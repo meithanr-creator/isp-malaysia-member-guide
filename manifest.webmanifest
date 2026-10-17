@@ -1,0 +1,10 @@
+{
+  "name": "ISP Malaysia Member Guide",
+  "short_name": "ISP Malaysia",
+  "description": "An accessible guide to official ISP Malaysia information.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fffdf8",
+  "theme_color": "#123b2a",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
