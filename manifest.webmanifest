@@ -1,10 +1,1 @@
-{
-  "name": "ISP Malaysia Member Guide",
-  "short_name": "ISP Malaysia",
-  "description": "An accessible guide to official ISP Malaysia information.",
-  "start_url": "./",
-  "display": "standalone",
-  "background_color": "#fffdf8",
-  "theme_color": "#123b2a",
-  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
-}
+{"id":"./","name":"ISP Member Experience Demo","short_name":"ISP Demo","description":"Design B interactive member demonstration","start_url":"./","scope":"./","display":"standalone","theme_color":"#006744","background_color":"#f8faf9","icons":[{"src":"assets/isp-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"assets/isp-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}

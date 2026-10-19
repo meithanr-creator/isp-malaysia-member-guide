@@ -1,19 +1,6 @@
-const CACHE_PREFIX = 'isp-member-guide-';
-const CACHE = `${CACHE_PREFIX}v1`;
-const APP_SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.webmanifest', './icon.svg'];
-
-self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL))));
-self.addEventListener('activate', event => event.waitUntil(
-  caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE).map(key => caches.delete(key))))
-    .then(() => self.clients.claim())
-));
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(caches.open(CACHE).then(cache => fetch(event.request)
-    .then(response => {
-      if (response.ok && new URL(event.request.url).origin === self.location.origin) cache.put(event.request, response.clone());
-      return response;
-    })
-    .catch(() => cache.match(event.request).then(cached => cached ||
-      (event.request.mode === 'navigate' ? cache.match('./index.html') : Response.error())))));
-});
+const PREFIX='isp-design-b-demo-'+self.registration.scope+'-';
+const CACHE=PREFIX+'v2';
+const SHELL=['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./assets/isp-192.png','./assets/isp-180.png','./assets/isp-270.png','./assets/isp-512.png','./assets/plantation-small.jpg','./assets/planter-cover.jpg','./assets/list.svg','./assets/house-door-fill.svg','./assets/calendar3.svg','./assets/people-fill.svg','./assets/three-dots.svg','./assets/person-fill.svg','./assets/chevron-right.svg','./assets/arrow-left.svg','./assets/award.svg','./assets/bag.svg','./assets/chat-dots.svg','./assets/journal-bookmark.svg','./assets/briefcase.svg','./assets/x-lg.svg','./assets/book.svg'];
+self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting())));
+self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith(PREFIX)&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',event=>{if(event.request.method!=='GET'||!event.request.url.startsWith(self.registration.scope))return;event.respondWith(fetch(event.request).then(response=>{if(response.ok){const copy=response.clone();event.waitUntil(caches.open(CACHE).then(cache=>cache.put(event.request,copy)));}return response;}).catch(()=>caches.open(CACHE).then(cache=>cache.match(event.request).then(hit=>hit||(event.request.mode==='navigate'?cache.match('./index.html'):Response.error())))));});
