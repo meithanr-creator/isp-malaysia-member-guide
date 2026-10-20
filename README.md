@@ -1,6 +1,6 @@
 # ISP Design B member experience demo
 
-A static mobile PWA matching the centre Modern Professional concept in the supplied Three ISP App Design Concepts image. The official ISP shield replaces the fictitious coat of arms shown in that concept.
+A static mobile PWA implementing the approved 20 October welcome, membership-dashboard and event-registration mockups. The official ISP shield is used throughout. Project files and QA evidence are kept on D:\Projects\isp-member-demo.
 
 ## Separate demo environment
 
@@ -8,7 +8,7 @@ Source: `meithanr-creator/isp-malaysia-member-guide`, branch `design-b-demo`. Se
 
 ## Demo scope and data
 
-Seven interactive areas: membership, payment and CPD; event registration, sample materials and poll; proposed certification pathways; shop and simulated checkout; temporary posts and replies; The Planter publication preview; consultation request preview. All entered records live only in JavaScript memory, clear on refresh/sign-out and are never sent to a backend. No analytics or third-party scripts.
+Eight interactive areas: membership, payment and CPD; event registration, sample materials and poll; ISP Academy training and proposed certification pathways; shop and simulated checkout; temporary posts and replies; The Planter publication preview; consultation request preview; Jobs with location/level filters, mock JDs and local vacancy advertising. All entered records live only in JavaScript memory, clear on refresh/sign-out and are never sent to a backend. No analytics or third-party scripts.
 
 The client password is a public prototype gate, not authentication. Never reuse it for a real account. No financial details are requested and payments are simulated. Programme tiers, merchandise, prices, points and events are illustrative, not official offers. External links to ISP/Mentimeter are explicitly marked; opening them uses their own policies.
 
