@@ -22,3 +22,32 @@ h1,h2,h3{font-family:Newsreader,Georgia,serif;font-weight:500;letter-spacing:-.0
 .brandbar{display:flex;justify-content:space-between;gap:10px}
 .brandbar .brand{order:0}
 .brandbar #menu-button{order:1;flex:0 0 44px}
+/* Direct icon-led navigation and Academy editorial learning pages. */
+.menu{max-height:calc(100dvh - 200px);overflow-y:auto;overscroll-behavior:contain;padding:8px 14px 12px}
+.menu-heading{font-size:12px;letter-spacing:.19em;text-transform:uppercase;color:var(--muted);padding:10px 8px}
+.menu button.menu-item{display:flex;align-items:center;gap:14px;width:100%;min-height:48px;padding:10px 8px;border-radius:3px;color:var(--deep);font-size:18px}
+.menu-item>img{width:23px;height:23px;flex-shrink:0;filter:invert(19%) sepia(38%) saturate(900%) hue-rotate(113deg)}
+.menu-item>img:last-child:not(:first-child){width:14px;height:14px;margin-left:auto}
+.menu-item span{text-align:left}.menu-divider{border-top:1px solid var(--line);margin:7px 0}
+.menu button:hover,.menu button:focus-visible{background:#eaf1ea}
+.academy{padding-top:12px}.academy h1{font-size:2.05rem;line-height:1.07;margin:5px 0 14px}
+.academy-intro{font-size:1.04rem;line-height:1.4;color:#53655f;margin-bottom:20px}
+.academy-hero{margin:0 -23px 20px}.academy-hero>img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover}
+.academy-hero figcaption{padding:7px 23px 0;font-size:11px;line-height:1.3;color:#69746f}
+.academic-note{border-left:3px solid #b1c6b5;padding:2px 0 2px 14px;margin:0 0 30px}.academic-note b{font-weight:600;font-size:17px}
+.academic-note p{font-size:15px;line-height:1.45;color:#56635e;margin:7px 0 0}
+.academy>h2{font-size:1.65rem;margin-bottom:8px}.academy-courses{display:grid;gap:26px}
+.academy-card{background:#fff;border:1px solid #dde5de;border-radius:5px;overflow:hidden}
+.academy-card>img{display:block;width:100%;height:180px;object-fit:cover}
+.academy-card-copy{padding:19px}.academy-card .eyebrow{font-size:11px;letter-spacing:.14em;margin-bottom:8px}.academy-card h2{font-size:1.65rem;margin:0 0 10px}
+.course-hook{font-size:18px;line-height:1.35;margin:0 0 12px;color:#374f44}.academy-card .secondary{justify-content:space-between;font-size:17px;margin-top:5px}
+.secondary img{width:18px;height:18px}.official-learning{border-top:1px solid var(--line);margin-top:32px;padding-top:24px}.official-learning p{font-size:16px;line-height:1.45}
+.course-lede{font:500 1.4rem/1.2 Newsreader,Georgia,serif;color:#466951;margin-bottom:20px}
+.course-facts{border-block:1px solid var(--line);padding:16px 0;display:grid;gap:18px;margin:22px 0 28px}.course-facts>div{display:flex;gap:14px;align-items:flex-start;font-size:16px;line-height:1.4}.course-facts img{width:23px;height:23px;margin-top:3px}.course-facts b{display:block;color:var(--deep);margin-bottom:4px}.course-facts span{color:#56635e}
+.course-section{margin:28px 0}.course-section h2,.applied-project h2{font-size:1.6rem;margin-bottom:15px}.learning-outcomes{padding-left:22px;margin:0}.learning-outcomes li{padding-left:5px;margin:0 0 15px;font-size:17px;line-height:1.45}.learning-outcomes li::marker{color:#54816a;font-weight:600}
+.curriculum details{border-bottom:1px solid var(--line)}.curriculum summary{display:flex;align-items:center;gap:12px;list-style:none;cursor:pointer;min-height:62px;padding:12px 0;color:var(--deep);font-size:17px;line-height:1.3}.curriculum summary::-webkit-details-marker{display:none}.module-number{font:500 21px Newsreader,serif;color:#789181}.curriculum summary>img{width:16px;height:16px;margin-left:auto;flex-shrink:0}.curriculum details[open] summary>img{transform:rotate(45deg)}.curriculum details>p{font-size:16px;line-height:1.45;color:#56635e;padding:0 10px 6px 34px}
+.applied-project{background:#edf3ec;padding:22px 18px;border-radius:4px;margin:28px -5px}.applied-project p{font-size:17px;line-height:1.45}.applied-project .small{font-size:14px}
+.case-options{border:0;padding:0;margin:20px 0}.case-options legend{font-size:15px;color:var(--muted);margin-bottom:10px}.case-options label{display:flex;align-items:flex-start;gap:12px;border:1px solid var(--line);border-radius:4px;padding:14px;margin:10px 0;cursor:pointer;font-size:16px;line-height:1.4}.case-options input{width:20px;height:20px;flex-shrink:0;margin:1px 0}
+@media(max-width:360px){.academy-hero{margin-left:-18px;margin-right:-18px}.academy h1{font-size:1.85rem}.academy-card-copy{padding:16px}.academy-card h2{font-size:1.5rem}.menu button.menu-item{font-size:17px}.academy-hero figcaption{padding-left:18px;padding-right:18px}}
+
+.course-status{font-size:13px;color:#64766a;border-left:2px solid #b9cbbd;padding-left:10px;margin:0 0 15px;line-height:1.4}
