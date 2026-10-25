@@ -12,6 +12,11 @@
 
 The implementation contains Rails source, documentation and brand assets plus the repository-level CI workflow. Published source was checked for excluded master keys, encrypted local credentials, databases, uploads, logs and temporary files. Local sample records and screenshots are not part of the GitHub source package.
 
+## M7 release evidence
+
+Implementation commit: `a0b8b3d3f5336777fc2e48858ad985459f7145c8`.
+GitHub validation: https://github.com/meithanr-creator/isp-malaysia-member-guide/actions/runs/40191683497 — passed: tests, Rails autoloading and Brakeman on Ubuntu.
+
 ## Current M7 delivery
 
 Native Membership (no CPD), member-only Publications and member-only Consultation replace the legacy demo links. Only Shop and Plantation jobs remain legacy demos. Admins use `/admin/publications` to upload PDF books/covers, edit descriptions, preview and publish. Members see published covers at the bottom of `/` and browse `/member/publications`; every cover and PDF requires member authentication. Admin enquiry inbox: `/admin/consultation_requests`. Members submit and review their own questions at `/member/consultation_requests`.
