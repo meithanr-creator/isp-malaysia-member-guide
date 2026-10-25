@@ -45,3 +45,5 @@ Requested on 25 October 2026: remove Membership, Publications and Consultation f
 5. Evidence: independent regression tests, role/file isolation checks, mobile browser journeys, Astra review and GitHub validation before completion. Production M2b/M5 remain pending.
 
 M7 acceptance: 124 tests / 984 assertions passed (seed 5156); Rails autoloading passed; Brakeman zero warnings/errors. Astra source and screenshot reviews accepted. Browser upload → preview → edit → preview → publish → member homepage/library and enquiry → admin inbox completed. QA records/uploads removed. GitHub release validation is recorded in DELIVERY.md. M2b and M5 remain pending.
+
+M7 usability refinement: persistent, icon-labelled administration shortcuts added above every admin page so Publications, Discover ISP and Consultation enquiries are visible alongside Events. Existing access controls are unchanged.

@@ -59,9 +59,11 @@
       </header>
       <main id="main" tabindex="-1">
         <% flash.each do |kind, message| %><div class="flash <%= kind %>" role="<%= kind == 'alert' ? 'alert' : 'status' %>"><%= message %></div><% end %>
+        <%= render "shared/admin_navigation" if current_user&.admin? && controller_path.start_with?("admin/") %>
         <%= yield %>
       </main>
       <nav class="bottom-nav" aria-label="Events navigation"><%= link_to events_path, aria: { current: controller_name == "events" && !controller_path.start_with?("admin/") ? "page" : nil } do %><%= isp_icon "calendar3" %>Events<% end %></nav>
     </div>
   </body>
 </html>
+
