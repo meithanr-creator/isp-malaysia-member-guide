@@ -16,11 +16,17 @@ class LoginAttemptBucketTest < ActiveSupport::TestCase
   test "counter values persist across model reload and reset after the window" do
     now = Time.utc(2026, 10, 25, 12, 0, 10)
     10.times { LoginAttemptBucket.allowed?(email: "member@example.test", ip: "192.0.2.1", now: now) }
-    assert_equal [10, 10], LoginAttemptBucket.order(:id).pluck(:attempts)
+    scopes = [["login:account", "member@example.test"], ["login:ip", "192.0.2.1"]].map { |scope, value| LoginAttemptBucket.send(:scope_digest, scope, value) }
+    counters = LoginAttemptBucket.where(scope_digest: scopes)
+    unrelated_scope = LoginAttemptBucket.send(:scope_digest, "login:account", "unrelated@example.test")
+    LoginAttemptBucket.create!(scope_digest: unrelated_scope, window_started_at: now, expires_at: now + 1.day, attempts: 7)
+    unrelated = LoginAttemptBucket.where.not(scope_digest: scopes).count
+    assert_equal [10, 10], counters.order(:id).pluck(:attempts)
     LoginAttemptBucket.reset_column_information
     assert_not LoginAttemptBucket.allowed?(email: "member@example.test", ip: "192.0.2.1", now: now)
     assert LoginAttemptBucket.allowed?(email: "member@example.test", ip: "192.0.2.1", now: now + 3.minutes)
-    assert_equal 2, LoginAttemptBucket.count
+    assert_equal 2, counters.count
+    assert_equal unrelated, LoginAttemptBucket.where.not(scope_digest: scopes).count
   end
 
   test "buckets contain keyed digests instead of raw account or address" do

@@ -155,6 +155,7 @@ class DiscoverSetupConcurrencyTest < ActionDispatch::IntegrationTest
     assert_equal 0, DiscoverSlide.count, "Concurrent setup requires an empty isolated test list"
     cleanup_cards = true
     admin = create_member(role: "admin")
+    throttle_scopes = [["login:account", admin.email], ["login:ip", "2001:db8:82::1"], ["login:ip", "2001:db8:82::2"]].map { |scope, value| LoginAttemptBucket.send(:scope_digest, scope, value) }
     ready, release, results, errors = Queue.new, Queue.new, Queue.new, Queue.new
     workers = 2.times.map do |index|
       Thread.new do
@@ -189,6 +190,7 @@ class DiscoverSetupConcurrencyTest < ActionDispatch::IntegrationTest
   ensure
     workers&.each { |worker| worker.kill if worker.alive? }
     workers&.each(&:join)
+    LoginAttemptBucket.where(scope_digest: throttle_scopes).delete_all if throttle_scopes
     DiscoverSlide.where(position: 1..3).destroy_all if cleanup_cards
     # These committed audit rows belong only to this nontransactional test actor.
     AdministrativeAudit.where(actor_id: admin.id).delete_all if admin

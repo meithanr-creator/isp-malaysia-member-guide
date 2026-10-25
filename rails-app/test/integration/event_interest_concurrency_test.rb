@@ -8,6 +8,7 @@ class EventInterestConcurrencyTest < ActionDispatch::IntegrationTest
   test "simultaneous registrations return success and retain exactly one snapshot" do
     skip "PostgreSQL row-lock exercise runs in the PostgreSQL CI job" unless ActiveRecord::Base.connection.adapter_name == "PostgreSQL"
     member = create_member
+    throttle_scopes = [["login:account", member.email], ["login:ip", "2001:db8:44::1"], ["login:ip", "2001:db8:44::2"]].map { |scope, value| LoginAttemptBucket.send(:scope_digest, scope, value) }
     event = create_published_event
     ready = Queue.new
     release = Queue.new
@@ -45,6 +46,7 @@ class EventInterestConcurrencyTest < ActionDispatch::IntegrationTest
   ensure
     workers&.each { |worker| worker.kill if worker.alive? }
     workers&.each(&:join)
+    LoginAttemptBucket.where(scope_digest: throttle_scopes).delete_all if throttle_scopes
     if member
       EventInterest.where(user_id: member.id).delete_all
       UserSession.where(user_id: member.id).delete_all if defined?(UserSession)
