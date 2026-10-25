@@ -4,16 +4,16 @@ Prepared 25 October 2026, Asia/Kuala_Lumpur. Owner: project owner. Delivery dire
 
 ## Outcome and scope
 
-Visitors discover ISP and browse published events without signing in. The top-right member control opens login or the member dashboard. The landing body no longer repeats a member dashboard button. Discover becomes a rotating, accessible slideshow. The bottom navigation contains Events only. Existing additional demo areas stay reachable from the top-right menu.
+Visitors discover ISP and browse published events without signing in. The top-right member control opens login or the member dashboard. The landing body no longer repeats a member dashboard button. Discover becomes a rotating, accessible slideshow. The bottom navigation contains Events only. The remaining concept areas are preserved in the earlier demo, with any links from Rails explicitly labelled as earlier-demo references. This phase migrates the requested member/events/admin surfaces.
 
 Members sign in, view their own profile and event interests, and register interest in a chosen event. Signing in returns them to that event. Interest is distinct from a booking or payment confirmation. Administrators prepare event details and assets, inspect the exact public preview, return to edit, and publish the reviewed revision.
 
-This delivery produces the redesigned interactive demonstration and the secure-backend specification. The earlier Cloudflare Pages demo has no secure authentication service or database. This Rails foundation uses sample records for review; real membership verification, recovery, administrator MFA and operational controls remain production gates. No real member data is introduced.
+This delivery produces redesigned Rails pages, a persisted local application using seeded sample accounts/events, and the production-backend specification. The earlier Cloudflare Pages demo has no secure authentication service or database. This Rails foundation uses sample records for review; real membership verification, recovery, administrator MFA and operational controls remain production gates. No real member data is introduced.
 
 ## Five redesigned surfaces
 
 1. Landing: official ISP logo, top-right Login / My dashboard control and menu, plantation welcome image, Discover carousel, public event teaser and Events-only bottom bar. Carousel supports previous/next, pause/resume, position indicators, keyboard use and reduced-motion preference.
-2. Login: recognisable member access layout, intended email/password fields with prototype handling, recovery/help affordance and explicitly separate sample member/admin entry. An event-interest intent survives the login transition. A review URL alone never grants member or administrator identity.
+2. Login: recognisable member access layout with server-authenticated sample accounts, accurate recovery/help information, and clearly labelled local-review sample entry. An event-interest intent survives the login transition. A review URL alone never grants member or administrator identity.
 3. Member dashboard: sample membership identity, editable permitted profile fields, event interests with status and withdrawal, clear route to browse events. Membership number/status and role are never member-editable in production.
 4. Admin event editor: title, summary, description, event date/start/end/time zone, physical venue or online location, image and brochure, price/currency or free attendance, bank name, account name, account number, receipt destination email and payment instructions. Group fields into understandable sections with validation near the field.
 5. Event preview/public detail: one renderer and one versioned event record for imagery, brochure, description, schedule, venue and payment instructions. Draft controls are outside the public content. Publish is possible only for the revision actually previewed. Editing an already published event creates a new draft while the public revision stays unchanged.
@@ -29,6 +29,24 @@ Active Storage files must be revision-scoped. Default public blob routes must be
 A Rails-compatible process/server/container host is required. Cloudflare can provide DNS/proxy and assets, but the existing static Cloudflare Pages deployment cannot run Rails. No new paid hosting is provisioned in this phase. Local working Rails pages and a GitHub branch are the immediate deliverables; staging follows host/cost selection.
 
 ## Roles and server boundaries
+
+```mermaid
+flowchart LR
+  V[Visitor] --> P[Public landing and published events]
+  P --> L[Member login]
+  L --> D[Own profile and event interests]
+  A[Administrator login] --> F[Event draft and uploads]
+  F --> R[Review exact event preview]
+  R --> E[Edit and invalidate preview]
+  E --> F
+  R --> U[Publish reviewed revision]
+  U --> P
+  D --> M[Open email app and attach receipt]
+  M --> C[Company inbox]
+  C --> Q[Staff reconcile payment separately]
+```
+
+The public event stays available while an administrator edits its next revision. Login, publication and interest changes are checked by Rails on the server. Opening an email app never marks a payment as received.
 
 | Role | Permitted operations |
 | --- | --- |
@@ -98,11 +116,11 @@ Return explicit validation errors, unauthenticated/forbidden states, not-found a
 
 ## Delivery controls
 
-Track each milestone in MILESTONES.md with named owner, evidence, outstanding work and commit. Astra reviews scope, visual quality, risks and acceptance evidence. Sol implements and an independent Sol tester checks critical paths. The parent coordinates integration and the separate Cloudflare demo release. Work is reviewed after each meaningful milestone; failures reopen the milestone. Future automated unattended monitoring is not configured by this plan.
+Track each milestone in MILESTONES.md with named owner, evidence, outstanding work and commit. Astra reviews scope, visual quality, risks and acceptance evidence. Sol implements and an independent Sol tester checks critical paths. The parent coordinates integration and local Rails review and GitHub delivery; hosted release follows compatible host selection. Work is reviewed after each meaningful milestone; failures reopen the milestone. Future automated unattended monitoring is not configured by this plan.
 
 GitHub changes target the separate rails-member-events branch under rails-app/. Preserve the existing design-b-demo deployment. Record commit and deployment IDs; use a fresh branch-head check and an expected-head update to avoid overwriting other work. Production backend work should use a dedicated feature branch and reviewed pull request. The rollback reference for the prior demo is b7299c71cf511f57e7ea81e29e4ca7cbdf12c0d1.
 
-## Decisions required before secure implementation
+## Decisions required before production activation
 
 - Rails is confirmed. Select a compatible host and hosting budget.
 - Source of member identity, invitation process and eligibility rules.

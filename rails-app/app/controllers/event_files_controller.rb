@@ -1,0 +1,21 @@
+class EventFilesController < ApplicationController
+  def show
+    response.headers["Cache-Control"] = "no-store, private"
+    event = Event.find_by!(slug: params[:event_id])
+    key = params[:key].to_s
+    public_file = event.published? && referenced?(event.published_data, key)
+    unless public_file
+      return head :not_found unless current_user&.admin?
+      return head :not_found unless referenced?(event.draft_data, key) || referenced?(event.preview_data, key)
+    end
+    blob = ActiveStorage::Blob.find_signed(key)
+    return head :not_found unless blob && event.uploads.blobs.exists?(id: blob.id)
+    send_data blob.download, filename: blob.filename.to_s, type: blob.content_type, disposition: "inline"
+  end
+
+  private
+  def referenced?(data, key)
+    return false unless data.is_a?(Hash)
+    (Array(data["images"]) + [data["brochure"]].compact).any? { |file| file["signed_id"] == key }
+  end
+end

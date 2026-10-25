@@ -1,0 +1,34 @@
+name: Rails member and events checks
+
+on:
+  push:
+    branches: [rails-member-events]
+    paths: ['rails-app/**', '.github/workflows/rails-ci.yml']
+  pull_request:
+    paths: ['rails-app/**', '.github/workflows/rails-ci.yml']
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: rails-app
+
+jobs:
+  rails_checks:
+    runs-on: ubuntu-latest
+    env:
+      RAILS_ENV: test
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.12'
+          bundler-cache: true
+          working-directory: rails-app
+      - name: Prepare database and run independent tests
+        run: bundle exec rails db:test:prepare test
+      - name: Check Rails autoloading
+        run: bundle exec rails zeitwerk:check
+      - name: Scan Rails code
+        run: bundle exec brakeman --no-pager

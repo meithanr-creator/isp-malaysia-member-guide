@@ -1,0 +1,24 @@
+<section class="welcome-hero">
+  <%= image_tag "/brand/welcome-palms.jpg", alt: "Oil palm plantation with a mountain backdrop" %>
+  <div class="welcome-copy"><span class="eyebrow">People. Plants. Progress.</span><h1>A community of planters.<br>A shared future.</h1><p>Connect with your profession.<br>Learn, contribute and grow with ISP.</p></div>
+</section>
+<section class="home-section discover-section" data-controller="carousel" data-action="mouseenter->carousel#hover mouseleave->carousel#leave focusin->carousel#focus focusout->carousel#blur" aria-roledescription="carousel" aria-label="Discover ISP">
+  <div class="section-head"><h2>Discover ISP</h2><span class="quiet-caption">Since 1919</span></div>
+  <% slides = [
+    ["plantation-small.jpg", "A profession. A community.", "Rooted in the field. Looking to the future.", "Since 1919, ISP has connected planters through knowledge, professional fellowship and a shared commitment to progress.", "Discover our story", about_path],
+    ["academy-leadership.jpg", "Keep your curiosity growing", "Learn from experience. Build what comes next.", "Explore the proposed ISP Academy learning experience, from leadership to everyday plantation practice.", "Explore ISP Academy", "https://isp-design-b-demo.pages.dev/?review=1#certification"],
+    ["member-events.jpg", "Ideas grow in good company", "Make a connection. Share a new perspective.", "Discover workshops, field visits and conversations that bring the plantation community together.", "Explore events", events_path]
+  ] %>
+  <% slides.each_with_index do |(image, tag, title, copy, link, path), index| %>
+    <article class="discover-card" data-carousel-target="slide" aria-label="<%= index + 1 %> of 3" <%= "hidden" unless index.zero? %>>
+      <%= image_tag "/brand/#{image}", alt: ["Oil palm plantation beneath a wide sky", "A plantation team learning together", "Plantation professionals exchanging ideas"][index] %>
+      <div class="discover-copy"><span class="eyebrow"><%= tag %></span><h3><%= title %></h3><p><%= copy %></p><%= link_to path, class: "link-button" do %><%= link %><%= isp_icon "chevron-right" %><% end %></div>
+    </article>
+  <% end %>
+  <div class="discover-controls"><button type="button" class="carousel-arrow" data-action="carousel#previous" aria-label="Previous slide">‹</button><div class="slide-selectors"><% 3.times do |index| %><button type="button" class="slide-dot" data-carousel-target="dot" data-action="carousel#select" data-index="<%= index %>" aria-label="Show slide <%= index + 1 %>" <%= 'aria-current="true"'.html_safe if index.zero? %>></button><% end %></div><button type="button" class="carousel-arrow" data-action="carousel#next" aria-label="Next slide">›</button><button type="button" class="carousel-pause" data-carousel-target="pause" data-action="carousel#toggle">Pause</button></div>
+  <p class="sr-only" data-carousel-target="announcement" aria-live="polite"></p>
+</section>
+<section class="home-section home-upcoming"><div class="section-head"><h2>Events & activities</h2><%= link_to events_path, class: "link-button" do %>View all <%= isp_icon "chevron-right" %><% end %></div><p class="section-lede">Fresh perspectives, shared in good company.</p>
+  <% @events.each do |event| %><% data = event.published_data %><article class="event-teaser"><%= image_tag event_cover(data, event: event), alt: "", loading: "lazy" %><div><span class="sample-label">Sample <%= data["format"] %></span><h3><%= data["title"] %></h3><p><%= event_date(data) %> · <%= data["admission"] == "free" ? "Free" : "RM #{number_with_precision(data['fee'], precision: 0)}" %></p><%= link_to event_path(event), class: "link-button" do %>View event <%= isp_icon "chevron-right" %><% end %></div></article><% end %>
+</section>
+<footer class="home-footer"><span>The Incorporated Society of Planters</span><%= link_to "About & contact", about_path, class: "link-button" %><small>Interactive design preview · all events are illustrative.</small></footer>
