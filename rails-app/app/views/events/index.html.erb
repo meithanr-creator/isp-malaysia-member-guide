@@ -1,0 +1,6 @@
+<section class="page public-events"><%= link_to root_path, class: "back" do %><%= isp_icon "arrow-left" %>Home<% end %><span class="eyebrow">Come together. Grow together.</span><h1>Events & activities</h1><p class="intro">Make time for a new idea, a practical conversation and your professional community.</p><% if demo_mode? %><p class="prototype-note">Interactive preview · sample events · nothing is sent to ISP.</p><% end %>
+  <%= form_with url: events_path, method: :get, class: "filter-form" do |form| %><label class="field">Explore by format<%= form.select :format, options_for_select([["All activities", ""]] + Event::FORMATS.map { |format| [format, format] }, @format) %></label><%= form.submit "Filter", class: "secondary" %><% end %>
+  <div class="public-event-list"><% @events.each do |event| %><%= render "card", event: event %><% end %><% if @events.empty? %><div class="empty-state"><h2>More connections ahead.</h2><p>No events match this format yet. Choose another format or check back for new activities.</p></div><% end %></div>
+  <%= link_to "Browse official ISP events", "https://isp.org.my/v4/event/", class: "secondary full official-events", target: "_blank", rel: "noopener" %>
+</section>
+

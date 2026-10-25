@@ -1,0 +1,9 @@
+<section class="page consultation-page">
+  <span class="eyebrow">Member consultation</span><h1>Start with a question.</h1>
+  <p class="intro">Tell ISP about the challenge facing your plantation or organisation. Your enquiry starts the conversation.</p>
+  <%= image_tag "/brand/member-consultation.jpg", class: "consultation-hero", alt: "Plantation consultation", loading: "lazy" %>
+  <div class="consultation-topics"><h2>Practical questions. Clear context.</h2><p>Feasibility studies, operational due diligence, vendor management, or a data-driven approach to cost and inventory optimisation.</p><%= link_to new_member_consultation_request_path, class: "primary full" do %>Send an enquiry <%= isp_icon "chevron-right" %><% end %></div>
+  <section class="query-history"><h2>Your enquiries</h2>
+    <% if @requests.empty? %><div class="empty-state"><p>You have not submitted an enquiry yet. Your requests and reference numbers will appear here.</p></div><% else %><p class="form-hint">Your most recent 100 enquiries.</p><% @requests.each do |query| %><%= link_to member_consultation_request_path(query), class: "query-card" do %><span class="eyebrow"><%= query.reference %> · Received</span><h3><%= query.subject %></h3><p><%= query.category %></p><small><%= query.created_at.in_time_zone("Asia/Kuala_Lumpur").strftime("%-d %b %Y") %></small><% end %><% end %><% end %>
+  </section>
+</section>

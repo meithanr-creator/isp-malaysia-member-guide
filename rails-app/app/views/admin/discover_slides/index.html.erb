@@ -1,0 +1,31 @@
+<section class="page discover-admin"><%= link_to admin_events_path, class: "back" do %><%= isp_icon "arrow-left" %>Admin workspace<% end %><span class="eyebrow">The homepage invitation</span><h1>Discover ISP, your way.</h1><p class="intro">Refresh the three cards that welcome your community. Edit each card here, then save it to update the homepage.</p><div class="discover-admin-note">The preview changes as you type. Your changes appear publicly only after you save that card.</div>
+  <%= render "shared/admin_verification_notice" %>
+  <% if @slides.size < 3 %>
+    <section class="admin-create">
+      <h2>Prepare the Discover cards.</h2>
+      <p>Add the missing cards using ISP's existing welcome text, pictures and website links. Saved cards stay as they are. Review every card and its destination before launch.</p>
+      <%= button_to "Set up missing Discover cards", admin_discover_setup_path, method: :post, class: "primary full" %>
+    </section>
+  <% end %>
+  <div class="discover-admin-list"><% @slides.each do |slide| %>
+    <article class="discover-admin-card" id="discover-card-<%= slide.id %>" data-controller="discover-editor">
+      <div class="discover-admin-card-heading"><h2>Card <%= slide.position %></h2><span class="quiet-caption">Homepage carousel</span></div>
+      <% destination = discover_safe_website_url(slide) %>
+      <div class="discover-inline-preview"><%= image_tag discover_slide_image(slide), alt: slide.image_alt, data: { discover_editor_target: "image" } %><div class="discover-inline-copy"><span class="eyebrow" data-discover-editor-target="tag"><%= slide.tag %></span><h3 data-discover-editor-target="title"><%= slide.title %></h3><p data-discover-editor-target="description"><%= slide.description %></p><%= tag.a href: destination, target: "_blank", rel: "noopener", class: "link-button", aria: { disabled: destination.nil? ? "true" : nil }, data: { discover_editor_target: "link" } do %>Click to Access Website<%= isp_icon "chevron-right" %><% end %></div></div>
+      <div class="discover-inline-fields"><%= render "shared/errors", record: slide %>
+        <%= form_with model: slide, url: admin_discover_slide_path(slide), method: :patch, multipart: true, id: "discover-form-#{slide.id}" do |form| %>
+          <%= form.hidden_field :lock_version %>
+          <label class="upload-area" for="discover-image-<%= slide.id %>"><%= isp_icon "plus-lg" %><b>Replace card picture</b><span>JPG, PNG or WebP · up to 5 MB</span><%= form.file_field :image, id: "discover-image-#{slide.id}", accept: "image/jpeg,image/png,image/webp", data: { discover_editor_target: "file", action: "change->discover-editor#image" } %></label><p class="form-status" role="status" data-discover-editor-target="status"></p>
+          <label class="field" for="discover-alt-<%= slide.id %>">Picture description<%= form.text_field :image_alt, id: "discover-alt-#{slide.id}", required: true, maxlength: 180, data: { preview_field: "image_alt", action: "input->discover-editor#update" } %><small>Describe the picture for people using a screen reader.</small></label>
+          <label class="field" for="discover-tag-<%= slide.id %>">Tag<%= form.text_field :tag, id: "discover-tag-#{slide.id}", required: true, maxlength: 80, data: { preview_field: "tag", action: "input->discover-editor#update" } %></label>
+          <label class="field" for="discover-title-<%= slide.id %>">Title<%= form.text_field :title, id: "discover-title-#{slide.id}", required: true, maxlength: 140, data: { preview_field: "title", action: "input->discover-editor#update" } %></label>
+          <label class="field" for="discover-description-<%= slide.id %>">Description<%= form.text_area :description, id: "discover-description-#{slide.id}", required: true, maxlength: 700, rows: 4, data: { preview_field: "description", action: "input->discover-editor#update" } %></label>
+          <label class="field" for="discover-url-<%= slide.id %>">Destination website URL<%= form.url_field :website_url, id: "discover-url-#{slide.id}", required: true, maxlength: 2048, placeholder: "https://example.com/", data: { preview_field: "website_url", action: "input->discover-editor#update" } %><small>Use a complete HTTPS address. The website opens in a new tab.</small></label>
+          <button type="submit" class="primary full">Save card <%= slide.position %><%= isp_icon "chevron-right" %></button>
+        <% end %>
+      </div>
+    </article>
+  <% end %></div>
+</section>
+
+

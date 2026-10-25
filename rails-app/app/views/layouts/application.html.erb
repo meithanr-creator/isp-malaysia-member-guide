@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= content_for(:title) || "People, Plants, Progress | ISP" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="ISP">
+    <meta name="apple-mobile-web-app-title" content="ISP">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="turbo-cache-control" content="no-cache">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+
+    <%= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+
+    <link rel="icon" href="/brand/isp-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="/brand/isp-180.png">
+    <meta name="theme-color" content="#007759">
+
+    <%# Includes all stylesheet files in app/assets/stylesheets %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body data-controller="pwa">
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="app-shell <%= 'admin-shell' if controller_path.start_with?('admin/') %>">
+      <header class="brandbar">
+        <%= link_to root_path, class: "brand", aria: { label: "ISP home" } do %>
+          <%= image_tag "/brand/isp-crest.png", alt: "Official ISP crest" %><span>The Incorporated<br>Society of Planters<small>MALAYSIA · EST. 1919</small></span>
+        <% end %>
+        <div class="header-actions">
+          <%= link_to current_user ? "Dashboard" : "Login", account_path, class: "account-control" %>
+          <details class="menu-root" data-controller="menu"><summary aria-label="Explore ISP menu"><%= isp_icon "list" %></summary><nav class="menu" aria-label="Explore ISP">
+            <span class="menu-heading">Explore ISP</span>
+            <%= link_to root_path do %><%= isp_icon "house-door-fill" %>Home<% end %>
+            <%= link_to events_path do %><%= isp_icon "calendar3" %>Events & activities<% end %>
+            <% unless current_user&.admin? %>
+            <%= link_to member_membership_path do %><%= isp_icon "people-fill" %>Membership<% end %>
+            <%= link_to member_publications_path do %><%= isp_icon "journal-bookmark" %><span>Publications<small>Members only</small></span><% end %>
+            <%= link_to member_consultation_requests_path do %><%= isp_icon "bar-chart-line" %><span>Consultation<small>Members only</small></span><% end %>
+            <% end %>
+            <%= link_to about_path do %><%= isp_icon "book" %>About & contact<% end %>
+            <% if current_user&.admin? %>
+              <div class="menu-divider"></div><span class="menu-heading">Administration</span>
+              <%= link_to admin_membership_registry_entries_path do %><%= isp_icon "people-fill" %>Membership list<% end %>
+              <%= link_to admin_discover_path do %><%= isp_icon "file-earmark-text" %>Edit Discover ISP<% end %>
+              <%= link_to admin_publications_path do %><%= isp_icon "journal-bookmark" %>Manage publications<% end %>
+              <%= link_to admin_consultation_requests_path do %><%= isp_icon "bar-chart-line" %>Consultation enquiries<% end %>
+            <% end %>
+            <div class="menu-divider"></div><span class="menu-heading">Explore demos</span>
+            <% [["ISP shop", "shop", "bag"], ["Plantation jobs", "jobs", "briefcase"]].each do |label, route, icon| %>
+              <%= link_to "https://isp-design-b-demo.pages.dev/?review=1##{route}", target: "_blank", rel: "noopener" do %><%= isp_icon icon %><span><%= label %> <% if %w[shop jobs].include?(route) %><strong class="status-badge">DEMO</strong><% end %><small>Earlier demo · opens new tab</small></span><% end %>
+            <% end %>
+            <% if current_user %><div class="menu-divider"></div><%= button_to session_path, method: :delete, class: "menu-signout", form: { data: { turbo: false } } do %><%= isp_icon "box-arrow-right" %>Sign out<% end %><% end %>
+          </nav></details>
+        </div>
+      </header>
+      <main id="main" tabindex="-1">
+        <% flash.each do |kind, message| %><div class="flash <%= kind %>" role="<%= kind == 'alert' ? 'alert' : 'status' %>"><%= message %></div><% end %>
+        <%= render "shared/admin_navigation" if current_user&.admin? && controller_path.start_with?("admin/") %>
+        <%= yield %>
+      </main>
+      <nav class="bottom-nav" aria-label="Events navigation"><%= link_to events_path, aria: { current: controller_name == "events" && !controller_path.start_with?("admin/") ? "page" : nil } do %><%= isp_icon "calendar3" %>Events<% end %></nav>
+    </div>
+  </body>
+</html>
+
+
+

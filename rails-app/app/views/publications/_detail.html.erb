@@ -1,0 +1,9 @@
+<% file_url = ->(kind) { admin_preview ? admin_publication_file_path(publication, kind, data.dig(kind, "signed_id"), version: "preview", revision: publication.preview_revision) : member_publication_file_path(publication, kind, data.dig(kind, "signed_id")) } %>
+<article class="publication-detail">
+  <div class="publication-book"><%= image_tag file_url.call("cover"), alt: "#{data["title"]} cover" %></div>
+  <div class="publication-detail-copy"><h1><%= data["title"] %></h1><% if data["subtitle"].present? %><p class="publication-subtitle"><%= data["subtitle"] %></p><% end %>
+  <% if data["author"].present? || data["issue_date"].present? %><p class="form-hint"><%= [data["author"].presence, data["issue_date"].presence].compact.join(" · ") %></p><% end %>
+  <p class="preserve-lines"><%= data["description"] %></p>
+  <%= link_to file_url.call("pdf"), class: "primary full", data: { turbo: false } do %>Download PDF <%= isp_icon "journal-bookmark" %><% end %>
+  <p class="form-hint publication-file-size">PDF book · <%= number_to_human_size(data.dig("pdf", "size")) %>. Opens with your device's PDF reader.</p></div>
+</article>

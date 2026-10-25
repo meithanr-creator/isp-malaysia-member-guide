@@ -1,0 +1,16 @@
+<section class="page membership-page">
+  <span class="eyebrow">Membership</span><h1>Your connection to ISP.</h1>
+  <p class="intro">Keep your profile up to date and make the most of your member resources.</p>
+  <article class="profile-card">
+    <div class="profile-heading"><span class="avatar"><%= current_user.name.split.map(&:first).first(2).join %></span><div><h2><%= current_user.name %></h2><p>Member profile</p></div></div>
+    <dl class="profile-details"><% if current_user.membership_registry_entry %><div><dt>Membership reference</dt><dd><%= current_user.membership_registry_entry.member_reference %></dd></div><% end %><% [["Email", current_user.email], ["Organisation", current_user.company], ["Branch", current_user.branch], ["Telephone", current_user.phone]].each do |label, value| %><div><dt><%= label %></dt><dd><%= value.presence || "Not added" %></dd></div><% end %></dl>
+    <%= link_to edit_member_profile_path, class: "link-button" do %>Edit your profile <%= isp_icon "chevron-right" %><% end %>
+  </article>
+  <h2>Make the connection.</h2>
+  <div class="stack">
+    <%= link_to member_publications_path, class: "service-row" do %><%= isp_icon "journal-bookmark" %><span>Publications<small>Read the member library</small></span><%= isp_icon "chevron-right" %><% end %>
+    <%= link_to member_consultation_requests_path, class: "service-row" do %><%= isp_icon "bar-chart-line" %><span>Consultation<small>Send an enquiry to ISP</small></span><%= isp_icon "chevron-right" %><% end %>
+    <%= link_to events_path, class: "service-row" do %><%= isp_icon "calendar3" %><span>Events & activities<small>Explore upcoming opportunities</small></span><%= isp_icon "chevron-right" %><% end %>
+  </div>
+</section>
+

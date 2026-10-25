@@ -1,0 +1,9 @@
+<nav class="admin-navigation" aria-label="Administration">
+  <span class="menu-heading">Admin workspace</span>
+  <div class="admin-navigation-links">
+    <% [["Membership list", admin_membership_registry_entries_path, "people-fill", "admin/membership_registry_entries"], ["Events", admin_events_path, "calendar3", "admin/events"], ["Publications", admin_publications_path, "journal-bookmark", "admin/publications"], ["Discover ISP", admin_discover_path, "file-earmark-text", "admin/discover_slides"], ["Consultation enquiries", admin_consultation_requests_path, "bar-chart-line", "admin/consultation_requests"]].each do |label, destination, icon, section| %>
+      <%= link_to destination, aria: { current: (controller_path == section || (section == "admin/membership_registry_entries" && controller_path == "admin/membership_imports")) ? "page" : nil } do %><%= isp_icon icon %><span><%= label %></span><% end %>
+    <% end %>
+  </div>
+</nav>
+

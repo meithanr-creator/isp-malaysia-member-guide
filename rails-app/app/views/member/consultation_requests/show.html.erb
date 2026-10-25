@@ -1,0 +1,6 @@
+<section class="page consultation-page">
+  <%= link_to "Your enquiries", member_consultation_requests_path, class: "back" %>
+  <%= render "shared/consultation_request", query: @consultation_request %>
+  <p class="form-hint">This enquiry is recorded for the ISP team to review. It is not a confirmed consultation or booking.</p>
+  <%= link_to "Send another enquiry", new_member_consultation_request_path, class: "secondary full" %>
+</section>

@@ -1,0 +1,25 @@
+test:
+  service: Disk
+  root: <%= Rails.root.join("tmp/storage") %>
+
+local:
+  service: Disk
+  root: <%= Rails.root.join("storage") %>
+
+# Private service only. Credentials come from the runtime secret manager.
+production_private:
+  service: S3
+  access_key_id: <%= ENV["AWS_ACCESS_KEY_ID"].to_s.inspect %>
+  secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"].to_s.inspect %>
+  region: <%= ENV["AWS_REGION"].to_s.inspect %>
+  bucket: <%= ENV["STORAGE_BUCKET"].to_s.inspect %>
+<% if ENV["STORAGE_ENDPOINT"].to_s != "" %>
+  endpoint: <%= ENV["STORAGE_ENDPOINT"].inspect %>
+<% end %>
+  force_path_style: <%= ENV["STORAGE_FORCE_PATH_STYLE"] == "true" %>
+  public: false
+  http_open_timeout: 5
+  http_read_timeout: 15
+  retry_limit: 2
+  upload:
+    cache_control: "private, no-store"
