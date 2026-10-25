@@ -9,7 +9,7 @@
 - [x] Requested five surfaces rendered and visually checked at mobile and desktop sizes.
 - [x] Visitor/member/admin journeys tested independently: 61 tests / 380 assertions.
 - [x] Event revision and attachment behaviour tested; default storage routes disabled.
-- [ ] GitHub source commit and local run instructions recorded.
+- [x] GitHub source commit, passing CI and local run instructions recorded in DELIVERY.md.
 - [x] Final director review and open-issue register recorded in DIRECTOR-REVIEW.md.
 - [x] Rails autoloading and Brakeman scan passed (zero warnings/errors).
 

@@ -27,4 +27,6 @@ Updated 25 October 2026, Asia/Kuala_Lumpur. Director/PMO: Astra high. Implementa
 
 ## Evidence policy
 
+Implementation commit: `9d09fe29000405c8637028edb9147e65a909a235`. GitHub Actions run `40180704259` passed tests, autoloading and Brakeman on Ubuntu. See DELIVERY.md for review routes and links.
+
 Record commands/results, screenshots, source commit and unresolved defects. Do not mark a gate complete without evidence. A local seeded app is not a production membership service. No unattended monitor is configured.
