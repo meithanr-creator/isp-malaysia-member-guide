@@ -16,4 +16,5 @@
 <section class="home-section home-upcoming"><div class="section-head"><h2>Events & activities</h2><%= link_to events_path, class: "link-button" do %>View all <%= isp_icon "chevron-right" %><% end %></div><p class="section-lede">Fresh perspectives, shared in good company.</p>
   <% @events.each do |event| %><% data = event.published_data %><article class="event-teaser"><%= image_tag event_cover(data, event: event), alt: "", loading: "lazy" %><div><span class="sample-label">Sample <%= data["format"] %></span><h3><%= data["title"] %></h3><p><%= event_date(data) %> · <%= data["admission"] == "free" ? "Free" : "RM #{number_with_precision(data['fee'], precision: 0)}" %></p><%= link_to event_path(event), class: "link-button" do %>View event <%= isp_icon "chevron-right" %><% end %></div></article><% end %>
 </section>
+<%= render "member/publications/home", publications: @member_publications %>
 <footer class="home-footer"><span>The Incorporated Society of Planters</span><%= link_to "About & contact", about_path, class: "link-button" %><small>Interactive design preview · all events are illustrative.</small></footer>

@@ -12,9 +12,23 @@ Rails.application.routes.draw do
   end
   namespace :member do
     get "dashboard", to: "dashboards#show"
+    resource :membership, only: :show
+    resources :consultation_requests, only: %i[index new create show]
+    resources :publications, only: %i[index show] do
+      get "files/:kind/:key", to: "publication_files#show", as: :file
+    end
     resource :profile, only: %i[edit update]
   end
   namespace :admin do
+    resources :consultation_requests, only: %i[index show]
+    resources :publications, except: %i[show destroy] do
+      member do
+        get :preview
+        post :prepare_preview
+        post :publish
+      end
+      get "files/:kind/:key", to: "publication_files#show", as: :file
+    end
     get "discover", to: "discover_slides#index", as: :discover
     patch "discover/:id", to: "discover_slides#update", as: :discover_slide
     resources :events, except: %i[show destroy] do

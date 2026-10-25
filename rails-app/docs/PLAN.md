@@ -145,3 +145,11 @@ GitHub changes target the separate rails-member-events branch under rails-app/. 
 - OWASP authorization: https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html
 - OWASP uploads: https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html
 - Cloudflare Pages Functions: https://developers.cloudflare.com/pages/functions/
+
+## Native member services — M7
+
+Membership now uses the authenticated member's persisted profile. CPD and the legacy membership demo are removed. No membership number, paid status or tier is inferred from a sample account.
+
+Publications are a separate Rails content workflow: title, description, PDF book and cover image; private draft; preview; publish. A subsequent draft must not change the version currently available to members. Admins manage and preview publication files; members read published snapshots through authenticated cover/PDF endpoints. Files never use public Active Storage routes. Home shows the latest published issues only to members; visitors get a generic login prompt without titles, covers or file URLs. An empty library is honest until the first authorized issue is uploaded.
+
+Consultation is an enquiry workflow only. A member selects an area, enters a subject/question and submits using their session identity. The stored record has a reference, timestamp and retry key. Members see only their own enquiries; admins see the inbox. Profile email/phone provide follow-up context, but no automatic email, booking or payment is implemented. Pages and responses are private/no-store. Upload scanning, retention and production account lifecycle remain M5/M2b gates.

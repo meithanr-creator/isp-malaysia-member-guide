@@ -1,0 +1,5 @@
+<% data = publication.published_data %>
+<article class="publication-card">
+  <%= link_to member_publication_path(publication), class: "publication-cover-link", aria: { label: "Read #{data["title"]}" } do %><%= image_tag member_publication_file_path(publication, "cover", data.dig("cover", "signed_id")), alt: "#{data["title"]} cover", loading: "lazy" %><% end %>
+  <div><span class="eyebrow">Member publication</span><h3><%= data["title"] %></h3><% if data["subtitle"].present? %><p class="publication-subtitle"><%= data["subtitle"] %></p><% end %><p><%= truncate(data["description"], length: 160) %></p><%= link_to member_publication_path(publication), class: "link-button" do %>Read publication <%= isp_icon "chevron-right" %><% end %></div>
+</article>

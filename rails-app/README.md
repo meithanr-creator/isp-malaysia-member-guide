@@ -42,3 +42,13 @@ See [the implementation plan](docs/PLAN.md), [milestone board](docs/MILESTONES.m
 This is a local foundation, not a live membership service. Production still requires approved member verification, account recovery, administrator MFA, session lifecycle, hosted storage/scanning, finance ownership, backups and compatible hosting. Cloudflare Pages cannot run the Rails application process. The earlier Cloudflare demo remains separate.
 
 Never commit local keys, environment secrets, database files, uploads, logs or temporary files. Do not enable seeded review accounts for a hosted production service.
+
+## Member services
+
+- Membership is the native `/member/membership` page, showing the signed-in member's stored profile. CPD and the legacy membership redirect are removed.
+- Publications live at `/member/publications`. Only signed-in members see published issues and protected cover/PDF files. The homepage shows the latest two issues to members, or a generic login invitation to visitors.
+- Administrators use menu → Manage publications to upload a PDF book (25 MB maximum) and JPG/PNG/WebP cover (5 MB), edit the title/description, preview, then publish the reviewed version. Later drafts do not change the member version until published again. The library starts empty; do not invent or upload unauthorized ISP issues.
+- Consultation is a member enquiry at `/member/consultation_requests`. Members submit a question and see their own references/history. Administrators use menu → Consultation enquiries to read the inbox. The app does not send an email, book a consultation or take a payment.
+- Shop and Plantation jobs remain the only legacy demo links.
+
+These are persisted Rails workflows in the local review environment. Production identity, storage operations and hosting remain separate pending gates.

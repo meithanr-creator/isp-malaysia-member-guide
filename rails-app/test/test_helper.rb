@@ -78,6 +78,44 @@ module Phase2TestData
   def close_discover_uploads
     Array(@discover_tempfiles).each(&:close!)
   end
+
+  def consultation_attributes(overrides = {})
+    { category: "Plantation feasibility", subject: "Review a sample estate proposal",
+      message: "Please help us understand the planning information needed for this proposal.",
+      request_key: SecureRandom.uuid }.merge(overrides)
+  end
+
+  def create_consultation(user: create_member, **overrides)
+    ConsultationRequest.create!(consultation_attributes(overrides).merge(user: user))
+  end
+
+  def publication_data(overrides = {})
+    { "title" => "The Field Review", "subtitle" => "Professional knowledge for members",
+      "description" => "A collection of perspectives from the plantation profession.",
+      "author" => "ISP Editorial Team", "issue_date" => "2026-10-01" }.merge(overrides.stringify_keys)
+  end
+
+  def create_publication(overrides = {})
+    Publication.create!(slug: "publication-#{SecureRandom.hex(4)}", draft_data: publication_data(overrides), revision: 0)
+  end
+
+  def create_ready_publication(overrides = {})
+    create_publication(overrides).tap do |publication|
+      result = PublicationDraftUpdater.new(publication).call(attributes: {},
+        pdf: discover_upload(content: "%PDF-1.7 member publication", filename: "member-publication.pdf", type: "application/pdf"),
+        cover: discover_upload(filename: "publication-cover.png"), expected_lock_version: publication.lock_version)
+      raise "Could not build publication test data: #{publication.errors.full_messages.join(', ')}" unless result
+      publication.reload
+    end
+  end
+
+  def create_published_publication(overrides = {})
+    create_ready_publication(overrides).tap do |publication|
+      publication.prepare_preview!(expected_lock_version: publication.lock_version)
+      publication.publish!(expected_revision: publication.revision, expected_lock_version: publication.lock_version)
+      publication.reload
+    end
+  end
 end
 
 ActiveSupport::TestCase.include Phase2TestData

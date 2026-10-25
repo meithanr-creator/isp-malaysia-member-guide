@@ -1,0 +1,7 @@
+.consultation-hero{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:6px;margin-bottom:24px}
+.consultation-topics{padding:4px 0 28px}.consultation-topics p{color:var(--muted)}
+.query-history{border-top:1px solid var(--line);padding-top:26px}
+.query-card{display:block;padding:20px;margin:14px 0;background:#fff;border:1px solid var(--line);border-radius:6px;text-decoration:none;color:var(--deep)}
+.query-card:hover{border-color:var(--green);background:var(--pale)}.query-card p{margin-bottom:6px}.query-card small{color:var(--muted)}
+.query-meta{margin:24px 0;padding:18px;border:1px solid var(--line);border-radius:5px;background:var(--pale)}.query-meta>div+div{margin-top:14px}.query-meta dt{color:var(--muted);font-size:.83rem}.query-meta dd{margin:4px 0 0}
+.query-message{padding:10px 0 20px}.query-message p{overflow-wrap:anywhere}

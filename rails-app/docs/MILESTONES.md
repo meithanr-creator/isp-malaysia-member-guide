@@ -33,3 +33,15 @@ M6 checkpoint: admin live text/picture preview and save were verified through th
 Implementation commit: `9d09fe29000405c8637028edb9147e65a909a235`. GitHub Actions run `40180704259` passed tests, autoloading and Brakeman on Ubuntu. See DELIVERY.md for review routes and links.
 
 Record commands/results, screenshots, source commit and unresolved defects. Do not mark a gate complete without evidence. A local seeded app is not a production membership service. No unattended monitor is configured.
+
+## M7 — Native member services (complete for local review)
+
+Requested on 25 October 2026: remove Membership, Publications and Consultation from legacy demos; remove CPD; add protected publication administration/library and member consultation enquiries.
+
+1. Membership: persisted profile, no invented membership number/status, no CPD or legacy redirect.
+2. Publications: admin PDF + cover + description; validated uploads; private draft, preview, exact reviewed publication; subsequent drafts preserve the published version.
+3. Member access: library and landing-page covers require member login; every cover/PDF is authorized against the current published snapshot. Visitors receive only a generic login invitation.
+4. Consultation: member-only enquiry form, own history and reference; admin read-only inbox. No booking, payment or automatic email. Repeated submission keys cannot create duplicates.
+5. Evidence: independent regression tests, role/file isolation checks, mobile browser journeys, Astra review and GitHub validation before completion. Production M2b/M5 remain pending.
+
+M7 acceptance: 124 tests / 984 assertions passed (seed 5156); Rails autoloading passed; Brakeman zero warnings/errors. Astra source and screenshot reviews accepted. Browser upload → preview → edit → preview → publish → member homepage/library and enquiry → admin inbox completed. QA records/uploads removed. GitHub release validation is recorded in DELIVERY.md. M2b and M5 remain pending.

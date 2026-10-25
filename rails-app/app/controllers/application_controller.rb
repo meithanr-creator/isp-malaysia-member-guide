@@ -25,7 +25,7 @@ class ApplicationController < ActionController::Base
   def require_login
     return true if current_user
     session[:return_to] = safe_return_path(request.fullpath) if request.get? || request.head?
-    redirect_to login_path, notice: "Login to continue. We will bring you back to this event."
+    redirect_to login_path, notice: "Login to continue. We will bring you back to the page you requested."
     false
   end
 

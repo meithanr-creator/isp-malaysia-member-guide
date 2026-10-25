@@ -32,3 +32,11 @@ Astra inspected menu-refinement.png, discover-editor.png and discover-public.png
 - Production membership verification, recovery, MFA, revocable sessions and distributed throttling remain pending.
 - Hosted private storage, file quarantine/scanning, image processing, finance reconciliation, monitoring and backup/restore remain pending.
 - Browser verification is desktop Chromium at responsive sizes; physical iOS/Android and assistive-technology testing remain future acceptance work.
+
+## M7 source and visual review
+
+Astra high reviewed the completed M7 source and found no blocking defect: member/admin guards precede lookup; current published file references and attachment ownership are checked; admin preview files require the reviewed revision; stale edits/publishing are rejected; draft changes preserve the published snapshot; guest homepage metadata is gated; enquiry records are scoped by owner; Turbo snapshot caching is disabled and logout uses a full navigation.
+
+Astra separately inspected all four M7 screenshots and accepted mobile clarity/alignment with no visual blockers. Membership/Publications/Consultation are primary navigation; only Shop and Jobs are demos. Enquiry wording accurately describes a query, and private publication preview separates editing, downloading and publishing. Physical iOS/Android testing remains pending.
+
+Membership currently shows stored profile/contact fields. Dues, renewals and verified membership tiers are not implemented; earlier simulated identifiers/statuses are not carried over. M7 completion also requires the independent final test result recorded in TEST-REPORT.md and successful GitHub validation.

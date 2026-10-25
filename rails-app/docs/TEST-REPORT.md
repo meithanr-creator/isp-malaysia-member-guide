@@ -2,9 +2,19 @@
 
 Date: 25 October 2026. Target: the local Rails project at `D:\Projects\isp-member-rails`.
 
-## Executed result
+## M7 final result — 25 October 2026
 
-Latest run includes the Discover CMS and navigation changes. **87 tests, 620 assertions, 0 failures, 0 errors, 0 skips.** Run seed: `62941`; elapsed test time: 4.07 seconds. Runtime: Rails 8.1.4, Ruby 3.4.12, SQLite.
+**124 tests, 984 assertions, 0 failures, 0 errors, 0 skips.** Final coordinator run seed `5156`, 8.71 seconds. Rails 8.1.4 / Ruby 3.4.12 / SQLite. Rails autoloading passed. Brakeman 8.1.0 completed 79 checks across 18 controllers, 7 models and 38 templates with zero warnings/errors and exit 0.
+
+Coverage adds native membership/profile wording, consultation owner scoping/admin inbox/UUID retry/validation/CSRF, publication upload limits and signatures, exact preview/publish locks and snapshots, admin/member role boundaries, authenticated cover/PDF bytes, private draft and superseded file rejection, cross-publication blob ownership, disabled default Active Storage paths, guest homepage metadata exclusion, escaping and Turbo cache/logout controls. 27 M7 model/service/member-enquiry cases were authored and first run by the independent Sol tester; the coordinator completed 10 publication request cases and the final full rerun.
+
+The first combined run exposed a test-only CSRF switch targeting ActionController::Base rather than ApplicationController. That test configuration was corrected; tokenless create/publish now return 422. No application security bypass was required. Browser QA also found a missing template terminator in enquiry lists; it was fixed before final acceptance.
+
+Browser journeys and mobile screenshots are documented in MOBILE-QA.md. Temporary QA book/uploads and enquiry were removed from the development database. No actual ISP publication is seeded. Real iOS/Android device checks and production identity/hosting remain pending.
+
+## Earlier milestone results
+
+M6 run included the Discover CMS and navigation changes. **87 tests, 620 assertions, 0 failures, 0 errors, 0 skips.** Run seed: `62941`; elapsed test time: 4.07 seconds. Runtime: Rails 8.1.4, Ruby 3.4.12, SQLite.
 
 The earlier foundation milestone passed 61 tests / 380 assertions, including the coordinator rerun at seed `6774`. At that milestone `zeitwerk:check` passed and Brakeman 8.1.0 completed 79 checks with zero warnings/errors and exit 0. The coordinator repeated both checks after the final Discover CMS fix: Rails autoloading passed and Brakeman again returned zero warnings/errors with exit 0.
 
