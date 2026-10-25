@@ -1,4 +1,7 @@
 raise "Sample accounts and events are disabled in production." if Rails.env.production?
+DiscoverSlide::DEFAULTS.each do |attributes|
+  DiscoverSlide.find_or_create_by!(position: attributes[:position]) { |slide| slide.assign_attributes(attributes) }
+end
 User.find_or_create_by!(email: "member@example.com") do |user|
   user.assign_attributes(name: "Alex Tan", role: "member", company: "Greenfield Estate (sample)", branch: "Selangor / W. Persekutuan", phone: "+60 12 000 0000", password: "MemberDemo!2026")
 end

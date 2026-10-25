@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <title><%= content_for(:title) || "People, Plants, Progress | ISP" %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Isp Member Rails">
     <meta name="mobile-web-app-capable" content="yes">
@@ -15,6 +15,7 @@
     <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
 
     <link rel="icon" href="/brand/isp-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="/brand/isp-180.png">
     <meta name="theme-color" content="#007759">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
@@ -36,9 +37,10 @@
             <%= link_to root_path do %><%= isp_icon "house-door-fill" %>Home<% end %>
             <%= link_to events_path do %><%= isp_icon "calendar3" %>Events & activities<% end %>
             <%= link_to about_path do %><%= isp_icon "book" %>About & contact<% end %>
+            <% if current_user&.admin? %><%= link_to admin_discover_path do %><%= isp_icon "file-earmark-text" %>Edit Discover ISP<% end %><% end %>
             <div class="menu-divider"></div><span class="menu-heading">Other member demos</span>
-            <% [["ISP Academy", "certification", "award"], ["Membership & CPD", "membership", "people-fill"], ["Publications", "publications", "journal-bookmark"], ["ISP shop", "shop", "bag"], ["Community forum", "forum", "chat-dots"], ["Consultation", "consultation", "bar-chart-line"], ["Plantation jobs", "jobs", "briefcase"]].each do |label, route, icon| %>
-              <%= link_to "https://isp-design-b-demo.pages.dev/?review=1##{route}", target: "_blank", rel: "noopener" do %><%= isp_icon icon %><span><%= label %><small>Earlier demo · opens new tab</small></span><% end %>
+            <% [["Membership & CPD", "membership", "people-fill"], ["Publications", "publications", "journal-bookmark"], ["ISP shop", "shop", "bag"], ["Consultation", "consultation", "bar-chart-line"], ["Plantation jobs", "jobs", "briefcase"]].each do |label, route, icon| %>
+              <%= link_to "https://isp-design-b-demo.pages.dev/?review=1##{route}", target: "_blank", rel: "noopener" do %><%= isp_icon icon %><span><%= label %> <% if %w[shop jobs].include?(route) %><strong class="status-badge">DEMO</strong><% end %><small>Earlier demo · opens new tab</small></span><% end %>
             <% end %>
             <% if current_user %><div class="menu-divider"></div><%= button_to session_path, method: :delete, class: "menu-signout" do %><%= isp_icon "box-arrow-right" %>Sign out<% end %><% end %>
           </nav></details>

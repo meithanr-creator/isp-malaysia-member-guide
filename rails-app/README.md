@@ -5,12 +5,15 @@ A native Ruby on Rails application for reviewing the next ISP member and event e
 ## Review the experience
 
 - Public landing: top-right member access, Discover carousel and Events-only bottom bar.
+- Discover administration: use the admin menu's **Edit Discover ISP** entry to edit three cards inline, including picture, tag, title, description and website. Save updates the homepage. All card buttons read **Click to Access Website**.
 - Events: visitors can browse published details; registering interest requires a member session.
 - Member dashboard: own profile, saved event interests and withdrawal.
 - Admin: save an event draft, upload images/PDF brochure, review the exact event page, edit and publish a reviewed revision. A new draft does not overwrite the existing published version.
 - Payment instructions: fictional bank details and an email-app link. No money or email is sent; opening the email app is not proof of payment.
 
 Other concept areas remain clearly labelled links to the earlier static demonstration. This phase migrates member access, profiles and event publishing.
+
+Academy and Forum shortcuts are removed from Rails; Shop and Plantation Jobs have explicit DEMO badges. Mobile-first layouts target iOS and Android browsers. See [mobile review coverage](docs/MOBILE-QA.md) for executed responsive checks and the pending physical-device checklist.
 
 ## Run on this Windows computer
 

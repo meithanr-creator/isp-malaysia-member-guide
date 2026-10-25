@@ -6,6 +6,7 @@ Rails.application.routes.draw do
   delete "session", to: "sessions#destroy"
   post "demo_session", to: "sessions#demo"
   get "event-files/:event_id/:key", to: "event_files#show", as: :event_file
+  get "discover-images/:id/:key", to: "discover_images#show", as: :discover_image
   resources :events, only: %i[index show] do
     resource :interest, only: %i[new create destroy], controller: "event_interests"
   end
@@ -14,6 +15,8 @@ Rails.application.routes.draw do
     resource :profile, only: %i[edit update]
   end
   namespace :admin do
+    get "discover", to: "discover_slides#index", as: :discover
+    patch "discover/:id", to: "discover_slides#update", as: :discover_slide
     resources :events, except: %i[show destroy] do
       member do
         get :preview

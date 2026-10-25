@@ -11,6 +11,7 @@ Updated 25 October 2026, Asia/Kuala_Lumpur. Director/PMO: Astra high. Implementa
 | M3 Draft, preview and publication | Complete — local review | Version checks, publication snapshots and protected files tested. Browser upload → preview → edit → preview v2 → publish completed. |
 | M4 Interest and receipt workflow | Complete — local review | Public browsing; member login return, interest and dashboard verified. Ownership, snapshots and uniqueness tested. Email draft only; no payment verification. |
 | M5 Hosted release and operational readiness | Not started | Compatible host/costs, real member onboarding, approved finance details, MFA/recovery, upload scanning, backup and restore. |
+| M6 Discover editor and navigation refinement | Complete — responsive local review | Three editable cards, validated picture/HTTPS links, fixed CTA, Academy/Forum removed, Shop/Jobs DEMO badges. 87 tests / 620 assertions passed; mobile checks and Astra review accepted. Physical device checks remain pending. |
 
 ## Checkpoints
 
@@ -26,6 +27,8 @@ Updated 25 October 2026, Asia/Kuala_Lumpur. Director/PMO: Astra high. Implementa
 - Astra accepted M1 visuals from landing, dashboard and desktop-admin screenshots plus the coordinator's responsive checks. Concurrent request race recovery and all production gates remain limited; see TEST-REPORT.md and DIRECTOR-REVIEW.md.
 
 ## Evidence policy
+
+M6 checkpoint: admin live text/picture preview and save were verified through the browser, followed by signed-out homepage verification. Public/editor widths 320/360/390/430 and editor landscape 844×390 had no horizontal overflow or offscreen fields. Inputs were 18px. Rejected URL error-page links are inactive. Final suite seed 62941 passed 87 tests / 620 assertions; autoloading and Brakeman passed with zero warnings/errors. See MOBILE-QA.md and audit/menu-refinement.png, audit/discover-editor.png, audit/discover-public.png.
 
 Implementation commit: `9d09fe29000405c8637028edb9147e65a909a235`. GitHub Actions run `40180704259` passed tests, autoloading and Brakeman on Ubuntu. See DELIVERY.md for review routes and links.
 

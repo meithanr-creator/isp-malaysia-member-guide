@@ -51,6 +51,33 @@ module Phase2TestData
       event.reload
     end
   end
+
+  def valid_discover_attributes(overrides = {})
+    {
+      position: 1, tag: "Our community", title: "Knowledge grows together",
+      description: "Meet the people and ideas shaping the plantation profession.",
+      website_url: "https://example.test/discover?topic=planting&source=isp#learn",
+      image_alt: "A sample plantation landscape", default_image: "plantation-small.jpg"
+    }.merge(overrides)
+  end
+
+  def create_discover_slide(overrides = {}) = DiscoverSlide.create!(valid_discover_attributes(overrides))
+
+  def discover_upload(content: nil, filename: "sample.png", type: "image/png")
+    require "tempfile"
+    require "base64"
+    content ||= Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO/aH9UAAAAASUVORK5CYII=")
+    tempfile = Tempfile.new(["discover-test", File.extname(filename)])
+    tempfile.binmode
+    tempfile.write(content)
+    tempfile.rewind
+    (@discover_tempfiles ||= []) << tempfile
+    Rack::Test::UploadedFile.new(tempfile.path, type, true, original_filename: filename)
+  end
+
+  def close_discover_uploads
+    Array(@discover_tempfiles).each(&:close!)
+  end
 end
 
 ActiveSupport::TestCase.include Phase2TestData

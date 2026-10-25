@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_25_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_25_110000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -37,6 +37,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_25_090000) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "discover_slides", force: :cascade do |t|
+    t.integer "position", null: false
+    t.string "tag", null: false
+    t.string "title", null: false
+    t.text "description", null: false
+    t.string "website_url", null: false
+    t.string "image_alt", null: false
+    t.string "default_image", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["position"], name: "index_discover_slides_on_position", unique: true
   end
 
   create_table "event_interests", force: :cascade do |t|

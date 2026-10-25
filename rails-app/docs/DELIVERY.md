@@ -14,6 +14,12 @@ The implementation contains 173 Rails source/document/asset files plus the repos
 
 ## Review routes
 
+### M6 mobile and Discover refinement
+
+The 25 October refinement removes Academy and Community forum navigation, marks Shop and Plantation jobs as DEMO, and adds the administrator-only `/admin/discover` inline editor. Administrators can change each card's picture, accessible image description, tag, title, description and HTTPS destination. Every public card uses “Click to Access Website”. Saves update the landing page immediately.
+
+Final local validation: 87 tests, 620 assertions, zero failures/errors/skips (seed 62941), Rails autoloading passed, and Brakeman reported zero warnings/errors. Responsive browser checks covered widths 320–430 px plus landscape. Real iOS Safari and Android Chrome device checks remain pending; see MOBILE-QA.md. Three further screenshots are in `audit/`: menu-refinement.png, discover-editor.png and discover-public.png. M6 is complete for responsive local review.
+
 Landing `/`, login `/login`, public events `/events`, member dashboard `/member/dashboard`, admin workspace `/admin/events`, new-event editor `/admin/events/new`. Private routes require the corresponding session. Local demo-entry buttons on the login page let reviewers explore fictional member/admin accounts.
 
 Six screenshots are saved in `audit/`: landing, login, dashboard, admin form, event preview and desktop admin. Astra accepted the local design and source gates; see DIRECTOR-REVIEW.md. Test coverage and limits are in TEST-REPORT.md.

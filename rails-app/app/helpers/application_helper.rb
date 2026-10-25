@@ -1,4 +1,10 @@
 module ApplicationHelper
+  def discover_slide_image(slide)
+    slide.image.attached? ? discover_image_path(id: slide.id, key: slide.image.blob.signed_id) : "/brand/#{slide.default_image}"
+  end
+  def discover_safe_website_url(slide)
+    slide.website_url if DiscoverSlide.safe_website_url?(slide.website_url)
+  end
   def isp_icon(name, **options)
     image_tag "/brand/#{name}.svg", { alt: "", class: "ui-icon", aria: { hidden: true } }.merge(options)
   end

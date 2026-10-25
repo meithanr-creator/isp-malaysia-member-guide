@@ -24,6 +24,10 @@ Local screenshots in `D:\Projects\isp-member-rails\audit`: landing.png, login.pn
 
 ## Limits retained
 
+### M6 Discover refinement acceptance
+
+Astra inspected menu-refinement.png, discover-editor.png and discover-public.png and approved their responsive local design. The menu omits Academy/Forum and clearly labels Shop/Jobs DEMO; the public CTA is exactly Click to Access Website. Source review accepted admin-only access, optimistic edit tokens, image validation/replacement and current-slide image delivery. The independent tester identified an active invalid URL in the rejected-save preview; the shared server HTTPS validator now removes that href, and the amended suite passed 87 tests / 620 assertions. Physical iOS/Android compatibility is not certified by this review.
+
 - Simultaneous duplicate HTTP requests are not proven gracefully idempotent; the unique database index prevents duplicate records, but controller recovery from a uniqueness race is not implemented. Sequential duplicate submissions are tested.
 - Production membership verification, recovery, MFA, revocable sessions and distributed throttling remain pending.
 - Hosted private storage, file quarantine/scanning, image processing, finance reconciliation, monitoring and backup/restore remain pending.

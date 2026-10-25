@@ -18,6 +18,14 @@ This delivery produces redesigned Rails pages, a persisted local application usi
 4. Admin event editor: title, summary, description, event date/start/end/time zone, physical venue or online location, image and brochure, price/currency or free attendance, bank name, account name, account number, receipt destination email and payment instructions. Group fields into understandable sections with validation near the field.
 5. Event preview/public detail: one renderer and one versioned event record for imagery, brochure, description, schedule, venue and payment instructions. Draft controls are outside the public content. Publish is possible only for the revision actually previewed. Editing an already published event creates a new draft while the public revision stays unchanged.
 
+## Discover content administration — 25 October refinement
+
+The three Discover cards are persisted Rails records. An administrator edits each card inline in `/admin/discover`: picture, descriptive alt text, tag, headline, description and destination website. Every public card uses the fixed CTA **Click to Access Website**. Save updates that homepage card immediately, with clear confirmation; event drafts retain their separate preview/publish workflow.
+
+Only administrators may save Discover content. Require a matching edit-version token, bounded plain text, a complete HTTPS destination and an accepted JPG/PNG/WebP picture up to 5 MB. Validate before replacing the current image. Public image delivery must match the current card attachment; old or cross-card file URLs must fail. Website addresses are links only and are never fetched by the backend.
+
+Academy and Forum are removed from Rails navigation and member shortcuts. Shop and Plantation Jobs show visible DEMO badges. The former Academy slide is replaced by a publications/knowledge card. Delivery prioritises single-column iOS/Android mobile web use; physical device acceptance remains in MOBILE-QA.md.
+
 ## Architecture decision — approved
 
 The user confirmed Ruby on Rails on 25 October 2026. All application execution uses native Rails MVC, ERB views/partials, Active Record and small JavaScript interactions. Pin a currently patched Rails 8.1 release compatible with the installed Ruby runtime. Use SQLite for local review and PostgreSQL for eventual hosting. Use Rails sessions and a vetted password implementation; membership verification, recovery and admin MFA remain production requirements.
