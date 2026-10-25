@@ -10,10 +10,15 @@ class EventDraftUpdater
     removed = remove_images.map(&:to_s)
     new_data["images"] = new_data["images"].each_with_index.reject { |_image, index| removed.include?(index.to_s) }.map(&:first)
     new_data["brochure"] = nil if remove_brochure
-    upload_errors = images.filter_map { |file| LocalFileValidator.error(file, kind: :image) }
-    upload_errors << "Choose up to three event images in total." if new_data["images"].size + images.size > 3
-    upload_errors << LocalFileValidator.error(brochure, kind: :pdf) if brochure.present?
-    upload_errors.compact!
+    # Reject excessive counts before opening any scanner exchange, including a
+    # brochure scan. A rejected array cannot multiply scanner request deadlines.
+    upload_errors = if new_data["images"].size + images.size > 3
+      ["Choose up to three event images in total."]
+    else
+      errors = images.filter_map { |file| LocalFileValidator.error(file, kind: :image) }
+      errors << LocalFileValidator.error(brochure, kind: :pdf) if brochure.present?
+      errors.compact
+    end
     event.with_lock do
       if !expected_lock_version.to_s.match?(/\A\d+\z/) || event.lock_version != expected_lock_version.to_i
         event.errors.add(:base, "This draft changed in another window. Reload it before editing again.")
@@ -37,8 +42,9 @@ class EventDraftUpdater
 
   private
   def store_file(file)
-    blob = ActiveStorage::Blob.create_and_upload!(io: file.tempfile, filename: file.original_filename, content_type: file.content_type, identify: false, metadata: { analyzed: true })
+    blob = ActiveStorage::Blob.create_and_upload!(io: file.tempfile, filename: file.original_filename, content_type: file.content_type, identify: false, metadata: { analyzed: true }.merge(UploadScanner.metadata(file)))
     event.uploads.attach(blob)
     { "signed_id" => blob.signed_id, "name" => blob.filename.to_s, "size" => blob.byte_size }
   end
 end
+

@@ -20,7 +20,7 @@ module Phase2TestData
     {
       name: "Alex Sample", email: "alex-#{SecureRandom.hex(4)}@example.test",
       password: "test-password-2026", password_confirmation: "test-password-2026",
-      role: "member", company: "Sample Estate", branch: "Sample branch", phone: "0101234567"
+      role: "member", account_status: "active", company: "Sample Estate", branch: "Sample branch", phone: "0101234567"
     }.merge(overrides)
   end
 

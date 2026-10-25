@@ -10,7 +10,11 @@ class EventFilesController < ApplicationController
     end
     blob = ActiveStorage::Blob.find_signed(key)
     return head :not_found unless blob && event.uploads.blobs.exists?(id: blob.id)
-    send_data blob.download, filename: blob.filename.to_s, type: blob.content_type, disposition: "inline"
+    disposition = blob.content_type == "application/pdf" ? "attachment" : "inline"
+    bytes = UploadScanner.download(blob)
+    return head :not_found unless bytes
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    send_data bytes, filename: blob.filename.to_s, type: blob.content_type, disposition: disposition
   end
 
   private
@@ -19,3 +23,7 @@ class EventFilesController < ApplicationController
     (Array(data["images"]) + [data["brochure"]].compact).any? { |file| file["signed_id"] == key }
   end
 end
+
+
+
+

@@ -3,10 +3,10 @@ DiscoverSlide::DEFAULTS.each do |attributes|
   DiscoverSlide.find_or_create_by!(position: attributes[:position]) { |slide| slide.assign_attributes(attributes) }
 end
 User.find_or_create_by!(email: "member@example.com") do |user|
-  user.assign_attributes(name: "Alex Tan", role: "member", company: "Greenfield Estate (sample)", branch: "Selangor / W. Persekutuan", phone: "+60 12 000 0000", password: "MemberDemo!2026")
+  user.assign_attributes(name: "Alex Tan", role: "member", account_status: "active", company: "Greenfield Estate (sample)", branch: "Selangor / W. Persekutuan", phone: "+60 12 000 0000", password: "MemberDemo!2026")
 end
 User.find_or_create_by!(email: "admin@example.com") do |user|
-  user.assign_attributes(name: "ISP Event Team", role: "admin", company: "ISP (sample)", password: "AdminDemo!2026")
+  user.assign_attributes(name: "ISP Event Team", role: "admin", account_status: "active", company: "ISP (sample)", password: "AdminDemo!2026")
 end
 samples = [
   { slug: "plantation-leadership", title: "Plantation Leadership Exchange", format: "Workshop", summary: "Lead people. Strengthen decisions.", description: "A day of thoughtful exchange for plantation professionals. Work through a leadership case, learn from peers and take a practical action plan back to your estate.", audience: "Estate managers, assistant managers and emerging plantation leaders.", programme: "09:00 · Welcome and shared challenges\n09:30 · A leadership case in practice\n11:00 · Peer exchange and reflection\n12:30 · Lunch and close", date: "2026-11-19", starts_at: "09:00", ends_at: "13:00", venue: "ISP learning room · Petaling Jaya", venue_details: "Illustrative venue. This is a sample programme, not a scheduled ISP event.", admission: "paid", fee: "150.00", payment_method: "bank", bank_name: "Sample Bank", account_name: "ISP DEMO — DO NOT TRANSFER", account_number: "DEMO-0000-0000", receipt_email: "receipts@example.com", payment_notes: "Use fictional payment information in this preview. No payment is collected.", cover: "member-events.jpg" },

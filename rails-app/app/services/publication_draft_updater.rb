@@ -22,7 +22,7 @@ class PublicationDraftUpdater
       return false if publication.errors.any?
       blobs = []
       files.each do |kind, file|
-        blob = ActiveStorage::Blob.create_and_upload!(io: file.tempfile, filename: file.original_filename, content_type: file.content_type, identify: false, metadata: { analyzed: true })
+        blob = ActiveStorage::Blob.create_and_upload!(io: file.tempfile, filename: file.original_filename, content_type: file.content_type, identify: false, metadata: { analyzed: true }.merge(UploadScanner.metadata(file)))
         blobs << blob
         data[kind] = { "signed_id" => blob.signed_id, "name" => blob.filename.to_s, "size" => blob.byte_size }
       end

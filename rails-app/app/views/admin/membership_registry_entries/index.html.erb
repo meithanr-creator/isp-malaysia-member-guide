@@ -1,0 +1,21 @@
+<% content_for :title, "Membership list | ISP" %>
+<section class="page membership-admin">
+  <span class="eyebrow">Administration · membership authority</span>
+  <h1>The membership list.</h1>
+  <p class="intro">Eligibility from the administrator list stays separate from account activation.</p>
+  <%= link_to "Upload and review a CSV", new_admin_membership_import_path, class: "primary full" %>
+  <p class="form-hint"><%= @total %> membership entries. Missing rows in an uploaded CSV are preserved.</p>
+  <% if @entries.empty? %><div class="empty-state"><h2>Start with an approved list.</h2><p>Upload the membership list to review eligibility before confirming changes.</p><% if demo_mode? %><p>Use fictional records for this local preview.</p><% end %></div><% else %>
+    <ul class="membership-row-list" aria-label="Membership list"><% @entries.each do |entry| %><li class="membership-row">
+      <h2><%= entry.name %></h2>
+      <dl class="membership-details"><div><dt>Membership reference</dt><dd><%= entry.member_reference %></dd></div><div><dt>Email</dt><dd><%= entry.email %></dd></div><div><dt>Eligibility</dt><dd><%= entry.status %></dd></div><div><dt>Account</dt><dd><%= entry.user ? entry.user.account_status : "Not activated" %></dd></div></dl>
+      <% if entry.eligible? && (entry.user.nil? || entry.user.account_status == "pending") %>
+        <% if AccountMailer.enabled? %><%= button_to(entry.user ? "Resend activation invitation" : "Invite this member", admin_membership_invitation_path(entry), class: "secondary full", data: { turbo: false }) %>
+        <% else %><p class="form-hint">Account invitations are not enabled. No email has been sent.</p><% end %>
+      <% end %>
+    </li><% end %></ul>
+    <nav class="membership-pagination" aria-label="Membership pages"><% if @page > 1 %><%= link_to "Previous 50", admin_membership_registry_entries_path(page: @page - 1), class: "link-button" %><% end %><span>Page <%= @page %></span><% if @page * 50 < @total %><%= link_to "Next 50", admin_membership_registry_entries_path(page: @page + 1), class: "link-button" %><% end %></nav>
+  <% end %>
+  <% if @recent_imports.any? %><section class="editor-footer"><h2>Your recent imports</h2><ul><% @recent_imports.each do |import| %><li><%= link_to "#{import.created_at.in_time_zone('Asia/Kuala_Lumpur').strftime('%-d %b %Y, %H:%M')} · #{import.state} · #{import.counts.fetch('total', 0)} rows", admin_membership_import_path(import) %></li><% end %></ul></section><% end %>
+</section>
+

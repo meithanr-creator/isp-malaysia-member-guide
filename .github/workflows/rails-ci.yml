@@ -1,8 +1,8 @@
-name: Rails member and events checks
+name: Rails production readiness checks
 
 on:
   push:
-    branches: [rails-member-events]
+    branches: [rails-member-events, production-readiness]
     paths: ['rails-app/**', '.github/workflows/rails-ci.yml']
   pull_request:
     paths: ['rails-app/**', '.github/workflows/rails-ci.yml']
@@ -17,8 +17,26 @@ defaults:
 jobs:
   rails_checks:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [sqlite, postgresql]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: isp_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       RAILS_ENV: test
+      TEST_DATABASE_URL: ${{ matrix.database == 'postgresql' && 'postgresql://postgres:postgres@localhost:5432/isp_test' || '' }}
     steps:
       - uses: actions/checkout@v6
       - uses: ruby/setup-ruby@v1
@@ -26,9 +44,24 @@ jobs:
           ruby-version: '3.4.12'
           bundler-cache: true
           working-directory: rails-app
-      - name: Prepare database and run independent tests
-        run: bundle exec rails db:test:prepare test
+      - name: Apply migrations to a fresh database
+        run: bundle exec rails db:create db:migrate
+      - name: Run application and security tests
+        run: bundle exec rails test
       - name: Check Rails autoloading
         run: bundle exec rails zeitwerk:check
       - name: Scan Rails code
+        if: matrix.database == 'sqlite'
         run: bundle exec brakeman --no-pager
+      - name: Audit dependency advisories
+        if: matrix.database == 'sqlite'
+        run: bundle exec bundler-audit check --update
+
+  container_build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build the production image without runtime secrets
+        run: docker build -t isp-production-check:${{ github.sha }} .
+      - name: Confirm unprivileged runtime
+        run: test "$(docker image inspect isp-production-check:${{ github.sha }} --format '{{.Config.User}}')" = "1000:1000"

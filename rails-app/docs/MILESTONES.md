@@ -47,3 +47,9 @@ Requested on 25 October 2026: remove Membership, Publications and Consultation f
 M7 acceptance: 124 tests / 984 assertions passed (seed 5156); Rails autoloading passed; Brakeman zero warnings/errors. Astra source and screenshot reviews accepted. Browser upload → preview → edit → preview → publish → member homepage/library and enquiry → admin inbox completed. QA records/uploads removed. GitHub release validation is recorded in DELIVERY.md. M2b and M5 remain pending.
 
 M7 usability refinement: persistent, icon-labelled administration shortcuts added above every admin page so Publications, Discover ISP and Consultation enquiries are visible alongside Events. Existing access controls are unchanged.
+
+## Production transition — current work
+
+The owner authorized moving to production and continued work, with Astra directing review and Sol 6.1 extra-high agents implementing/testing. The intended domain is **planterapp.co**; the owner will change nameservers when ready. All working files remain on D and Shop/Jobs development is frozen.
+
+The newer P0–P4 plan in PRODUCTION-PLAN.md supersedes the earlier M2b “not started” description: native identity, membership import and security implementation are now under independent integration review. Earlier M0–M7 acceptance is historical, not evidence for the new candidate. Production status remains incomplete until source checks, GitHub validation and actual hosting/mail/storage/scanner/device/restore evidence are recorded in PRODUCTION-REVIEW.md. No generic repeat approval is required; concrete unresolved hosting/cost and operational decisions remain dependencies.

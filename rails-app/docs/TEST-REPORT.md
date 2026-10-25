@@ -68,3 +68,13 @@ The coordinating agent separately reports earlier browser checks of carousel Nex
 This is validation of the local demonstration and its implemented Rails flows. The suite does not certify production account recovery, MFA, cross-worker rate limiting, replay revocation of previously copied cookie sessions, or a production deployment. Concurrent duplicate-interest insertion is protected by the database index; a simultaneous HTTP retry race was not exercised. Reduced-motion/visibility/focus behavior was inspected in source, not automated in a real browser. The Rails app does not register a service worker; generated PWA routes remain disabled.
 
 The published-revision mismatch and rejected Discover preview-link issue were reproduced as failing regressions before their fixes. The latest suite validates both corrections, required edit locks and protected attachment routes. No unresolved automated failure remains.
+
+## Production candidate verification — 25 October 2026
+
+This section supersedes earlier local-demo limitations where implemented below; historical milestone results are retained as dated evidence.
+
+The independent combined suite passed: **277 tests, 2,230 assertions, zero failures/errors, two PostgreSQL-only concurrency skips**, seed 61808, CI=true, 13.75 seconds. Exact local output: audit/production-full-tests.txt. This count is the combined suite, not a sum of focused runs. PostgreSQL concurrency and the Linux container build await GitHub CI for the candidate commit.
+
+The candidate adds server-revocable sessions, registry-gated activation/recovery, administrator MFA and recent verification, transactional audit records, CSV preview/confirm import, scanned private uploads, safe stale-edit handling and an organizer interest roster. The manifest and network-only service worker now return correct formats; no private page is cached. Local autoloading passed; Brakeman reported zero errors/warnings and the refreshed dependency advisory check found no vulnerabilities. Targeted browser checks at 320/390px showed no horizontal overflow on the inspected admin screens. These checks do not certify physical iOS/Android installation.
+
+No live member data, invitation, administrator bootstrap, DNS change, paid hosting or production deployment occurred. Actual PostgreSQL/S3/ClamAV/SMTP integration, image processing, isolated staging, restore/rollback and physical-device acceptance remain launch gates. APP_HOST is prepared for planterapp.co; nameservers remain unchanged. Shop and Plantation Jobs remain frozen demos. See PRODUCTION-PLAN.md, PRODUCTION-REVIEW.md, PRODUCTION-OPERATIONS.md and HOSTING-PROPOSAL.md.

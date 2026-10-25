@@ -21,7 +21,7 @@ class DiscoverSlideUpdater
       return false if slide.errors.any?
       if image.present?
         # Validate before creating a blob; rejected uploads never replace the current image.
-        blob = ActiveStorage::Blob.create_and_upload!(io: image.tempfile, filename: image.original_filename, content_type: image.content_type, identify: false, metadata: { analyzed: true })
+        blob = ActiveStorage::Blob.create_and_upload!(io: image.tempfile, filename: image.original_filename, content_type: image.content_type, identify: false, metadata: { analyzed: true }.merge(UploadScanner.metadata(image)))
         slide.image = blob
       end
       # Advance the edit token even when only the attachment changes or the same text is saved.

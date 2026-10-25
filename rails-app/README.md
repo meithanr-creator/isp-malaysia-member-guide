@@ -1,6 +1,6 @@
-# ISP member and events — Rails review
+# ISP member services — Rails production preparation
 
-A native Ruby on Rails application for reviewing the next ISP member and event experience. Ruby 3.4.12, Rails 8.1.4, ERB, Stimulus and SQLite. Project and runtime live on drive D.
+A mobile-first Ruby on Rails member portal. Ruby 3.4.12, Rails 8.1.4, ERB and Stimulus; SQLite for local review and PostgreSQL for production. Project and runtime live on drive D. The production candidate is under review; it is not a live member service.
 
 ## Review the experience
 
@@ -11,7 +11,7 @@ A native Ruby on Rails application for reviewing the next ISP member and event e
 - Admin: save an event draft, upload images/PDF brochure, review the exact event page, edit and publish a reviewed revision. A new draft does not overwrite the existing published version.
 - Payment instructions: fictional bank details and an email-app link. No money or email is sent; opening the email app is not proof of payment.
 
-Other concept areas remain clearly labelled links to the earlier static demonstration. This phase migrates member access, profiles and event publishing.
+Membership, Publications and Consultation are native Rails services. Shop and Plantation Jobs are the only frozen links to the earlier static demonstration; no further demo features are being built.
 
 Academy and Forum shortcuts are removed from Rails; Shop and Plantation Jobs have explicit DEMO badges. Mobile-first layouts target iOS and Android browsers. See [mobile review coverage](docs/MOBILE-QA.md) for executed responsive checks and the pending physical-device checklist.
 
@@ -33,13 +33,13 @@ The login page offers local sample-account entry. The seeded accounts are `membe
 
 From the repository's `rails-app` directory, install the pinned Ruby version and run `bundle install`, `bundle exec rails db:prepare db:seed`, then `bundle exec rails server`. The Windows helper is specific to the D-drive installation.
 
-Run checks with `& .\script\rails.ps1 test` on this computer, or `bundle exec rails test` elsewhere. The tests use a separate SQLite test database. GitHub checks also run Rails autoloading and Brakeman analysis.
+Run checks with `& .\script\rails.ps1 test` on this computer, or `bundle exec rails test` elsewhere. The tests use a separate SQLite test database by default; TEST_DATABASE_URL selects PostgreSQL. The production-readiness workflow runs both database suites, Rails autoloading, Brakeman, dependency audit and a Linux production-container build. See the production review for executed results and remaining evidence.
 
 ## Delivery controls
 
 See [the implementation plan](docs/PLAN.md), [milestone board](docs/MILESTONES.md), [release checklist](docs/RELEASE-CHECKLIST.md) and [run/hosting notes](docs/OPERATIONS.md). Astra high directs and reviews; Sol 6.1 extra high implements and independently tests.
 
-This is a local foundation, not a live membership service. Production still requires approved member verification, account recovery, administrator MFA, session lifecycle, hosted storage/scanning, finance ownership, backups and compatible hosting. Cloudflare Pages cannot run the Rails application process. The earlier Cloudflare demo remains separate.
+Production preparation now includes administrator-reviewed membership imports, invitations and recovery, administrator MFA, revocable sessions, private-upload scanning, a mobile manifest and a network-only service worker. These controls require final independent validation and hosted operational evidence. The intended domain is planterapp.co, purchased through GoDaddy; nameservers and DNS remain unchanged. Hosting/cost, mail delivery, private storage, scanning and backup/restore setup remain pending. Cloudflare Pages cannot run the Rails application process; the earlier static demo remains separate.
 
 Never commit local keys, environment secrets, database files, uploads, logs or temporary files. Do not enable seeded review accounts for a hosted production service.
 
@@ -52,3 +52,10 @@ Never commit local keys, environment secrets, database files, uploads, logs or t
 - Shop and Plantation jobs remain the only legacy demo links.
 
 These are persisted Rails workflows in the local review environment. Production identity, storage operations and hosting remain separate pending gates.
+## Production candidate
+
+The working branch is `production-readiness`, reviewed in [pull request #1](https://github.com/meithanr-creator/isp-malaysia-member-guide/pull/1). Follow [the production milestones](docs/PRODUCTION-PLAN.md), [Astra's review](docs/PRODUCTION-REVIEW.md), [identity operations](docs/IDENTITY-LIFECYCLE.md), [membership import](docs/MEMBERSHIP-IMPORT.md) and [production operations](docs/PRODUCTION-OPERATIONS.md). Earlier M0–M7 records describe local demonstration acceptance and do not certify this production increment.
+
+The administrator imports a bounded CSV through upload → review → confirm. Import changes eligibility without automatically activating accounts or sending invitations. A separate invitation and verified password setup activate an eligible account. Production administrator access requires MFA, and sensitive edits require recent verification. Events and publications retain draft → exact preview → publish; administrator changes have transactional audit records. Event interests have a read-only administrator roster and remain requests rather than confirmed bookings.
+
+Use `.env.example` as a configuration template, never as working credentials. No real administrator/member, membership list, mail delivery, DNS change or paid hosting has been created as part of local preparation. A fresh production database must not inherit local sample data or unscanned uploads. The PWA deliberately does not cache private pages or provide offline member access. Physical iOS/Android acceptance remains required.

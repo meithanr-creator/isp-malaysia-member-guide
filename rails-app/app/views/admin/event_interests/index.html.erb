@@ -1,0 +1,32 @@
+<% content_for :title, "Member interests | ISP" %>
+<section class="page event-interest-roster">
+  <span class="eyebrow">Administration</span>
+  <h1>Member interests</h1>
+  <p class="intro"><%= @event.published_title.presence || @event.title %></p>
+  <%= link_to "Back to events", admin_events_path, class: "link-button" %>
+
+  <% if @interests.empty? %>
+    <div class="empty-state"><p>No member interests have been saved for this event.</p></div>
+  <% else %>
+    <p class="form-hint"><%= pluralize(@total_interests, "saved interest") %> · Most recent first · Page <%= @page %> of <%= @total_pages %></p>
+    <ol class="event-interest-list" aria-label="Member interests for this event">
+      <% @interests.each do |interest| %>
+        <li class="query-card event-interest-card" id="<%= dom_id(interest) %>">
+          <h2><%= interest.name %></h2>
+          <dl class="query-meta">
+            <div><dt>Submitted email</dt><dd><%= interest.email %></dd></div>
+            <div><dt>Submitted company</dt><dd><%= interest.company.presence || "Not provided" %></dd></div>
+            <div><dt>Interest saved</dt><dd><time datetime="<%= interest.created_at.iso8601 %>"><%= interest.created_at.in_time_zone("Asia/Kuala_Lumpur").strftime("%-d %b %Y, %H:%M %Z") %></time></dd></div>
+            <div><dt>Event version at submission</dt><dd><%= interest.event_revision ? "v#{interest.event_revision}" : "Not recorded" %></dd></div>
+          </dl>
+        </li>
+      <% end %>
+    </ol>
+    <% if @total_pages > 1 %>
+      <nav aria-label="Member interest pages">
+        <% if @page > 1 %><%= link_to "Previous page", admin_event_interests_path(@event, page: @page - 1), class: "link-button", rel: "prev" %><% end %>
+        <% if @page < @total_pages %><%= link_to "Next page", admin_event_interests_path(@event, page: @page + 1), class: "link-button", rel: "next" %><% end %>
+      </nav>
+    <% end %>
+  <% end %>
+</section>

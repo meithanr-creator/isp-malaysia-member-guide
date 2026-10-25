@@ -17,6 +17,7 @@ class DiscoverSlide < ApplicationRecord
   validates :image_alt, length: { maximum: 180 }
   validates :default_image, inclusion: { in: DEFAULT_IMAGES }
   validate :safe_https_destination
+  validate :scanned_image
   before_validation :trim_text
 
   def self.safe_website_url?(value)
@@ -29,6 +30,10 @@ class DiscoverSlide < ApplicationRecord
   end
 
   private
+
+  def scanned_image
+    errors.add(:image, "has not passed the upload safety check") if image.attached? && !UploadScanner.approved_blob?(image.blob)
+  end
 
   def trim_text
     %i[tag title description image_alt].each { |field| self[field] = self[field].to_s.strip }

@@ -38,3 +38,13 @@ Six screenshots are saved in `audit/`: landing, login, dashboard, admin form, ev
 M0, M1, M2a, M3 and M4 are complete for local review. M2b production identity and M5 hosted/operational readiness remain pending. This app has not been deployed to Cloudflare Pages; a Rails-compatible host and production controls must be selected/configured first. The existing static Cloudflare demonstration and its deployment branch were not updated for this Rails release.
 
 No email or payment was sent. The created event, member profile and registration used fictional review data. A database uniqueness constraint prevents duplicate interests, but simultaneous HTTP retry recovery remains a documented production work item.
+
+## Production candidate verification — 25 October 2026
+
+This section supersedes earlier local-demo limitations where implemented below; historical milestone results are retained as dated evidence.
+
+The independent combined suite passed: **277 tests, 2,230 assertions, zero failures/errors, two PostgreSQL-only concurrency skips**, seed 61808, CI=true, 13.75 seconds. Exact local output: audit/production-full-tests.txt. This count is the combined suite, not a sum of focused runs. PostgreSQL concurrency and the Linux container build await GitHub CI for the candidate commit.
+
+The candidate adds server-revocable sessions, registry-gated activation/recovery, administrator MFA and recent verification, transactional audit records, CSV preview/confirm import, scanned private uploads, safe stale-edit handling and an organizer interest roster. The manifest and network-only service worker now return correct formats; no private page is cached. Local autoloading passed; Brakeman reported zero errors/warnings and the refreshed dependency advisory check found no vulnerabilities. Targeted browser checks at 320/390px showed no horizontal overflow on the inspected admin screens. These checks do not certify physical iOS/Android installation.
+
+No live member data, invitation, administrator bootstrap, DNS change, paid hosting or production deployment occurred. Actual PostgreSQL/S3/ClamAV/SMTP integration, image processing, isolated staging, restore/rollback and physical-device acceptance remain launch gates. APP_HOST is prepared for planterapp.co; nameservers remain unchanged. Shop and Plantation Jobs remain frozen demos. See PRODUCTION-PLAN.md, PRODUCTION-REVIEW.md, PRODUCTION-OPERATIONS.md and HOSTING-PROPOSAL.md.

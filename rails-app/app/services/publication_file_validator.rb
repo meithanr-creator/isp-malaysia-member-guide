@@ -6,7 +6,7 @@ class PublicationFileValidator
     return "The PDF book is too large (maximum 25 MB)." if file.size > 25.megabytes
     header = file.read(5).b
     file.rewind
-    return if file.content_type == "application/pdf" && header.start_with?("%PDF-".b)
+    return UploadScanner.error(file) if file.content_type == "application/pdf" && header.start_with?("%PDF-".b)
     "Choose a valid PDF book. The file contents must match the PDF type."
   end
 end

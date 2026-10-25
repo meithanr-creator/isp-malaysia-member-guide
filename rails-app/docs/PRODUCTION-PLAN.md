@@ -2,7 +2,7 @@
 
 Date: 25 October 2026 (Asia/Kuala_Lumpur). Director/reviewer: Astra. Implementation and independent testing: GPT-6.1 Sol, extra-high reasoning. Project and artifacts: `D:\Projects\isp-member-rails`; runtime/tooling: `D:\Projects\isp-rails-tools`. Repository: `meithanr-creator/isp-malaysia-member-guide`, Rails source under `rails-app/`. Reported handover baseline: `rails-member-events` at `3673fe30e842cd987b9827c669493b58d89c0e91`; the coordinator must verify the remote head before delivery.
 
-**Release status: NOT APPROVED for production or real member data.** This plan authorizes no host, paid service, domain change, external email, live-data import or public deployment. Existing local review acceptance remains valid only for fictional records.
+**Release status: NOT APPROVED for production or real member data.** The owner has authorized the production transition and continued reversible implementation/testing. Host/cost selection, credentials/mail/DNS steps expressly deferred by the owner, and real-data/operational arrangements remain unresolved dependencies; this plan creates no additional blanket approval checkpoint. Existing local review acceptance remains valid only for fictional records.
 
 ## Scope and operating rules
 
@@ -20,13 +20,13 @@ Use a dedicated production-hardening feature branch and reviewed pull request fo
 | --- | --- | --- | --- |
 | D1 | Member authority and lifecycle — partially decided | Owner selected an administrator-uploaded membership list as authority. Build a reviewed import and Rails invitation workflow; exact columns/status semantics, real-data import authorization and operational verifier remain to confirm. | Live import and member activation. |
 | D2 | Administrators and recovery — partially decided | Owner named rvrameshveloo@isp.org.my for the first administrator/company account, invitations and recovery contact. Recommend Rails-managed TOTP with tested recovery. Mailbox verification, bootstrap authorization, emergency recovery ownership and session durations remain to confirm. | Administrator production access. |
-| D3 | Hosting and costs | Rails-capable host, region, staging/production isolation, maximum recurring budget and explicit provisioning approval. | Provisioning and environment-specific deployment. |
-| D4 | Domain and mail — partially decided | Owner does not want to purchase a domain now. Use the chosen provider HTTPS address for the mobile website and home-screen shortcut (Render onrender.com is the proposed option, subject to hosting approval). Contact: rvrameshveloo@isp.org.my. This contact is not proof of sender/domain verification; provider, sending permission and delivery setup remain pending. | Hosted links and identity email delivery. |
+| D3 | Hosting and costs - lower-cost proposal requested | Owner confirms no existing ISP server and requests a lower-cost proposal. docs/HOSTING-PROPOSAL.md proposes one 8 GB self-managed VPS with private R2 and verified SMTP. An unsubmitted Malaysia KVM 2 cart now records a proposed 12-month US$129.47 initial tax-inclusive invoice, renewing at US$16.99/month equivalent paid annually before tax; final term/invoice recheck, SMTP cost, staging isolation, operations owner and provisioning approval remain pending; planning allowances are not an approved budget. | Provisioning and environment-specific deployment. |
+| D4 | Domain and mail — partially decided | Owner has purchased planterapp.co through GoDaddy and will change nameservers when ready. The domain decision is confirmed; DNS verification, TLS/cutover, host mapping and any nameserver change remain pending. Contact: rvrameshveloo@isp.org.my. Mailbox ownership, approved sender/provider, sending permission and delivery setup remain pending; purchasing a domain does not verify a mail sender. | DNS cutover, hosted links and identity email delivery. |
 | D5 | Data stewardship | Approved fields, privacy notice, retention/deletion rules, publication rights, enquiry handling owner, incident/support contacts, backup recovery-time and recovery-point objectives. | Real personal data and publication uploads. |
 | D6 | Content and bank details | Approved live events/Discover destinations; confirmation that receipt-by-email remains the process; authorized bank details/inbox and finance owner if paid events are enabled. | Public content and paid events. |
-| D7 | Pilot and launch | Named pilot cohort, acceptance window, support coverage, rollback authority and explicit go-live decision. | Pilot activation and public release. |
+| D7 | Pilot and launch | Named pilot cohort, acceptance window, support coverage, rollback authority and release record referencing the existing production intent and the resolved concrete setup decisions. | Pilot activation and public release. |
 
-Hosting budget/provisioning approval remains pending. A mobile browser or home-screen shortcut still needs a hosted HTTPS site; it does not make localhost remotely accessible, create a native app, or approve hosting costs. Prepare a concrete configuration/options record for owner review once choices are known. Do not guess organizational membership policy or treat an unanswered question as approval. Safe local hardening may continue while these decisions are pending.
+Hosting budget/provisioning approval remains pending. The purchased domain does not authorize DNS or paid-resource changes. A mobile browser or home-screen shortcut still needs a hosted HTTPS site; it does not make localhost remotely accessible, create a native app, or approve hosting costs. Prepare a concrete configuration/options record for owner review once choices are known. Do not guess organizational membership policy or treat an unanswered question as approval. Safe local hardening may continue while these decisions are pending.
 
 ## Milestones and objective exit gates
 
@@ -100,10 +100,10 @@ Owner: project owner and named operational/identity/content owners; final techni
 
 - Review the evidence pack and owner decisions. Approve the pilot cohort and real-data handling explicitly; create least-privilege accounts via the approved identity process.
 - Pilot with agreed duration and success criteria. Confirm support triage, recovery, publication rights/content, receipt wording and operational alerts. Record incidents and retest changes.
-- Before public activation, obtain recorded owner go-live approval for the exact candidate and environment. Confirm rollback owner, latest backup, service readiness and post-launch checks.
+- Before public activation, record that the exact candidate and environment satisfy the technical gates and the owner-authorized setup, referencing existing production intent plus concrete host/cost and other necessary decisions. Do not ask for a duplicate generic confirmation solely because a milestone is complete. Confirm rollback owner, latest backup, service readiness and post-launch checks.
 - Check public/member/admin boundaries after activation, confirm health/alerts and rollback if a security, privacy, data-integrity or severe availability gate fails. Any observation period or recurring monitoring must be explicitly arranged; this document does not create unattended automation.
 
-Exit: signed owner release decision plus environment/deployment ID, candidate commit and completed operational evidence. A passing local suite, documentation, accepted filesystem permission or provisioned server is never a substitute.
+Exit: release record linking existing owner intent and the resolved concrete setup decisions, plus environment/deployment ID, candidate commit and completed operational evidence. A passing local suite, documentation, accepted filesystem permission or provisioned server is never a substitute.
 
 ## Evidence pack and change control
 
@@ -115,7 +115,7 @@ Reopen affected gates after security, schema, deployment configuration or identi
 
 ## Bounded membership import and native identity implementation brief
 
-Owner clarification: membership authority will be a list uploaded by an administrator. The first administrator/company and invitations/recovery contact is `rvrameshveloo@isp.org.my`. This records an intended identity, not a provisioned account, verified mailbox, approved mail sender or authorization to send messages. No domain purchase is requested. Hosting/budget approval remains open.
+Owner clarification: membership authority will be a list uploaded by an administrator. The first administrator/company and invitations/recovery contact is `rvrameshveloo@isp.org.my`. This records an intended identity, not a provisioned account, verified mailbox, approved mail sender or authorization to send messages. The owner subsequently purchased planterapp.co through GoDaddy. DNS/nameserver changes are deferred until ready; hosting/budget approval remains open.
 
 ### Import UI and registry — safe to build with synthetic data
 
@@ -140,3 +140,20 @@ Local acceptance: synthetic CSV cases cover validation, size/row limits, leading
 - Keep 30-minute idle / 12-hour absolute sessions as proposed defaults pending D2 acceptance. TOTP completion must rotate the session, bind MFA completion to its server record and prevent password-only sessions from reaching any admin endpoint. Require step-up for MFA/security reset and privileged bank/inbox changes.
 
 Independent acceptance must exercise successful journeys and forged, expired, reused, superseded and concurrent tokens; eligibility changes during redemption; generic recovery responses; MFA enrollment/replay/recovery-code races; session revocation; and all direct administrator routes. Passing local intercepted-mail tests is not evidence of delivered production email or functioning hosted MFA operations.
+
+## Implemented local increment — evidence still under review
+
+The local candidate now includes server-side sessions and shared throttles; pending account state and production eligibility checks; administrator-reviewed membership CSV import; invitation/activation and recovery-token lifecycle; TOTP and one-use recovery codes; an encrypted, explicitly dispatched recovery-email outbox; production PostgreSQL/private-storage configuration; bounded fail-closed ClamAV upload scanning with persisted provenance and download hash checks; safe file responses; a strict content security policy; and a mobile manifest/network-only service worker. Corrected-source inspection also confirms ten-minute administrator step-up, transactional publishing/Discover audit, host-only audited lost-factor recovery returning to pending enrollment, explicit missing Discover-card setup, dispatcher lease/cleanup fixes, pre-scan image-count bounds and a read-only scoped administrator interest roster. Final source reinspection confirms event/publication forms retain the submitted edit version through rejected saves and stale-MFA/audit-error redisplay, and refresh it only after successful draft save before preview. The bounded source findings are closed. The independent final Windows/SQLite suite passed 277 tests / 2,230 assertions with zero failures/errors and two PostgreSQL-only skips (seed 61808, 13.751086 seconds; audit/production-full-tests.txt). Exact source commit/CI evidence remains open, including the skipped PostgreSQL concurrency cases. This result is not a sum of focused runs. This inventory describes source implementation, not deployment acceptance.
+
+The recovery-email dispatcher and membership-preview expiration task require an approved monitored schedule before real operation. Enabling an environment flag does not create that schedule. Runtime readiness checks are dependency probes, not proof of SMTP delivery, bucket privacy, successful malware detection, clean-data bootstrap, backup restoration or release approval.
+
+The mobile manifest and service worker do not cache private data and do not provide offline membership access. Actual iOS/Android installation, browser behavior and screen accessibility require the P3 device checks. The purchased planterapp.co domain will be configured only after explicit DNS/hosting authorization and environment readiness.
+
+Delivery preparation is on GitHub branch production-readiness with draft PR #1; reported documentation baseline is 8e9a3b9. The final source revision and GitHub validation must be recorded after integration. No paid resource, DNS change, real administrator/member account or outbound message is created by this document.
+
+## Authorization interpretation
+
+The user's production-transition request and instruction to continue authorize the necessary reversible build, tests and preparation. Do not invent repeated generic approvals at each milestone. Deployment may proceed within that continuing intent once actual technical gates and the agreed setup are satisfied. The unresolved host/cost choice, required secrets and sender configuration, DNS/nameserver work the owner expressly deferred, and live-data/operational responsibilities are concrete dependencies. Request only genuinely missing decisions or permissions. A release record may cite the existing production intent and later concrete host/cost/setup decisions; it does not require a ceremonial second launch confirmation. Current NO-GO is grounded in pending final candidate validation and absent staging/operational evidence, not paperwork alone. The bounded source corrections inspected in PRODUCTION-REVIEW.md are closed.
+
+
+
