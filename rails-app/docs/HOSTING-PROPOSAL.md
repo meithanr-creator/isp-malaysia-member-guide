@@ -1,4 +1,33 @@
-# Lower-cost hosting proposal for planterapp.co
+# Selected Cloudflare deployment and cost proposal
+
+Updated 26 October 2026. Cloudflare is the owner-selected platform; the VPS comparisons below are historical alternatives. GitHub remains source, review and CI. The existing account already has Workers Paid, so no additional base subscription was purchased. The separate ISP Worker and empty private staging R2 bucket exist; no Rails container or database is active.
+
+## Proposed isolated rehearsal
+
+- One fixed container instance, proposed standard-2 (6 GiB memory, 1 vCPU, 12 GB ephemeral disk), Rails plus private loopback ClamAV. Maximum one instance; short inactivity sleep. Sizing, signature refresh and cold-start time remain measured acceptance gates.
+- External PostgreSQL: owner approved Neon Free on 26 October for synthetic staging only, using direct TLS-verified connections. Current published allowance is 1 GB storage and 100 CU-hours/month/project, scale-to-zero after five minutes, with a limited six-hour/1 GB-change restore window. No account/database has been created. This free allowance is not a production recovery plan or SLA.
+- Private Standard R2 bucket isp-staging-private. Shared account allowances may cover a small rehearsal, but are not a spending cap. No credentials or uploads yet.
+- Mail stays disabled during the first infrastructure rehearsal. Later delivery requires verified sender, scheduler and failure alerts; a sleeping web container alone cannot provide a reliable mail schedule.
+
+## Cost envelope to approve before starting
+
+For a single standard-2 instance running for one hour, ignoring all included allowances and assuming its entire 1 vCPU is busy, published compute rates imply memory US$0.054 + CPU US$0.072 + disk US$0.003024 = approximately **US$0.13 for container compute**. Worker/Durable Object requests, logs, image storage/builds, R2 operations, network, taxes and other account usage are additional. This is a rate calculation, not an invoice or hard billing cap.
+
+A proposed **US$5 incremental rehearsal allowance**, with a monitored one-hour test window, one instance, no public traffic and explicit shutdown/disable afterward, leaves room for these auxiliary charges. This allowance has not been approved. Inactivity sleep and max_instances reduce exposure but are not provider-enforced currency caps. Do not start billed runtime solely because the existing account already has Workers Paid.
+
+For perspective, 6 GiB running continuously for 720 hours would cost about US$38.655 in memory beyond the shared 25 GiB-hours allowance, before CPU/disk/other services and the existing plan. Actual usage and scanner cold starts must be measured before choosing operating policy. No claim that production is free or costs US$5/month is made.
+
+## Activation prerequisites
+
+Finish reviewed package and Linux CI first. Prepare ISP-only deployment and bucket credentials with exact scopes/destinations; never reuse another project's token. Connect an isolated PostgreSQL project after authorized account setup. Use a provider HTTPS staging hostname without changing planterapp.co. Record exact image/commit, scan/authorization/proxy tests, persistence/restore evidence and real mobile-device checks before live activation. DNS remains owner-deferred.
+
+Sources checked 26 October 2026: [Cloudflare container rates](https://developers.cloudflare.com/containers/platform/pricing/), [R2 pricing](https://developers.cloudflare.com/r2/pricing/), [Neon pricing](https://neon.com/pricing). Published allowances are account/provider conditions, not guaranteed application performance.
+
+---
+
+## Historical alternatives — superseded by owner selection
+
+### Earlier lower-cost hosting comparison
 
 Prepared 25 October 2026. Status: proposal only; no hosting, account, subscription or DNS change has been ordered. The owner confirmed there is no existing ISP server and requested a lower-cost proposal. All development files remain on D.
 
@@ -66,7 +95,7 @@ Cloudflare Containers can run a Rails container, so a Cloudflare-led deployment 
 
 Illustrative upper-uptime comparison, not a complete quote: a provisioned 4 GiB container running 720 hours uses 2,880 GiB-hours. After the included 25 GiB-hours, memory alone is (2,880 - 25) x 3,600 x US$0.0000025 = US$25.695, plus the US$5 plan and disk/CPU/other charges. Sleeping can reduce this substantially, but scanner cold starts, signature refresh, traffic patterns and scheduler reliability require measurement. Therefore US$5 is not the full system price and Cloudflare is not ruled out or assumed cheaper.
 
-The Cloudflare option still needs a private upload-scanning arrangement, private R2, verified mail, database backups and staging tests. No vendor has been selected or purchased. Compare measured pilot cost and operational burden before recommending a contract. The owner can keep planterapp.co at GoDaddy in either architecture.
+The Cloudflare option still needs a private upload-scanning arrangement, private R2, verified mail, database backups and staging tests. At the time of this comparison no vendor had been selected; Cloudflare was subsequently selected as recorded above. Compare measured pilot cost and operational burden before recommending a contract. The owner can keep planterapp.co at GoDaddy in either architecture.
 
 Sources checked 25 October 2026: [Cloudflare Containers pricing](https://developers.cloudflare.com/containers/platform/pricing/), [Container lifecycle and disk persistence](https://developers.cloudflare.com/containers/faq/), [GitHub Pages server-side limitations](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site).
 ## Owner selection — Cloudflare project created

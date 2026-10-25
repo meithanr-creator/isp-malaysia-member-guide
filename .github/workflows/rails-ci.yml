@@ -65,3 +65,24 @@ jobs:
         run: docker build -t isp-production-check:${{ github.sha }} .
       - name: Confirm unprivileged runtime
         run: test "$(docker image inspect isp-production-check:${{ github.sha }} --format '{{.Config.User}}')" = "1000:1000"
+
+  cloudflare_scanner_runtime:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.12'
+          bundler-cache: true
+          working-directory: rails-app
+      - name: Test scanner startup and shutdown supervision
+        run: bundle exec ruby deployment/cloudflare/supervisor_test.rb
+      - name: Build pinned Rails and private-scanner image
+        run: docker build --platform linux/amd64 -f deployment/cloudflare/Dockerfile.runtime -t isp-cloudflare-check:${{ github.sha }} .
+      - name: Confirm scanner runtime is unprivileged
+        run: test "$(docker image inspect isp-cloudflare-check:${{ github.sha }} --format '{{.Config.User}}')" = "1000:1000"
+      - name: Exercise real clean and EICAR scans without application credentials
+        timeout-minutes: 8
+        run: docker run --rm --no-healthcheck --memory=6g --cpus=1 isp-cloudflare-check:${{ github.sha }} --scanner-smoke
