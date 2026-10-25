@@ -7,10 +7,10 @@
 - Local review: http://127.0.0.1:4180/ (this computer only, while the server runs).
 - Repository branch: https://github.com/meithanr-creator/isp-malaysia-member-guide/tree/rails-member-events/rails-app
 - Architecture milestone commit: `f332d64fa4ea72da5da31cd34850d45dab19316b`.
-- Tested implementation commit: `9d09fe29000405c8637028edb9147e65a909a235`.
-- GitHub checks: https://github.com/meithanr-creator/isp-malaysia-member-guide/actions/runs/40180704259 — passed on Ubuntu: tests, Rails autoloading and Brakeman.
+- Current M6 implementation commit: `b53f893c4c324f1b2e0e8a02ca14b27c6c63420e` (mobile Discover CMS and navigation refinement).
+- GitHub checks: https://github.com/meithanr-creator/isp-malaysia-member-guide/actions/runs/40183704647 — passed on Ubuntu: tests, Rails autoloading and Brakeman.
 
-The implementation contains 173 Rails source/document/asset files plus the repository-level CI workflow. Published source was checked for excluded master keys, encrypted local credentials, databases, uploads, logs and temporary files. Local sample records and screenshots are not part of the GitHub source package.
+The implementation contains Rails source, documentation and brand assets plus the repository-level CI workflow. Published source was checked for excluded master keys, encrypted local credentials, databases, uploads, logs and temporary files. Local sample records and screenshots are not part of the GitHub source package.
 
 ## Review routes
 
