@@ -157,3 +157,13 @@ The user's production-transition request and instruction to continue authorize t
 
 
 
+
+## Verified candidate and CI — 25 October 2026
+
+Source revision: 6873ab772c9192ddd06cedfe949745e9e17c3d36 on production-readiness, draft PR #1. All three checks passed in both push run 40208159193 and PR run 40208162564: Linux SQLite, Linux PostgreSQL 17 and production container build. SQLite: 277 tests / 2,230 assertions, zero failures/errors, two PostgreSQL-only skips (seed 16596). PostgreSQL: 277 tests / 2,268 assertions, zero failures/errors/skips (seed 4393). Autoloading passed on both; Brakeman and refreshed dependency advisory checks passed. The container builds and its configured user is 1000:1000; this does not prove hosted startup or operational integrations.
+
+Astra independently verified the exact PR head/checks and accepted the scoped concurrency-test cleanup and portable Ruby launcher correction. Synthetic nontransactional test audit rows are removed before their synthetic actor; production audit constraints remain unchanged. All bounded source findings are closed. Earlier statements that final source/CI validation is pending are superseded by this record; operational release remains NO-GO pending the actual hosting, storage/scanner/mail, restore/rollback and mobile-device evidence.
+
+The owner asked whether Cloudflare and GitHub can be used. They can: GitHub source/CI, Cloudflare Containers for Rails, private R2 and an external managed PostgreSQL service are a compatible architecture to assess. Cloudflare's US$5 starting plan excludes complete runtime/database/other service costs. The alternative VPS quote is an unsubmitted comparison, not an approved vendor selection. No hosting, DNS, live-data action or paid order is authorized by this evidence record. See HOSTING-PROPOSAL.md.
+
+CI evidence: https://github.com/meithanr-creator/isp-malaysia-member-guide/actions/runs/40208159193

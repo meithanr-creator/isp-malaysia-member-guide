@@ -48,3 +48,14 @@ The independent combined suite passed: **277 tests, 2,230 assertions, zero failu
 The candidate adds server-revocable sessions, registry-gated activation/recovery, administrator MFA and recent verification, transactional audit records, CSV preview/confirm import, scanned private uploads, safe stale-edit handling and an organizer interest roster. The manifest and network-only service worker now return correct formats; no private page is cached. Local autoloading passed; Brakeman reported zero errors/warnings and the refreshed dependency advisory check found no vulnerabilities. Targeted browser checks at 320/390px showed no horizontal overflow on the inspected admin screens. These checks do not certify physical iOS/Android installation.
 
 No live member data, invitation, administrator bootstrap, DNS change, paid hosting or production deployment occurred. Actual PostgreSQL/S3/ClamAV/SMTP integration, image processing, isolated staging, restore/rollback and physical-device acceptance remain launch gates. APP_HOST is prepared for planterapp.co; nameservers remain unchanged. Shop and Plantation Jobs remain frozen demos. See PRODUCTION-PLAN.md, PRODUCTION-REVIEW.md, PRODUCTION-OPERATIONS.md and HOSTING-PROPOSAL.md.
+## Linux CI verification — candidate 6873ab7
+
+GitHub Actions run: https://github.com/meithanr-creator/isp-malaysia-member-guide/actions/runs/40208159193
+Source commit: 6873ab772c9192ddd06cedfe949745e9e17c3d36
+
+- Ubuntu / SQLite: 277 tests, 2,230 assertions, zero failures/errors, two PostgreSQL-only skips; seed 16596.
+- Ubuntu / PostgreSQL 17: 277 tests, 2,268 assertions, zero failures/errors/skips; seed 4393. Both real database concurrency tests executed.
+- Rails autoloading passed on both databases. Brakeman reported no warnings and the refreshed advisory check found no vulnerabilities.
+- The first candidate exposed missing cleanup of synthetic audit records in a nontransactional concurrency test. Cleanup now removes only that test actor's audit rows before its user, preserving production audit constraints. Ruby launchers were made portable to Linux. Astra reviewed the correction before this successful rerun.
+
+These results supersede the earlier PostgreSQL-pending statement for source validation. They do not replace hosted integration, backup restoration, email/scanner validation or physical-device acceptance. No production deployment or paid order occurred. Container status is recorded in the final production review/run record.

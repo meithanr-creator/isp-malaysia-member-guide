@@ -53,3 +53,14 @@ M7 usability refinement: persistent, icon-labelled administration shortcuts adde
 The owner authorized moving to production and continued work, with Astra directing review and Sol 6.1 extra-high agents implementing/testing. The intended domain is **planterapp.co**; the owner will change nameservers when ready. All working files remain on D and Shop/Jobs development is frozen.
 
 The newer P0–P4 plan in PRODUCTION-PLAN.md supersedes the earlier M2b “not started” description: native identity, membership import and security implementation are now under independent integration review. Earlier M0–M7 acceptance is historical, not evidence for the new candidate. Production status remains incomplete until source checks, GitHub validation and actual hosting/mail/storage/scanner/device/restore evidence are recorded in PRODUCTION-REVIEW.md. No generic repeat approval is required; concrete unresolved hosting/cost and operational decisions remain dependencies.
+## Linux CI verification — candidate 6873ab7
+
+GitHub Actions run: https://github.com/meithanr-creator/isp-malaysia-member-guide/actions/runs/40208159193
+Source commit: 6873ab772c9192ddd06cedfe949745e9e17c3d36
+
+- Ubuntu / SQLite: 277 tests, 2,230 assertions, zero failures/errors, two PostgreSQL-only skips; seed 16596.
+- Ubuntu / PostgreSQL 17: 277 tests, 2,268 assertions, zero failures/errors/skips; seed 4393. Both real database concurrency tests executed.
+- Rails autoloading passed on both databases. Brakeman reported no warnings and the refreshed advisory check found no vulnerabilities.
+- The first candidate exposed missing cleanup of synthetic audit records in a nontransactional concurrency test. Cleanup now removes only that test actor's audit rows before its user, preserving production audit constraints. Ruby launchers were made portable to Linux. Astra reviewed the correction before this successful rerun.
+
+These results supersede the earlier PostgreSQL-pending statement for source validation. They do not replace hosted integration, backup restoration, email/scanner validation or physical-device acceptance. No production deployment or paid order occurred. Container status is recorded in the final production review/run record.
