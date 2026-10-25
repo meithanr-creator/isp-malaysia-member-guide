@@ -1,9 +1,0 @@
-<section class="home-section home-publications" aria-label="Member publications"><div class="section-head"><h2>Publications</h2><%= isp_icon "journal-bookmark" %></div>
-<% if current_user&.member? %>
-  <p class="section-lede">Your next good read, from the ISP member library.</p>
-  <% if publications.empty? %><div class="empty-state"><p>New issues will appear here when published.</p><%= link_to "Open your library", member_publications_path, class: "link-button" %></div><% else %><% publications.each do |publication| %><%= render "member/publications/card", publication: publication %><% end %><%= link_to "View all publications", member_publications_path, class: "link-button" %><% end %>
-<% elsif current_user&.admin? %>
-  <p class="section-lede">Publish the next issue for the member library.</p><%= link_to "Manage publications", admin_publications_path, class: "secondary full" %>
-<% else %>
-  <p class="section-lede">A library for ISP members. Sign in to view the covers, read the latest issues and access PDF books.</p><%= link_to "Member login", member_publications_path, class: "secondary full" %>
-<% end %></section>

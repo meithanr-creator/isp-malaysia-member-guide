@@ -1,0 +1,24 @@
+{
+  "name": "isp-member-production",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --import ./test/register-loader.mjs --test test/*.test.mjs",
+    "deploy": "wrangler deploy",
+    "check": "node check.mjs"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "0.3.7"
+  },
+  "devDependencies": {
+    "wrangler": "4.152.0",
+    "esbuild": "0.28.2"
+  },
+  "overrides": {
+    "undici": "7.30.1"
+  }
+}

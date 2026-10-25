@@ -20,8 +20,7 @@ RUN test "$TARGETARCH" = amd64
 RUN --mount=type=bind,from=clamav-package,source=/tmp/clamav.deb,target=/tmp/clamav.deb,ro \
     apt-get update -qq && apt-get install --no-install-recommends -y ca-certificates libpq5 libvips tini /tmp/clamav.deb \
  && rm -rf /var/lib/apt/lists/* \
- && test "$(/usr/local/bin/clamscan --version | cut -d' ' -f2 | cut -d/ -f1)" = '1.4.6' \
- && /usr/local/sbin/clamd --version && /usr/local/bin/freshclam --version
+ && test "$(/usr/local/bin/clamscan --version | cut -d' ' -f2 | cut -d/ -f1)" = '1.4.6'
 ENV RAILS_ENV=production BUNDLE_DEPLOYMENT=1 BUNDLE_PATH=/usr/local/bundle BUNDLE_WITHOUT=development:test \
     CLAMD_HOST=127.0.0.1 CLAMD_PORT=3310 PORT=3000 TZ=Etc/UTC RAILS_LOG_TO_STDOUT=1
 
@@ -42,6 +41,9 @@ COPY deployment/cloudflare/freshclam.conf /etc/clamav/freshclam.conf
 # Runtime still updates and checks age; a cached image is never evidence of freshness.
 USER 1000:1000
 RUN /usr/local/bin/freshclam --stdout --config-file=/etc/clamav/freshclam.conf
+# Version probes need the reviewed configs, service user and signature directory.
+RUN /usr/local/sbin/clamd --config-file=/etc/clamav/clamd.conf --version \
+ && /usr/local/bin/freshclam --config-file=/etc/clamav/freshclam.conf --version
 USER root
 COPY --from=build /usr/local/bundle /usr/local/bundle
 COPY --from=build --chown=root:root /rails /rails

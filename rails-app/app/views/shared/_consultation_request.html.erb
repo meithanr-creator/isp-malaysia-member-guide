@@ -1,3 +1,0 @@
-<span class="eyebrow"><%= query.reference %> · Received</span><h1><%= query.subject %></h1>
-<dl class="query-meta"><div><dt>Area of enquiry</dt><dd><%= query.category %></dd></div><div><dt>Received</dt><dd><%= query.created_at.in_time_zone("Asia/Kuala_Lumpur").strftime("%-d %B %Y, %-I:%M %p") %> MYT</dd></div></dl>
-<section class="query-message"><h2>Your enquiry</h2><p class="preserve-lines"><%= query.message %></p></section>

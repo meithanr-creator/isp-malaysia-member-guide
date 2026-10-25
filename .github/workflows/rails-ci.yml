@@ -66,6 +66,30 @@ jobs:
       - name: Confirm unprivileged runtime
         run: test "$(docker image inspect isp-production-check:${{ github.sha }} --format '{{.Config.User}}')" = "1000:1000"
 
+  cloudflare_adapter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: rails-app/cloudflare/package-lock.json
+      - name: Install pinned Cloudflare dependencies
+        working-directory: rails-app/cloudflare
+        run: npm ci --ignore-scripts --fetch-timeout=30000 --fetch-retries=1
+      - name: Test activation, proxy and secret boundaries
+        working-directory: rails-app/cloudflare
+        run: npm test
+      - name: Validate configuration and compile the real SDK bundle
+        working-directory: rails-app/cloudflare
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+        run: npm run check
+      - name: Audit Cloudflare dependencies
+        working-directory: rails-app/cloudflare
+        run: npm audit --audit-level=high --fetch-timeout=30000 --fetch-retries=1
+
   cloudflare_scanner_runtime:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
