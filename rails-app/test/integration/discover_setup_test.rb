@@ -26,7 +26,7 @@ class DiscoverSetupTest < ActionDispatch::IntegrationTest
     assert_difference("DiscoverSlide.count", 3) { post admin_discover_setup_path }
     assert_redirected_to admin_discover_path
     assert_equal original_counts, [User.count, Event.count, Publication.count, MembershipRegistryEntry.count]
-    audit = AdministrativeAudit.find_by!(action: "discover_setup")
+    audit = AdministrativeAudit.find_by!(action: "discover_setup", actor_id: @admin.id)
     assert_equal @admin.id, audit.actor_id
     assert_equal "DiscoverConfiguration", audit.target_type
     assert_equal 1, audit.revision
@@ -190,6 +190,8 @@ class DiscoverSetupConcurrencyTest < ActionDispatch::IntegrationTest
     workers&.each { |worker| worker.kill if worker.alive? }
     workers&.each(&:join)
     DiscoverSlide.where(position: 1..3).destroy_all if cleanup_cards
+    # These committed audit rows belong only to this nontransactional test actor.
+    AdministrativeAudit.where(actor_id: admin.id).delete_all if admin
     admin&.destroy!
   end
 end
