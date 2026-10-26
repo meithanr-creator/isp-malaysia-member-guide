@@ -5,7 +5,7 @@ import {randomBytes,createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {LEASE2,leaseContext,selectLease,buildLease2Seed} from './staging-lease-context.mjs';
 import {validUuid} from '../cloudflare/src/diagnostics.js';
-const ROOT='D:/Projects/isp-member-rails',ACCOUNT='a9720867333b64a4f8ee70cdfd673eb9',WORKER='isp-member-production',CANDIDATE='98d271dd2e105a263a214f238795b7331f7c001f';
+const ROOT='D:/Projects/isp-member-rails',ACCOUNT='a9720867333b64a4f8ee70cdfd673eb9',WORKER='isp-member-production',CANDIDATE='80d32fddf88251a6608ba047a577ce16efe8c834';
 const context=leaseContext(LEASE2),SEED=context.privateRoot+'/runtime-seed.json',CONFIG=context.privateRoot+'/wrangler-v2.jsonc';
 let stage='plan';
 function guard(value){if(!value)throw Error('Unarmed preparation refused');}

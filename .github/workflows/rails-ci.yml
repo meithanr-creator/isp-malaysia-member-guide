@@ -182,3 +182,54 @@ jobs:
         run: |
           ruby script/make-local-test-certificate.rb
           node script/local-browser-gate-diagnostic.mjs
+
+  reviewed_image_artifact:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/production-readiness'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: 80d32fddf88251a6608ba047a577ce16efe8c834
+          persist-credentials: false
+      - name: Verify reviewed application checkout
+        run: test "$(git rev-parse HEAD)" = '80d32fddf88251a6608ba047a577ce16efe8c834'
+      - name: Build exact reviewed image without runtime secrets
+        run: docker build --platform linux/amd64 --label org.opencontainers.image.revision=80d32fddf88251a6608ba047a577ce16efe8c834 -f deployment/cloudflare/Dockerfile.runtime -t isp-export:80d32fddf88251a6608ba047a577ce16efe8c834 .
+      - name: Verify image user and source label
+        run: |
+          test "$(docker image inspect isp-export:80d32fddf88251a6608ba047a577ce16efe8c834 --format '{{.Config.User}}')" = '1000:1000'
+          test "$(docker image inspect isp-export:80d32fddf88251a6608ba047a577ce16efe8c834 --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = '80d32fddf88251a6608ba047a577ce16efe8c834'
+      - name: Test the exact image clean and EICAR scanner
+        timeout-minutes: 8
+        run: docker run --rm --no-healthcheck --memory=6g --cpus=1 isp-export:80d32fddf88251a6608ba047a577ce16efe8c834 --scanner-smoke
+      - name: Test the exact hosted PDF fixture in the same image
+        timeout-minutes: 8
+        run: docker run --rm --no-healthcheck --memory=6g --cpus=1 --entrypoint ruby isp-export:80d32fddf88251a6608ba047a577ce16efe8c834 script/scanner-pdf-acceptance.rb
+      - name: Export the tested image and provenance without rebuilding
+        run: |
+          set -euo pipefail
+          mkdir image-export
+          docker image inspect isp-export:80d32fddf88251a6608ba047a577ce16efe8c834 > image-export/docker-image-inspect.json
+          docker save isp-export:80d32fddf88251a6608ba047a577ce16efe8c834 | gzip -n -1 > image-export/isp-rails-image.tar.gz
+          sha256sum image-export/isp-rails-image.tar.gz > image-export/SHA256SUMS
+          node - <<'NODE'
+          const fs=require('fs');
+          const image=JSON.parse(fs.readFileSync('image-export/docker-image-inspect.json','utf8'))[0];
+          const source='80d32fddf88251a6608ba047a577ce16efe8c834';
+          const checkout=require('child_process').execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+          if(checkout!==source)throw Error('Checkout changed before export');
+          if(image.Config.User!=='1000:1000'||image.Config.Labels['org.opencontainers.image.revision']!==source||image.Os!=='linux'||image.Architecture!=='amd64')throw Error('Image identity mismatch');
+          const proof={version:1,repository:process.env.GITHUB_REPOSITORY,workflow_source:process.env.GITHUB_SHA,application_source:source,run_id:process.env.GITHUB_RUN_ID,run_attempt:process.env.GITHUB_RUN_ATTEMPT,actual_checkout:checkout,image_id:image.Id,os:image.Os,architecture:image.Architecture,user:image.Config.User,archive_sha256:fs.readFileSync('image-export/SHA256SUMS','utf8').split(/\s/)[0],scanner_checks:'Passed on this image before export',runtime_secrets:false};
+          fs.writeFileSync('image-export/provenance.json',JSON.stringify(proof,null,2)+'\n');
+          NODE
+      - name: Retain only the reviewed image artifact for one day
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: isp-reviewed-image-80d32fdd
+          path: rails-app/image-export/
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
