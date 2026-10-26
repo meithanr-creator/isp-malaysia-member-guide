@@ -24,7 +24,7 @@
 | Gate | Current state | Required closure |
 | --- | --- | --- |
 | P0 scope/guardrails | Recorded; no demo expansion | Maintain area ownership, exact source/image provenance and US$5 total incremental ceiling. |
-| P1 revised source | Local regression296 tests/2465 assertions passed; three PostgreSQL-only skips. Supervisor12 tests/86 assertions passed. Edge/staging42 tests passed. | Exact revised GitHub commit, all affected CI including PostgreSQL concurrency, dependency/security checks, real scanner/image build, then Astra source review. Local results do not certify hosted behavior. |
+| P1 revised source | Local regression303 tests/2528 assertions passed; three PostgreSQL-only skips. Supervisor12 tests/86 assertions passed. Edge/staging56 tests passed. | Exact revised GitHub commit, all affected CI including PostgreSQL concurrency, dependency/security checks, real scanner/image build, then Astra source review. Local results do not certify hosted behavior. |
 | P2 infrastructure/recovery | Direct private R2, actual startup, stop/rollback and bounded database restore observed | Production secret lifecycle, complete data+file recovery objectives and runbook, monitoring/error evidence and production isolation. |
 | P3 complete hosted acceptance | Partial; upload and mobile failures remain | Revised immutable image; observed cold/warm latency; complete Events/Discover/Publications/Consultations and remaining identity/security journeys; scanner/storage failures, restart persistence, virtual mobile/PWA and bounded resource checks. Preserve unchanged evidence and rerun affected paths only. |
 | P4 controlled launch | Not released | Official sender/invitation/recovery delivery; first real administrator and reviewed member list/content; operating/support/retention ownership; agreed ongoing hosting budget; domain/TLS cutover when owner is ready; Astra final release disposition. |
@@ -32,3 +32,9 @@
 Another Cloudflare runtime window needs explicit authorization after the revised package, CI, diagnostics and Astra review are concrete. Keep the existing US$5 ceiling; do not infer a new lease from the short amount of actual compute used. Actual billing is not yet verified; the earlier compute estimate is not an invoice. No paid plan upgrade, domain/nameserver change, real-member activation or identity mail is authorized by this ledger.
 
 Primary evidence: audit/hosted-startup.json, audit/hosted-acceptance.json, audit/virtual-mobile-acceptance.json, audit/cloudflare-staging-shutdown-independent.json, audit/effective-inactive-version.json, audit/neon-restore-rehearsal.json and audit/local-browser-gate-diagnostic.json. Earlier documentation sections are historical where they say runtime has not started.
+
+## Diagnostic and CI increment
+
+Source5577453483275223470d0d49aebeee6df92524f4 passed six GitHub jobs, including PostgreSQL296 tests/2510 assertions with zero skips, scanner/image, security and SDK checks. Its new Linux browser job timed out during system-package installation before any browser assertion. The replacement uses the verified official Playwright1.64.1 Noble image pinned by digest, with the matching API package. This is not a browser pass.
+
+The subsequent restricted diagnostic increment is described in STAGING-DIAGNOSTICS.md. Full local Rails303 tests/2528 assertions passed with three PostgreSQL-only skips; edge/staging56 and collector2 tests passed. Astra reviewed its privacy, lease and non-replay paths and required persistent admitted-ID memory plus preservation of the observed Rails class; both corrections and regressions are included. Exact revised GitHub CI and new image remain required. UPLOAD-RECOVERY.md documents retained tombstones and operator duties. No runtime or production approval is implied.

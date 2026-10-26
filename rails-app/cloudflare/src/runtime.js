@@ -1,3 +1,4 @@
+import { TRACE_HEADER, validUuid } from "./diagnostics.js";
 export const INSTANCE_NAME = "isp-member-production";
 export const EDGE_IP_HEADER = "x-isp-edge-client-ip";
 export const REQUIRED_VALUES = Object.freeze([
@@ -18,10 +19,10 @@ const STRIPPED_HEADERS = new Set([
   "te", "trailer", "transfer-encoding", "upgrade", "content-length", EDGE_IP_HEADER
 ]);
 
-export function unavailable() {
+export function unavailable(traceId = null) {
   return new Response("ISP member service is not available yet.", {
     status: 503,
-    headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" }
+    headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...(validUuid(traceId) ? { [TRACE_HEADER]: traceId } : {}) }
   });
 }
 
@@ -88,7 +89,7 @@ export function requestForRails(request, host, clientIp) {
   url.port = "";
   const headers = new Headers(request.headers);
   for (const name of [...headers.keys()]) {
-    if (name.startsWith("x-forwarded-") || STRIPPED_HEADERS.has(name)) headers.delete(name);
+    if (name.startsWith("x-forwarded-") || name.startsWith("x-isp-diagnostic-") || name === TRACE_HEADER || STRIPPED_HEADERS.has(name)) headers.delete(name);
   }
   headers.set("Host", host);
   headers.set("X-Forwarded-Host", host);
@@ -98,12 +99,16 @@ export function requestForRails(request, host, clientIp) {
   return new Request(new Request(url, request), { headers, redirect: "manual" });
 }
 
-export function privateResponse(response) {
+export function privateResponse(response, traceId = null) {
   if (response.status >= 500) {
     void response.body?.cancel().catch(() => {});
-    return unavailable();
+    return unavailable(traceId);
   }
   const result = new Response(response.body, response);
+  for (const name of [...result.headers.keys()]) {
+    if (name.startsWith("x-isp-diagnostic-") || name === TRACE_HEADER) result.headers.delete(name);
+  }
+  if (validUuid(traceId)) result.headers.set(TRACE_HEADER, traceId);
   result.headers.set("Cache-Control", "no-store");
   result.headers.set("X-Content-Type-Options", "nosniff");
   return result;

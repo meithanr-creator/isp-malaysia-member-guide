@@ -29,6 +29,7 @@ module Admin
       @slide = DiscoverSlide.find(params[:id])
       attributes = params.require(:discover_slide).permit(:tag, :title, :description, :website_url, :image_alt, :image, :lock_version)
       operation = UploadOperation.for_discover(image: attributes[:image])
+      request.env["isp.upload_operation_id"] = operation.id
       saved = operation.run do |uploads|
         AdministrativeAction.call(actor: current_user, authentication: current_user_session,
           target: @slide, action: "discover_update") do
@@ -60,6 +61,7 @@ module Admin
     end
 
     def render_action_failure(error, verification: false)
+      request.env["isp.exception_class"] = error.class.name if error
       @admin_verification_required = verification
       flash.now[:alert] = error.message if error && !verification
       @slides = DiscoverSlide.ordered.to_a

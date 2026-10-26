@@ -78,3 +78,14 @@ test('a slow review-key body is cancelled by the fixed window before a cookie ca
  const response=await browserAccessEndpoint(req,env,window,verify);
  assert.equal(response.status,403);assert.equal(cancelled,true);assert.equal(response.headers.get('Set-Cookie'),null);
 });
+test('only exact API-key clients may choose a trace; browser cookies cannot retrieve diagnostics',async()=>{
+ const env=environment(),window=stagingWindow(env),chosen='00000000-0000-4000-8000-000000000001';
+ const cookie=cookieHeader(await issueBrowserCookie(env,window));let forwarded;
+ env.RAILS_CONTAINER={idFromName:name=>name,get:()=>({fetch:async req=>{forwarded=req;return new Response('app');}})};
+ const browser=await worker.fetch(request('/events',{headers:{Cookie:cookie,'x-isp-trace':chosen}}),env);
+ assert.equal(browser.status,200);assert.notEqual(forwarded.headers.get('x-isp-trace'),chosen);assert.equal(browser.headers.get('x-isp-trace'),forwarded.headers.get('x-isp-trace'));
+ const api=await worker.fetch(request('/events',{headers:{'x-isp-staging-key':KEY,'x-isp-trace':chosen}}),env);
+ assert.equal(api.status,200);assert.equal(forwarded.headers.get('x-isp-trace'),chosen);
+ env.RAILS_CONTAINER=new Proxy({},{get(){assert.fail('Cookie-only diagnostic lookup acquired a binding');}});
+ const denied=await worker.fetch(request('/__isp_diagnostics/'+chosen,{headers:{Cookie:cookie}}),env);assert.equal(denied.status,503);
+});

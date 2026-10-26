@@ -79,6 +79,7 @@ module Admin
       render "shared/forbidden", status: :forbidden
     end
     def render_audit_failure(error)
+      request.env["isp.exception_class"] = error.class.name
       @publication.reload if @publication&.persisted?
       rebuild_submitted_draft
       @publication.errors.add(:base, error.message)
@@ -90,6 +91,7 @@ module Admin
       attributes = params.require(:publication).permit(*Publication::FIELDS, :lock_version, :pdf, :cover, :remove_pdf, :remove_cover)
       @submitted_lock_version = attributes[:lock_version]
       operation = UploadOperation.for_publication(pdf: attributes[:pdf], cover: attributes[:cover])
+      request.env["isp.upload_operation_id"] = operation.id
       success = operation.run do |uploads|
         AdministrativeAction.call(actor: current_user, authentication: current_user_session, target: @publication, action: "publication_draft_update") do
           @publication.save! if @publication.new_record?

@@ -77,6 +77,7 @@ module Admin
       render "shared/forbidden", status: :forbidden
     end
     def render_audit_failure(error)
+      request.env["isp.exception_class"] = error.class.name
       @event.reload if @event&.persisted?
       rebuild_submitted_draft
       @event.errors.add(:base, error.message)
@@ -89,6 +90,7 @@ module Admin
       @submitted_lock_version = attributes[:lock_version]
       operation = UploadOperation.for_event(@event, images: attributes[:images],
         brochure: attributes[:brochure], remove_images: Array(attributes[:remove_images]))
+      request.env["isp.upload_operation_id"] = operation.id
       success = operation.run do |uploads|
         AdministrativeAction.call(actor: current_user, authentication: current_user_session, target: @event, action: "event_draft_update") do
           @event.save! if @event.new_record?

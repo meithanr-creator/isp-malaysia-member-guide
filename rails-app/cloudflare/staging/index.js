@@ -1,4 +1,6 @@
-import coreWorker, { RailsContainer as BaseRailsContainer } from '../src/index.js';
+import { RailsContainer as BaseRailsContainer, fetchWithTrace } from '../src/index.js';
+import {validUuid} from '../src/diagnostics.js';
+import {storeTrace,readTrace} from './diagnostics.js';
 import { unavailable } from '../src/runtime.js';
 import { browserAccessEndpoint, validBrowserCookie, headersWithoutReviewCookie } from './browser-access.js';
 const HOST='isp-member-production.meithan-r.workers.dev',KEY_HEADER='x-isp-staging-key';
@@ -28,7 +30,32 @@ export function deadlineRequest(request,deadline,stripKey=false) {
  const headers=new Headers(request.headers);if(stripKey)headers.delete(KEY_HEADER);
  return new Request(request,{headers,cf:request.cf,signal:AbortSignal.any([request.signal,AbortSignal.timeout(Math.max(1,Math.ceil(deadline-Date.now())))])});
 }
+const DIAGNOSTIC_PREFIX='/__isp_diagnostics/';
+function diagnosticLookupId(request){
+ const url=new URL(request.url);
+ if(!url.pathname.startsWith('/__isp_diagnostics'))return undefined;
+ const id=url.pathname.slice(DIAGNOSTIC_PREFIX.length);
+ return request.method==='GET'&&url.pathname.startsWith(DIAGNOSTIC_PREFIX)&&!url.search&&!url.hash&&validUuid(id)?id:null;
+}
 export class RailsContainer extends BaseRailsContainer {
+ async recordDiagnostic(trace,options){return storeTrace(this.ctx.storage,trace,{...options,deadline:this.armedDeadline});}
+ isDiagnosticLeaseExpired(){const window=stagingWindow(this.env);return this.expired||!window||Date.now()>=Math.min(window.end,this.armedDeadline??Infinity);}
+ async diagnosticResponse(request,id){
+  const url=new URL(request.url);
+  if(!id||url.hostname!==HOST||url.port||url.username||url.password||request.headers.has('upgrade')||!allowedStagingRequest(request,this.env))return unavailable();
+  try{
+   const window=stagingWindow(this.env);
+   const [stored,expired]=await Promise.all([this.ctx.storage.get(DEADLINE_KEY),this.ctx.storage.get(EXPIRED_KEY)]);
+   if(!Number.isSafeInteger(stored)||stored<=0||expired===true||(expired!==undefined&&expired!==false))return unavailable();
+   const cutoff=Math.min(window.end,stored,this.armedDeadline??Infinity);
+   if(this.expired||!allowedStagingRequest(request,this.env,Date.now(),cutoff))return unavailable();
+   const trace=await readTrace(this.ctx.storage,id,stored);
+   if(this.expired||!allowedStagingRequest(request,this.env,Date.now(),cutoff))return unavailable();
+   return new Response(JSON.stringify(trace?{version:1,trace}:{error:'Diagnostic unavailable'}),{
+    status:trace?200:404,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Pragma':'no-cache','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'}
+   });
+  }catch{return unavailable();}
+ }
  sleepAfter='60s';
  async armDeadline(proposed) {
   if(this.arming)return this.arming;
@@ -46,6 +73,8 @@ export class RailsContainer extends BaseRailsContainer {
   try{return await this.arming;}finally{this.arming=undefined;}
  }
  async fetch(request) {
+  const lookup=diagnosticLookupId(request);
+  if(lookup!==undefined)return this.diagnosticResponse(request,lookup);
   const window=stagingWindow(this.env);
   if(!allowedStagingRequest(request,this.env,Date.now(),this.armedDeadline??Infinity)) {
    if(!window||this.expired||Date.now()>=Math.min(window.end,this.armedDeadline??Infinity))try{await this.expireStaging();}catch{}
@@ -97,6 +126,8 @@ export default {async fetch(request,env) {
  try {
   const url=new URL(request.url),window=stagingWindow(env);
   if(url.protocol!=='https:'||url.hostname!==HOST||url.port||request.headers.has('upgrade'))return unavailable();
+  const lookup=diagnosticLookupId(request);
+  if(lookup!==undefined&&(!lookup||!keyMatches(request,env)))return unavailable();
   const access=await browserAccessEndpoint(request,env,window,value=>matchesKey(value,env.ISP_STAGING_KEY));
   if(access)return access;
   if(!keyMatches(request,env)&&!await validBrowserCookie(request,env,window)){
@@ -105,6 +136,7 @@ export default {async fetch(request,env) {
   }
   if(Date.now()>=window.end)return unavailable();
   const headers=headersWithoutReviewCookie(request);headers.set(KEY_HEADER,env.ISP_STAGING_KEY);
-  return await coreWorker.fetch(deadlineRequest(new Request(request,{headers,cf:request.cf}),window.end),env);
+  const trustedTrace=keyMatches(request,env)&&validUuid(request.headers.get('x-isp-trace'))?request.headers.get('x-isp-trace'):null;
+  return await fetchWithTrace(deadlineRequest(new Request(request,{headers,cf:request.cf}),window.end),env,trustedTrace);
  }catch{return unavailable();}
 }};

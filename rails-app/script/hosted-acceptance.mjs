@@ -5,6 +5,7 @@ import path from 'node:path';
 import https from 'node:https';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import {cleanTrace} from '../cloudflare/staging/diagnostics.js';
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const PRIVATE='D:/Projects/isp-rails-tools/isp-staging-private';
 const ORIGIN='https://isp-member-production.meithan-r.workers.dev';
@@ -28,17 +29,62 @@ class CookieJar{
   header(url){return [...this.items.values()].filter(c=>url.pathname===c.path||url.pathname.startsWith(c.path.endsWith('/')?c.path:c.path+'/')).sort((a,b)=>b.path.length-a.path.length).map(c=>c.name+'='+c.value).join('; ');}
   save(){return [...this.items];}
 }
+export function safeDiagnostic(value,id,deadline){
+  const clean=cleanTrace(value,deadline);
+  return clean&&value.id===id&&value.deadline===deadline&&Object.keys(value).length===Object.keys(clean).length&&Object.entries(clean).every(([key,item])=>value[key]===item)?clean:null;
+}
 class Transport{
   constructor(runtime,state){this.runtime=runtime;this.state=state;this.calls=state.request_count??0;this.active=0;this.waiters=[];this.traces=[];this.jars=new Map();this.stopAt=Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-600000;check(Number.isFinite(this.stopAt)&&this.stopAt>Date.now(),'Unexpired fixed cleanup reserve required');check(Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-Date.parse(state.execution_started)<=55*60000,'Rehearsal may last at most 55 minutes');check(/^[a-f0-9]{64}$/.test(runtime.ISP_STAGING_KEY),'Private rehearsal key required');}
   jar(alias){if(!this.jars.has(alias))this.jars.set(alias,new CookieJar(this.state.jars?.[alias]));return this.jars.get(alias);}
   async request(alias,target,{method='GET',body,upload=false,startup=false,key=this.runtime.ISP_STAGING_KEY,omitCookie=false,accept="text/html,application/json;q=0.9"}={}){
-    const url=sameOrigin(target),limit=startup?120000:upload?45000:20000;check(!startup||(method==='GET'&&url.pathname==='/ready'),'Longer startup deadline is readiness-only');if(this.calls>=350||Date.now()+limit>=this.stopAt)throw new Blocked('Request budget or cleanup reserve reached');
-    while(this.active>=2)await new Promise(resolve=>this.waiters.push(resolve));if(this.calls>=350||Date.now()+limit>=this.stopAt)throw new Blocked('Request budget or cleanup reserve reached');this.active++;this.calls++;this.state.request_count=this.calls;const started=Date.now(),jar=this.jar(alias),trace={alias,method,path:url.pathname.replace(/\/(?:files\/[^/]+|event-files\/[^/]+|discover-images\/[^/]+)\/[^/]+/,'/protected-file/:key'),status:null,duration_ms:null};this.traces.push(trace);atomic(HTTP_FILE,this.state);
-    try{return await new Promise((resolve,reject)=>{const headers={'Accept':accept,'Origin':ORIGIN,'Referer':ORIGIN+'/','User-Agent':'ISP-hosted-acceptance/1'};if(key!==null)headers['x-isp-staging-key']=key;if(!omitCookie&&jar.header(url))headers.Cookie=jar.header(url);if(body){headers['Content-Type']=body.type;headers['Content-Length']=body.bytes.length;}
-      const req=https.request(url,{method,headers,rejectUnauthorized:true,signal:AbortSignal.timeout(limit)},res=>{jar.accept(res.headers['set-cookie'],url);const chunks=[],digest=crypto.createHash('sha256');let size=0;res.on('data',chunk=>{size+=chunk.length;if(size>30*1024*1024){res.destroy(Error('Response size limit'));return;}digest.update(chunk);chunks.push(chunk);});res.on('error',()=>reject(new Blocked('Response failed; inspect state before continuing')));res.on('end',()=>{const bytes=Buffer.concat(chunks);trace.status=res.statusCode;trace.duration_ms=Date.now()-started;resolve({url,status:res.statusCode,headers:res.headers,text:bytes.toString('utf8'),bytes,sha256:digest.digest('hex'),trace});});});req.on('error',()=>reject(new Blocked('HTTPS request failed or timed out; mutation outcome requires DB inspection')));if(body)req.write(body.bytes);req.end();});}
-    finally{this.active--;this.waiters.shift()?.();}
+    const url=sameOrigin(target),limit=startup?120000:upload?45000:20000;
+    check(!startup||(method==='GET'&&url.pathname==='/ready'),'Longer startup deadline is readiness-only');
+    if(this.calls>=350||Date.now()+limit>=this.stopAt)throw new Blocked('Request budget or cleanup reserve reached');
+    while(this.active>=2)await new Promise(resolve=>this.waiters.push(resolve));
+    if(this.calls>=350||Date.now()+limit>=this.stopAt)throw new Blocked('Request budget or cleanup reserve reached');
+    this.active++;this.calls++;this.state.request_count=this.calls;
+    const started=Date.now(),jar=this.jar(alias),trace={id:crypto.randomUUID(),alias,method,path:url.pathname.replace(/\/(?:files\/[^/]+|event-files\/[^/]+|discover-images\/[^/]+)\/[^/]+/,'/protected-file/:key'),status:null,duration_ms:null};
+    this.traces.push(trace);this.state.request_journal??=[];this.state.request_journal.push(trace);
+    atomic(HTTP_FILE,this.state); // UUID is durable BEFORE any request bytes are sent.
+    let result,failure;
+    try{
+      result=await new Promise((resolve,reject)=>{
+        const headers={'Accept':accept,'Origin':ORIGIN,'Referer':ORIGIN+'/','User-Agent':'ISP-hosted-acceptance/1','x-isp-trace':trace.id};
+        if(key!==null)headers['x-isp-staging-key']=key;
+        if(!omitCookie&&jar.header(url))headers.Cookie=jar.header(url);
+        if(body){headers['Content-Type']=body.type;headers['Content-Length']=body.bytes.length;}
+        const req=https.request(url,{method,headers,rejectUnauthorized:true,signal:AbortSignal.timeout(limit)},res=>{
+          jar.accept(res.headers['set-cookie'],url);const chunks=[],digest=crypto.createHash('sha256');let size=0;
+          res.on('data',chunk=>{size+=chunk.length;if(size>30*1024*1024){res.destroy(Error('Response size limit'));return;}digest.update(chunk);chunks.push(chunk);});
+          res.on('error',()=>reject(new Blocked('Response failed; inspect state before continuing')));
+          res.on('end',()=>{const bytes=Buffer.concat(chunks);trace.status=res.statusCode;
+            if(key===this.runtime.ISP_STAGING_KEY&&!url.pathname.startsWith('/__isp_diagnostics/')&&res.headers['x-isp-trace']!==trace.id){reject(new Blocked('Trusted request correlation unavailable; inspect state before continuing'));return;}
+            resolve({url,status:res.statusCode,headers:res.headers,text:bytes.toString('utf8'),bytes,sha256:digest.digest('hex'),trace});
+          });
+        });
+        req.on('error',()=>reject(new Blocked('HTTPS request failed or timed out; mutation outcome requires DB inspection')));
+        if(body)req.write(body.bytes);req.end();
+      });
+    }catch(error){failure=error;}
+    finally{trace.duration_ms=Date.now()-started;atomic(HTTP_FILE,this.state);this.active--;this.waiters.shift()?.();}
+    if(key===this.runtime.ISP_STAGING_KEY&&!url.pathname.startsWith('/__isp_diagnostics/')&&
+       (failure||result?.status>=500||(method!=='GET'&&url.pathname.startsWith('/admin/')&&result?.status>=400))){
+      await this.captureDiagnostic(trace);
+    }
+    if(failure)throw failure;
+    return result;
   }
-  async page(alias,target){let r=await this.request(alias,target);for(let i=0;i<4&&[301,302,303,307,308].includes(r.status);i++){check(r.headers.location,'Redirect location absent');r=await this.request(alias,sameOrigin(r.headers.location));}return r;}
+  async captureDiagnostic(trace){
+    trace.diagnostic_status='unknown';
+    try{
+      const result=await this.request('diagnostics','/__isp_diagnostics/'+trace.id,{omitCookie:true,accept:'application/json'});
+      if(result.status===200){
+        const value=JSON.parse(result.text),clean=value.version===1?safeDiagnostic(value.trace,trace.id,Date.parse(this.runtime.ISP_STAGING_EXPIRES_AT)):null;
+        if(clean){trace.diagnostic=clean;trace.diagnostic_status='observed';}
+      }
+    }catch{} // Unknown or missing evidence NEVER authorizes replay.
+    atomic(HTTP_FILE,this.state);
+  }  async page(alias,target){let r=await this.request(alias,target);for(let i=0;i<4&&[301,302,303,307,308].includes(r.status);i++){check(r.headers.location,'Redirect location absent');r=await this.request(alias,sameOrigin(r.headers.location));}return r;}
   save(){this.state.jars={...this.state.jars,...Object.fromEntries([...this.jars].map(([alias,jar])=>[alias,jar.save()]))};}
 }
 function encoded(fields){return{type:'application/x-www-form-urlencoded',bytes:Buffer.from(new URLSearchParams(fields).toString())};}

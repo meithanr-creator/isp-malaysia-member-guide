@@ -1,0 +1,28 @@
+{
+  "linux_browser": {
+    "phase": "system package installation",
+    "assertions_run": false,
+    "correction": "Verified official Playwright 1.64.1 Noble image pinned by digest, matching API package",
+    "status": "cancelled",
+    "reason": "12-minute job deadline"
+  },
+  "source": "5577453483275223470d0d49aebeee6df92524f4",
+  "runtime": "Stopped; no new window",
+  "run": 40328252071,
+  "production": "NO-GO",
+  "passed": [
+    "neon_build_tools",
+    "container_build",
+    "cloudflare_scanner_runtime",
+    "rails_checks (postgresql)",
+    "rails_checks (sqlite)",
+    "cloudflare_adapter"
+  ],
+  "rails_postgresql": {
+    "assertions": 2510,
+    "tests": 296,
+    "skips": 0,
+    "failures": 0,
+    "errors": 0
+  }
+}

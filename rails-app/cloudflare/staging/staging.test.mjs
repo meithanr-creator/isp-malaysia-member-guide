@@ -47,11 +47,13 @@ function harness(env, options = {}, store = new Map()) {
   const ctx = {
     events, requests, starts: 0, kills: 0,
     storage: {
+      async transaction(callback) { return callback(this); },
       async get(key) { if (options.storageFailure) throw Error("synthetic"); return store.get(key); },
       async put(key, value) { events.push("put"); store.set(key, value); }
     },
     async start(settings) {
       events.push("start"); ctx.starts++;
+      if(options.startFailure)throw new Error('private startup failure');
       assert.ok(store.has(DEADLINE), "deadline must persist before startup");
       assert.ok(schedules.length, "shutdown must be armed before startup");
       if (options.waitForAbort) {
@@ -66,6 +68,7 @@ function harness(env, options = {}, store = new Map()) {
       running: true,
       getTcpPort() { return { async fetch(req) {
         requests.push(req);
+        if(new URL(req.url).pathname==='/app-ready')return new Response('application ready',{status:options.appReadyStatus||200});
         if(!['/ready','/app-ready','/up'].includes(new URL(req.url).pathname) && options.response) return options.response(req);
         return new Response(new URL(req.url).pathname === "/ready" ? "ready" : "synthetic page");
       } }; }
@@ -193,4 +196,84 @@ test('idle renewal is clamped to absolute expiry and cannot renew afterward',t=>
  assert.equal(h.instance.sleepAfterMs,cutoff);assert.equal(h.ctx.renewed,1);
  t.mock.timers.enable({apis:['Date'],now:cutoff+1});h.instance.renewActivityTimeout();
  assert.equal(h.ctx.renewed,1);
+});
+const TRACE='00000000-0000-4000-8000-000000000001';
+const OPERATION='00000000-0000-4000-8000-000000000002';
+function lookupRequest(id=TRACE,extra={}){
+ return new Request(`http://${HOST}/__isp_diagnostics/${id}`,{headers:{'x-isp-staging-key':KEY,[EDGE_IP_HEADER]:'203.0.113.7'},...extra});
+}
+function mutation(){return new Request(`http://${HOST}/admin/events?member=synthetic`,{method:'POST',body:'synthetic-private-body',headers:{'x-isp-staging-key':KEY,[EDGE_IP_HEADER]:'203.0.113.7','x-isp-trace':TRACE}});}
+test('backend500 keeps private metadata; freshDO lookup never starts or renews',async()=>{
+ const env=environment(),h=harness(env,{response:req=>new Response('synthetic secret stack/member/body',{status:500,headers:{'x-isp-trace':req.headers.get('x-isp-trace'),'x-isp-diagnostic-operation':OPERATION,'x-isp-diagnostic-exception':'UploadOperation::StorageFailure'}})});
+ const response=await h.instance.fetch(mutation());
+ assert.equal(response.status,503);assert.equal(response.headers.get('x-isp-trace'),TRACE);
+ assert.equal(response.headers.get('x-isp-diagnostic-operation'),null);assert.equal(response.headers.get('x-isp-diagnostic-exception'),null);
+ assert.equal(await response.text(),'ISP member service is not available yet.');
+ const fresh=harness(env,{},h.store);
+ for(const name of ['armDeadline','startAndWaitForPorts','renewActivityTimeout','expireStaging'])fresh.instance[name]=()=>assert.fail(`lookup called ${name}`);
+ fresh.ctx.storage.put=()=>assert.fail('lookup wrote state');fresh.ctx.storage.transaction=()=>assert.fail('lookup wrote ring');
+ const lookup=await fresh.instance.fetch(lookupRequest());assert.equal(lookup.status,200);
+ const row=(await lookup.json()).trace;
+ assert.equal(row.stage,'backend_http');assert.equal(row.dispatched,true);assert.equal(row.response_received,true);assert.equal(row.status,500);assert.equal(row.operation_id,OPERATION);assert.equal(row.exception_class,'UploadOperation::StorageFailure');
+ assert.equal(JSON.stringify(row).includes('synthetic'),false);
+ assert.equal(fresh.ctx.starts,0);assert.equal(fresh.ctx.requests.length,0);assert.equal(fresh.instance.activeRequests,0);assert.equal(fresh.schedules.length,0);
+});
+test('transport failure records unknown response and never replays; duplicate ID cannot alter it',async()=>{
+ const h=harness(environment(),{response:()=>{throw new TypeError('private URL/query/credential');}});
+ const response=await h.instance.fetch(mutation());assert.equal(response.status,503);await response.text();
+ const row=(await (await h.instance.fetch(lookupRequest())).json()).trace;
+ assert.equal(row.stage,'transport');assert.equal(row.dispatched,true);assert.equal(row.response_received,false);assert.equal(row.status,null);assert.equal(row.exception_class,'TypeError');
+ const again=await h.instance.fetch(mutation());assert.equal(again.status,503);
+ assert.deepEqual((await (await h.instance.fetch(lookupRequest())).json()).trace,row);
+ assert.equal(h.ctx.requests.filter(req=>new URL(req.url).pathname==='/admin/events').length,1);
+});
+test('diagnostic lookup refuses invalid requests without startup writes or activity',async()=>{
+ const env=environment(),h=harness(env);
+ await (await h.instance.fetch(mutation())).text();
+ for(const req of [lookupRequest('bad'),lookupRequest(TRACE+'%0A'),lookupRequest(TRACE+'?query=private'),lookupRequest(TRACE,{method:'POST'}),lookupRequest(TRACE,{method:'HEAD'}),lookupRequest(TRACE,{headers:{'x-isp-staging-key':'b'.repeat(64)}}),lookupRequest(TRACE,{headers:{}}),new Request(`http://other.invalid/__isp_diagnostics/${TRACE}`,{headers:{'x-isp-staging-key':KEY}})]){
+  const fresh=harness(env,{},h.store);fresh.ctx.storage.put=()=>assert.fail('lookup write');fresh.ctx.storage.transaction=()=>assert.fail('lookup ring write');
+  const response=await fresh.instance.fetch(req);assert.equal(response.status,503);assert.equal(fresh.ctx.starts,0);assert.equal(fresh.schedules.length,0);assert.equal(fresh.ctx.renewed,undefined);
+ }
+ const fresh=harness(env,{},h.store);assert.equal((await fresh.instance.fetch(lookupRequest('00000000-0000-4000-8000-000000000099'))).status,404);
+});
+test('fresh lookup enforces stored earliest expiry and expired flags or storage failure',async()=>{
+ for(const mode of ['deadline','expired','storage']){
+  const env=environment(),h=harness(env);await (await h.instance.fetch(mutation())).text();
+  if(mode==='deadline')h.store.set(DEADLINE,Date.now()-1);
+  if(mode==='expired')h.store.set('isp:staging:expired',true);
+  const fresh=harness(env,{storageFailure:mode==='storage'},h.store);
+  const response=await fresh.instance.fetch(lookupRequest());assert.equal(response.status,503);assert.equal(fresh.ctx.starts,0);assert.equal(fresh.schedules.length,0);assert.equal(fresh.ctx.renewed,undefined);
+ }
+});
+test('diagnostic admission and dispatch failures stop backend work; response telemetry failure preserves success',async()=>{
+ for(const phase of ['admission','dispatch','response']){
+  const h=harness(environment(),{response:()=>new Response('stored',{status:201})});
+  const original=h.ctx.storage.transaction.bind(h.ctx.storage);
+  h.ctx.storage.transaction=callback=>original(txn=>callback({get:txn.get.bind(txn),put:async(key,value)=>{
+   const row=Array.isArray(value)?value.find(r=>r.id===TRACE):null;
+   const fail=row&&((phase==='admission'&&row.revision===1)||(phase==='dispatch'&&row.stage==='backend_http'&&row.dispatched&&!row.response_received)||(phase==='response'&&row.response_received));
+   if(fail)throw new Error('synthetic private persistence failure');
+   return txn.put(key,value);
+  }}));
+  const response=await h.instance.fetch(mutation());
+  assert.equal(response.status,phase==='response'?201:503);
+  assert.equal(await response.text(),phase==='response'?'stored':'ISP member service is not available yet.');
+  assert.equal(h.ctx.requests.filter(req=>new URL(req.url).pathname==='/admin/events').length,phase==='response'?1:0);
+  if(phase==='response'){
+   const row=(await (await h.instance.fetch(lookupRequest())).json()).trace;
+   assert.equal(row.dispatched,true);assert.equal(row.response_received,false);assert.equal(row.status,null);
+  }
+ }
+});
+test('startup readiness and lease failures remain distinct and undispatched',async()=>{
+ for(const [options,expected]of [[{startFailure:true},'startup'],[{appReadyStatus:503},'application_readiness'],[{waitForAbort:true},'lease']]){
+  const h=harness(environment(),options);
+  if(expected==='lease')h.instance.armedDeadline=Date.now()+20;
+  const pending=h.instance.fetch(mutation());
+  if(expected==='lease')await new Promise(resolve=>setTimeout(resolve,60));
+  const response=await pending;assert.equal(response.status,503);await response.text();
+  const rows=h.store.get('isp:staging:diagnostics:v1');
+  assert.equal(rows.length,1);assert.equal(rows[0].stage,expected);assert.equal(rows[0].dispatched,false);assert.equal(rows[0].response_received,false);
+  assert.equal(h.ctx.requests.filter(req=>new URL(req.url).pathname==='/admin/events').length,0);
+ }
 });

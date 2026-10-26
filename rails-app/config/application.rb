@@ -1,6 +1,7 @@
 require_relative "boot"
 
 require "rails/all"
+require_relative "../lib/request_diagnostic_metadata"
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
@@ -10,6 +11,7 @@ module IspMemberRails
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.1
+    config.middleware.insert_before ActionDispatch::ShowExceptions, RequestDiagnosticMetadata
     config.active_storage.draw_routes = false
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do

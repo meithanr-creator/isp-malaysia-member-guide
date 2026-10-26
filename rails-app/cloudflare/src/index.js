@@ -1,3 +1,4 @@
+import { TRACE_HEADER, validUuid, className } from "./diagnostics.js";
 import { Container, getContainer } from "@cloudflare/containers";
 import { beginRequest } from "./lifetime.js";
 import {
@@ -159,10 +160,24 @@ export class RailsContainer extends Container {
     return waitForProbe(this.applicationReadiness.promise, requestSignal);
   }
 
+  async recordDiagnostic(_trace, _options) { return true; }
+  isDiagnosticLeaseExpired() { return false; }
+  async diagnosticEvent(trace, changes, {required = false, admit = false} = {}) {
+    Object.assign(trace, changes);
+    trace.updated_at = Date.now(); trace.revision += 1;
+    let recorded = false;
+    try { recorded = await this.recordDiagnostic({...trace}, {admit}); } catch {}
+    if (required && recorded !== true) throw Error("Diagnostic persistence unavailable");
+  }
   async fetch(request) {
+    const now = Date.now();
+    const trace = {id: validUuid(request.headers.get(TRACE_HEADER)) ? request.headers.get(TRACE_HEADER) : crypto.randomUUID(),
+      revision: 0, started_at: now, updated_at: now, stage: "startup", outcome: "pending",
+      dispatched: false, response_received: false, status: null, operation_id: null, exception_class: null};
+    let admitted = false, backendStarted = false;
     const settings = runtimeConfiguration(this.env);
     const clientIp = request.headers.get(EDGE_IP_HEADER);
-    if (!settings || !validClientIp(clientIp)) return unavailable();
+    if (!settings || !validClientIp(clientIp)) return unavailable(trace.id);
 
     const lifetime = beginRequest(this, request.signal);
     let requestGeneration = this.lifecycleGeneration;
@@ -170,26 +185,31 @@ export class RailsContainer extends Container {
       const url = new URL(request.url);
       if (url.hostname !== settings.host) {
         lifetime.release();
-        return unavailable();
+        return unavailable(trace.id);
       }
+      await this.diagnosticEvent(trace, {}, {required: true, admit: true});
+      admitted = true;
       this.envVars = settings.containerEnv;
       const port = await this.railsPort(lifetime.signal);
       if (!port) {
+        await this.diagnosticEvent(trace, {stage: this.isDiagnosticLeaseExpired() ? 'lease' : 'startup', outcome: 'failed'});
         lifetime.release();
-        return unavailable();
+        return unavailable(trace.id);
       }
       requestGeneration = this.lifecycleGeneration;
       this.renewActivityTimeout();
 
+      if (!HEALTH_PATHS.has(url.pathname)) await this.diagnosticEvent(trace, {stage: 'application_readiness'});
       if (!HEALTH_PATHS.has(url.pathname) &&
           !await this.applicationReady(port, settings, lifetime.signal)) {
+        await this.diagnosticEvent(trace, {stage: this.isDiagnosticLeaseExpired() ? 'lease' : 'application_readiness', outcome: 'failed'});
         lifetime.release();
-        return unavailable();
+        return unavailable(trace.id);
       }
 
       if (requestGeneration !== this.lifecycleGeneration || !this.portReady) {
         lifetime.release();
-        return unavailable();
+        return unavailable(trace.id);
       }
 
       // Forward once. Authorization, upload scans and download checks remain
@@ -198,18 +218,30 @@ export class RailsContainer extends Container {
         requestForRails(request, settings.host, clientIp),
         { signal: lifetime.signal }
       );
+      forwarded.headers.set(TRACE_HEADER, trace.id);
+      // Durable dispatch intent precedes send; it does not prove Rails received it.
+      await this.diagnosticEvent(trace, {stage: "backend_http", outcome: "pending", dispatched: true}, {required: true});
+      if (lifetime.signal.aborted || requestGeneration !== this.lifecycleGeneration) throw Error('Request lifetime ended');
+      backendStarted = true;
       const response = await port.fetch(forwarded);
+      const correlated = response.headers.get(TRACE_HEADER) === trace.id;
+      await this.diagnosticEvent(trace, {stage: "backend_http", outcome: "response", response_received: true,
+        status: response.status,
+        operation_id: correlated && validUuid(response.headers.get("x-isp-diagnostic-operation")) ? response.headers.get("x-isp-diagnostic-operation") : null,
+        exception_class: correlated ? className(response.headers.get("x-isp-diagnostic-exception")) : null});
       if (response.status >= 500) {
         if (requestGeneration === this.lifecycleGeneration && !lifetime.signal.aborted) this.invalidateApplicationReadiness();
         void response.body?.cancel().catch(() => {});
         lifetime.release();
-        return unavailable();
+        return unavailable(trace.id);
       }
-      return lifetime.wrap(privateResponse(response));
-    } catch {
-      if (requestGeneration === this.lifecycleGeneration && !lifetime.signal.aborted) this.invalidateLifecycle();
+      return lifetime.wrap(privateResponse(response, trace.id));
+    } catch (error) {
+      if (admitted) await this.diagnosticEvent(trace, {stage: this.isDiagnosticLeaseExpired() ? "lease" : (trace.dispatched ? "transport" : trace.stage),
+        outcome: "failed", exception_class: className(error?.constructor?.name)});
+      if (admitted && (backendStarted || trace.stage === "startup") && requestGeneration === this.lifecycleGeneration && !lifetime.signal.aborted) this.invalidateLifecycle();
       lifetime.release();
-      return unavailable();
+      return unavailable(trace.id);
     }
   }
 
@@ -232,20 +264,21 @@ export class RailsContainer extends Container {
   }
 }
 
-export default {
-  async fetch(request, env) {
-    const settings = runtimeConfiguration(env);
-    if (!settings) return unavailable();
-    try {
-      const url = new URL(request.url);
-      const clientIp = edgeClientIp(request);
-      if (url.protocol !== "https:" || url.hostname !== settings.host ||
-          url.port || !clientIp || request.headers.has("upgrade")) return unavailable();
-      const forwarded = requestForRails(request, settings.host, null);
-      forwarded.headers.set(EDGE_IP_HEADER, clientIp);
-      return privateResponse(await getContainer(env.RAILS_CONTAINER, INSTANCE_NAME).fetch(forwarded));
-    } catch {
-      return unavailable();
-    }
+export async function fetchWithTrace(request, env, trustedTrace = null) {
+  const settings = runtimeConfiguration(env);
+  if (!settings) return unavailable();
+  let traceId = null;
+  try {
+    const url = new URL(request.url), clientIp = edgeClientIp(request);
+    if (url.protocol !== "https:" || url.hostname !== settings.host ||
+        url.port || !clientIp || request.headers.has("upgrade")) return unavailable();
+    traceId = validUuid(trustedTrace) ? trustedTrace : crypto.randomUUID();
+    const forwarded = requestForRails(request, settings.host, null);
+    forwarded.headers.set(EDGE_IP_HEADER, clientIp);
+    forwarded.headers.set(TRACE_HEADER, traceId);
+    return privateResponse(await getContainer(env.RAILS_CONTAINER, INSTANCE_NAME).fetch(forwarded), traceId);
+  } catch {
+    return unavailable(traceId);
   }
-};
+}
+export default {fetch: (request, env) => fetchWithTrace(request, env)};

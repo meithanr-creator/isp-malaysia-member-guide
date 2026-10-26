@@ -187,6 +187,8 @@ test("startup longer than sixty seconds remains active until the response ends",
   const ctx = containerContext({ start: () => new Promise((resolve) => setTimeout(resolve, 90000)) });
   const instance = new RailsContainer(ctx, environment());
   const pending = instance.fetch(internalRequest());
+  for (let i = 0; i < 100 && ctx.starts.length === 0; i++) await Promise.resolve();
+  assert.equal(ctx.starts.length, 1);
   await advance(t, 61000);
   await instance.onActivityExpired();
   assert.equal(instance.activeRequests, 1);
@@ -494,4 +496,17 @@ test("a cancelled forwarded client cannot invalidate current readiness", async (
   assert.equal(await (await instance.fetch(internalRequest("/login"))).text(), "member page");
   assert.equal(appProbes(ctx).length, probes);
   assert.equal(ctx.starts.length, 1);
+});
+test("external clients cannot inject trace or diagnostic headers through either proxy pass", async () => {
+  const chosen="00000000-0000-4000-8000-000000000001";let forwarded;
+  const env=environment({RAILS_CONTAINER:binding(async request=>{
+    forwarded=request;
+    return new Response("ok",{headers:{"x-isp-trace":chosen,"x-isp-diagnostic-operation":chosen,"x-isp-diagnostic-exception":"PrivateError"}});
+  })});
+  const response=await worker.fetch(edgeRequest("/events",{headers:{"x-isp-trace":chosen,"x-isp-diagnostic-secret":"synthetic"}}),env,{trustedTrace:chosen});
+  assert.notEqual(forwarded.headers.get("x-isp-trace"),chosen);
+  assert.equal(forwarded.headers.get("x-isp-diagnostic-secret"),null);
+  assert.equal(response.headers.get("x-isp-trace"),forwarded.headers.get("x-isp-trace"));
+  assert.equal(response.headers.get("x-isp-diagnostic-operation"),null);
+  assert.equal(response.headers.get("x-isp-diagnostic-exception"),null);
 });
