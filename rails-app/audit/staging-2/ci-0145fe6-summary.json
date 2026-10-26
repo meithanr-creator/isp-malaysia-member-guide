@@ -1,0 +1,95 @@
+{
+  "checked_at": "2026-10-26 16:41:41 UTC",
+  "source": "0145fe605d7d5455de574f25cd0f7b754c8d64f9",
+  "tree": "8b21ddff268fea3b0a4857fa7da6d8dff433e1f6",
+  "application_image_source": "80d32fddf88251a6608ba047a577ce16efe8c834",
+  "image_export_workflow": "73add85e87235caccb8661208b8fe28a5cdd0a2c",
+  "runs": [
+    {
+      "id": 40360092079,
+      "sha": "0145fe605d7d5455de574f25cd0f7b754c8d64f9",
+      "status": "completed",
+      "conclusion": "success",
+      "event": "push",
+      "url": "https://github.com/meithanr-creator/isp-malaysia-member-guide/actions/runs/40360092079"
+    },
+    {
+      "id": 40360103180,
+      "sha": "0145fe605d7d5455de574f25cd0f7b754c8d64f9",
+      "status": "completed",
+      "conclusion": "success",
+      "event": "pull_request",
+      "url": "https://github.com/meithanr-creator/isp-malaysia-member-guide/actions/runs/40360103180"
+    }
+  ],
+  "jobs": [
+    {
+      "id": 121702870804,
+      "name": "container_build",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 121702871021,
+      "name": "cloudflare_adapter",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 121702871273,
+      "name": "neon_build_tools",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 121702871278,
+      "name": "virtual_browser_gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 121702871285,
+      "name": "cloudflare_scanner_runtime",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 121702871296,
+      "name": "rails_checks (postgresql)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 121702871336,
+      "name": "rails_checks (sqlite)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 121702873749,
+      "name": "reviewed_image_artifact",
+      "status": "completed",
+      "conclusion": "skipped"
+    }
+  ],
+  "postgres": {
+    "tests": 303,
+    "assertions": 2573,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "release_boundary_tests": 42,
+  "edge_tests": 56,
+  "local_image_verified": true,
+  "local_manifest_digest": "sha256:152480a896060eae82a380dc54f651e199ff1585cd5dd805d0d51b9f3a587d2a",
+  "remote_registry_verified": false,
+  "authorization_plan_created": false,
+  "registry_upload_attempted": false,
+  "runtime_started": false,
+  "demo_scope_unchanged": true,
+  "owner_actions_required": [
+    "New deployment-access period: previous key expired",
+    "Windows administrator start of installed Linux test environment"
+  ]
+}

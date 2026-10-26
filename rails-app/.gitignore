@@ -27,3 +27,6 @@ node_modules/
 /.agents/
 
 /skills-lock.json
+
+# Mobile acceptance screenshots remain local/private.
+/audit/**/*.png

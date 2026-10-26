@@ -138,12 +138,15 @@ jobs:
       - name: Test environment isolation and direct-connection guards
         run: npm run test:neon-tools
       - name: Verify private staging controls and safe shutdown
-        run: node --test script/cloudflare-staging-ops.test.mjs script/cloudflare-staging-watchdog.test.mjs script/staging-lease-context.test.mjs script/prepare-unarmed-lease2.test.mjs script/upload-reviewed-image-2.test.mjs
+        run: node --test script/cloudflare-staging-ops.test.mjs script/cloudflare-staging-watchdog.test.mjs script/staging-lease-context.test.mjs script/prepare-unarmed-lease2.test.mjs script/upload-reviewed-image-2.test.mjs script/linux-webkit-connection.test.mjs script/virtual-mobile-failures.test.mjs
       - name: Validate bounded hosted acceptance tools without network or credentials
         run: |
           ruby -c script/hosted-acceptance-fixtures.rb
           node --check script/hosted-acceptance-operator.mjs
           node --check script/run-hosted-acceptance.mjs
+          node --check script/run-linux-webkit-offline-smoke.mjs
+          node --check script/linux-webkit-server.mjs
+          node --check script/linux-webkit-offline-smoke.mjs
           node --check script/virtual-mobile-acceptance.mjs
           node script/hosted-acceptance.mjs --selftest
           ISP_STAGING_LEASE=rails-staging-2 node script/hosted-acceptance.mjs --selftest
