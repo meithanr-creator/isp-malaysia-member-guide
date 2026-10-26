@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --import ./test/register-loader.mjs --test test/*.test.mjs",
+    "test": "node --import ./test/register-loader.mjs --test test/*.test.mjs staging/*.test.mjs",
     "deploy": "wrangler deploy",
-    "check": "node check.mjs"
+    "check": "node check.mjs && node staging/check.mjs"
   },
   "engines": {
     "node": ">=22.0.0"

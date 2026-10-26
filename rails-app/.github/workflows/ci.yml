@@ -134,6 +134,8 @@ jobs:
         run: npm --prefix cloudflare ci --ignore-scripts --fetch-timeout=30000 --fetch-retries=1
       - name: Test environment isolation and direct-connection guards
         run: npm run test:neon-tools
+      - name: Verify private staging controls and safe shutdown
+        run: node --test script/cloudflare-staging-ops.test.mjs script/cloudflare-staging-watchdog.test.mjs
       - name: Build Rails assets and real Cloudflare bundle without runtime secrets
         env:
           WRANGLER_SEND_METRICS: 'false'

@@ -4,7 +4,25 @@ Updated 26 October 2026, Asia/Kuala_Lumpur. Director: Astra (high); implementati
 
 **Decision: the bounded application, Cloudflare package and local Rails–Neon integration source are accepted. Production release remains NO-GO pending hosted and operational evidence.** Astra's source review was read-only; actual executions below were coordinator-run/reported. Shop and Plantation Jobs stay frozen demos. No real member records, account activation or identity emails were used.
 
-## Current resources and authorizations
+
+## Current director assessment — 26 October 2026
+
+The authoritative area gates and carry-forward/retest rules are in PRODUCTION-ACCEPTANCE.md and HOSTED-ACCEPTANCE-RUNBOOK.md. Astra reviewed the saved guard source: GO for inactive deployment, conditional GO for the bounded acceptance window after exact-source tests/publication, instance identity and watchdog verification. This is not production approval. Detailed review: audit/astra-staging-guard-review.txt.
+
+| Gate | Current evidence | Status |
+| --- | --- | --- |
+| P0/P1 source preparation | Exact c9a5142bd8c949c6415c3639c0113ee015f9a3f4, all six CI jobs passed in run 40268599968; application guards unchanged | Accepted within recorded scope |
+| P2 Neon | Verify-full TLS, all 14 migrations, local Rails persistence and anonymous-route checks | Accepted local/service integration; hosted connection pending |
+| P2 private R2 transport | Actual scoped credential; signed HEAD/PUT/GET, exact bytes, unsigned S3 authentication rejection (400 InvalidArgument, authentication error), DELETE and absence confirmed | Accepted direct transport; Rails file pipeline pending |
+| P2 immutable image | Actual Cloudflare build 7df5ce3e-a847-4533-8ca0-a7bfc6d546e8 succeeded from c9a5142; digest 0187a1e32351a3f7a8f9c87a48798c0adf31f3b6c4116309c78f638582700cd2 | Accepted preparation; no container started |
+| P2 deployment controls | 22 edge tests (9 staging plus 13 existing), real SDK guard bundle 69,809 bytes; 19 operations/watchdog checks passed locally | Source reviewed; exact new commit/CI and actual shutdown pending |
+| P3 whole-area hosted acceptance | Membership/login, events, Discover, publications, consultation, platform/release checklist documented | Not run; no hosted passes claimed |
+| P4 release | Identity delivery, restore/rollback, physical devices/accessibility, operational ownership, approved real content/data and domain cutover | Open; production NO-GO |
+
+Cloudflare API inspection confirmed zero applications named isp-member-production after image preparation. The image-only command did not deploy a Worker/application. Two first attempts stopped during unnecessary host Ruby setup; repository-root builds with explicit rails-app paths and automatic dependency installation disabled fixed the build configuration. Runtime Ruby remains 3.4.12 inside the Docker image. Failures and the successful build logs remain under audit on D.
+
+The ISP-only bucket credential and separate account-scoped Workers/Containers/build-control credential were explicitly approved and created/corrected. Neither credential grants live-member or launch authorization. No domain/nameserver, real-member, real-administrator, outbound email or Neon paid-plan action has occurred. Cost evidence remains estimated until provider usage is available; the US$5 total ceiling and fixed 55-minute runtime window are retained.
+## Earlier resource and source evidence (historical)
 
 - Cloudflare isp-member-production is reserved and GitHub-connected with builds, workers.dev and preview URLs disabled. Default bootstrap only; Rails is not deployed there. Existing Workers Paid was already active.
 - Empty private Standard R2 isp-staging-private exists in APAC, public URL/custom domain disabled. No bucket credential or app upload has been created. Application access and anonymous-denial evidence remain open.

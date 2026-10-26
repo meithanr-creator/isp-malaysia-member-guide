@@ -1,0 +1,23 @@
+**GO for deploying the current configuration inactive. Conditional GO for bounded activation after the checks below pass. This is not production approval.**
+
+The inspected configuration disables workers.dev, preview URLs, routes and container activation; timestamps are blank. It pins the accepted image digest, one `standard-2` instance and the intended application/account. No request can pass the wrapper in this state.
+
+The wrapper’s main controls are sound at source level:
+
+- Both ingress layers require the access key and valid fixed window, with mail/demo disabled.
+- The key is removed before forwarding to Rails and excluded from its environment.
+- The earliest deadline and expired state persist; ordinary requests cannot extend the deadline.
+- Deadline persistence and shutdown scheduling precede container startup.
+- Startup, request cancellation and activity renewal respect the cutoff.
+- The installed SDK represents `sleepAfterMs` as an absolute timestamp, so the clamp is compatible. Its scheduled callbacks support the persisted expiry method.
+
+**Before activation:**
+
+1. Pass focused wrapper tests and real SDK/config bundling: missing/wrong key, invalid/future/expired windows, prohibited flags, persisted earlier deadline, storage/scheduling failure, expiry during startup, slow response cancellation, key removal and activity-renewal clamping.
+2. Publish the reviewed wrapper’s exact commit and record the deployed Worker version separately from the Rails image digest.
+3. Verify the created application ID/name, then arm the independent watchdog and confirm its live heartbeat, stop time and credential validity. Its stop occurs five minutes before expiry.
+4. Confirm the runtime secrets/configuration and keep sufficient time/budget for startup, evidence collection and shutdown.
+
+One operational caveat: the watchdog reports success when application deletion is confirmed even if closing ingress failed (`ingress_closed:false`). That stops compute, but **shutdown acceptance must still verify workers.dev and preview access are disabled**; do not equate application absence with complete deactivation.
+
+No source blocker found for the inactive deployment. Hosted startup, deadline execution and shutdown remain observations to collect.
