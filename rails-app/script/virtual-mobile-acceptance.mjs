@@ -33,6 +33,7 @@ async function main(){
    check(opened.status()===303,'Same-origin review entry accepted');
    const cookies=await context.cookies(ORIGIN),gate=cookies.find(c=>c.name==='__Host-isp_acceptance');
    check(gate&&gate.secure&&gate.httpOnly&&gate.sameSite==='Strict'&&!gate.value.includes(runtime.ISP_STAGING_KEY)&&gate.expires*1000<=Date.parse(runtime.ISP_STAGING_EXPIRES_AT)+1000,'Browser accepts secure fixed-expiry cookie without raw key');
+   admit();result.requests++;const readiness=await context.request.get(ORIGIN+'/ready',{headers:{'x-isp-staging-key':runtime.ISP_STAGING_KEY},timeout:Math.min(120000,deadline-Date.now())});check(readiness.status()===200,'Bounded scanner and Rails readiness before navigation');
    const home=await page.goto(ORIGIN);check(home.status()===200,'Landing page loads in actual engine');
    await page.locator('.welcome-hero').waitFor();await page.evaluate(()=>document.fonts.ready);
    check((await page.locator('img[alt="Official ISP crest"]').count())===1,'Official crest present');
