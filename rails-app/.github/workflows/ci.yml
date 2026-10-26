@@ -110,3 +110,33 @@ jobs:
       - name: Exercise real clean and EICAR scans without application credentials
         timeout-minutes: 8
         run: docker run --rm --no-healthcheck --memory=6g --cpus=1 isp-cloudflare-check:${{ github.sha }} --scanner-smoke
+
+  neon_build_tools:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.12'
+          bundler-cache: true
+          working-directory: rails-app
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            rails-app/package-lock.json
+            rails-app/cloudflare/package-lock.json
+      - name: Install pinned Neon and build dependencies
+        run: npm ci --ignore-scripts --fetch-timeout=30000 --fetch-retries=1
+      - name: Install pinned Cloudflare dependencies
+        run: npm --prefix cloudflare ci --ignore-scripts --fetch-timeout=30000 --fetch-retries=1
+      - name: Test environment isolation and direct-connection guards
+        run: npm run test:neon-tools
+      - name: Build Rails assets and real Cloudflare bundle without runtime secrets
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+        run: npm run build
+      - name: Audit Neon tooling dependencies
+        run: npm audit --audit-level=high --fetch-timeout=30000 --fetch-retries=1

@@ -20,8 +20,10 @@ Dashboard: https://dash.cloudflare.com/a9720867333b64a4f8ee70cdfd673eb9/r2/defau
 
 Rails configuration will use AWS_REGION=auto and the account HTTPS S3 endpoint. Credentials must be restricted to this bucket and stored in the ISP secret manager. Dashboard privacy is verified; authenticated read/write/delete and anonymous-denial probes are still pending. Do not infer tested backups from a private bucket.
 
-## Next execution gates
+## Connected PostgreSQL and next execution gates
 
-Review and validate the Rails/scanner container and Worker adapter; then connect isolated PostgreSQL and ISP-only credentials. A specific runtime allowance is still needed before starting billed container work. Do not reuse CWC or any other project's credential. Public URLs/builds stay disabled until the reviewed configuration and operational checks justify activation. Mail, backups/restore, first-admin MFA and real mobile-device acceptance remain separate gates. No real-data import or domain cutover has occurred.
+Neon staging project isp-member-staging (royal-glitter-45740959), Singapore PostgreSQL18, branch production (br-floral-tree-a1hpnagn), is now authenticated, configured for PostgreSQL only, migrated and verified through local Rails/HTTP and certificate-verified TLS. See NEON-SETUP.md. No Neon credential has been installed in the Cloudflare Worker yet.
 
-Local evidence (not committed): audit/cloudflare-isp-project.png and audit/cloudflare-private-r2.png.
+The 8d73ac0 Cloudflare package baseline passed its Linux image/real scanner smoke and adapter checks. The owner approved a bounded US$5, at most one-hour isolated Cloudflare test, followed by shutdown; it has not started. The next integration work is ISP-only Worker/R2 credentials, approved staging hostname, real hosted startup/private-object/proxy/scanner checks and combined update-memory measurement. Do not reuse CWC or another project's credentials. Public URLs/builds remain disabled until the reviewed staging setup is ready. Mail, backup restore, first-admin MFA and real mobile-device acceptance remain separate gates. No real-data import or domain cutover occurred.
+
+Local evidence (not committed): audit/cloudflare-isp-project.png, audit/cloudflare-private-r2.png and audit/neon-setup.txt.

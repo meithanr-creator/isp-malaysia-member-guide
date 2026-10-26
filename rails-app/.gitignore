@@ -17,3 +17,13 @@
 /coverage/
 
 /public/assets/
+.neon
+node_modules/
+
+/node_modules/
+
+/.neon
+
+/.agents/
+
+/skills-lock.json

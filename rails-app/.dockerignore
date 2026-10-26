@@ -15,3 +15,11 @@ coverage
 *.sqlite3-*
 
 /public/assets/
+
+/node_modules/
+
+/.neon
+
+/.agents/
+
+/skills-lock.json
