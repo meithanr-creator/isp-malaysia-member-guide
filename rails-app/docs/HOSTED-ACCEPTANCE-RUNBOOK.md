@@ -88,3 +88,5 @@ Restore requires an approved isolated target, database+objects+historical keys a
 Cleanup exact manifest-owned enquiries/interests/imports/content/blobs/registry/accounts, revoke sessions/tokens, conditionally restore Discover and independently verify absence. Never global-delete/purge/reset. Stop the concrete container, verify no running/starting instances and record cost.
 
 Fix complete affected areas. Retest shared-control dependents and whole affected journeys; preserve unchanged-area evidence. Changed authentication/storage/runtime requires broader retesting. No mock or local pass substitutes for hosted execution.
+
+Owner-accepted mobile scope (26 October 2026): use virtual environments. Record actual WebKit and Chromium engine versions with iPhone and Android profiles, responsive layouts, navigation, forms, sign-in and PWA browser behavior. Physical-device and native home-screen installation are outside this acceptance scope and must not be claimed as passed or introduced as a new owner-action requirement.
