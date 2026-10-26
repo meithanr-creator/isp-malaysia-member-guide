@@ -1,5 +1,6 @@
 import coreWorker, { RailsContainer as BaseRailsContainer } from '../src/index.js';
 import { unavailable } from '../src/runtime.js';
+import { browserAccessEndpoint, validBrowserCookie, headersWithoutReviewCookie } from './browser-access.js';
 const HOST='isp-member-production.meithan-r.workers.dev',KEY_HEADER='x-isp-staging-key';
 const DEADLINE_KEY='isp:staging:earliest-deadline',EXPIRED_KEY='isp:staging:expired';
 const MAX_WINDOW_MS=55*60*1000;
@@ -12,16 +13,17 @@ export function stagingWindow(env={}) {
  const start=utcSeconds(env.ISP_STAGING_START_AT),end=utcSeconds(env.ISP_STAGING_EXPIRES_AT);
  return start!==null&&end!==null&&end>start&&end-start<=MAX_WINDOW_MS?{start,end}:null;
 }
-function keyMatches(request,env) {
- const expected=env.ISP_STAGING_KEY,supplied=request.headers.get(KEY_HEADER)||'';
+function matchesKey(supplied,expected) {
  if(typeof expected!=='string'||!/^[a-f0-9]{64}$/.test(expected)||!/^[a-f0-9]{64}$/.test(supplied))return false;
  let difference=0;for(let i=0;i<64;i++)difference|=expected.charCodeAt(i)^supplied.charCodeAt(i);
  return difference===0;
 }
-export function allowedStagingRequest(request,env,now=Date.now(),deadline=Infinity) {
+function keyMatches(request,env){return matchesKey(request.headers.get(KEY_HEADER)||'',env.ISP_STAGING_KEY);}
+function validContext(env,now=Date.now(),deadline=Infinity) {
  const window=stagingWindow(env);
- return !!window&&env.ISP_CONTAINER_ENABLED==='true'&&env.APP_HOST===HOST&&env.ISP_ACCOUNT_EMAILS_ENABLED==='false'&&env.ISP_ACCOUNT_EMAIL_DISPATCHER_ENABLED==='false'&&env.ISP_DEMO_MODE==='false'&&now>=window.start&&now<Math.min(window.end,deadline)&&keyMatches(request,env);
+ return !!window&&env.ISP_CONTAINER_ENABLED==='true'&&env.APP_HOST===HOST&&env.ISP_ACCOUNT_EMAILS_ENABLED==='false'&&env.ISP_ACCOUNT_EMAIL_DISPATCHER_ENABLED==='false'&&env.ISP_DEMO_MODE==='false'&&now>=window.start&&now<Math.min(window.end,deadline);
 }
+export function allowedStagingRequest(request,env,now=Date.now(),deadline=Infinity) {return validContext(env,now,deadline)&&keyMatches(request,env);}
 export function deadlineRequest(request,deadline,stripKey=false) {
  const headers=new Headers(request.headers);if(stripKey)headers.delete(KEY_HEADER);
  return new Request(request,{headers,cf:request.cf,signal:AbortSignal.any([request.signal,AbortSignal.timeout(Math.max(1,Math.ceil(deadline-Date.now())))])});
@@ -86,6 +88,18 @@ export class RailsContainer extends BaseRailsContainer {
  }
 }
 export default {async fetch(request,env) {
- if(!allowedStagingRequest(request,env))return unavailable();
- try{return await coreWorker.fetch(deadlineRequest(request,stagingWindow(env).end),env);}catch{return unavailable();}
+ if(!validContext(env))return unavailable();
+ try {
+  const url=new URL(request.url),window=stagingWindow(env);
+  if(url.protocol!=='https:'||url.hostname!==HOST||url.port||request.headers.has('upgrade'))return unavailable();
+  const access=await browserAccessEndpoint(request,env,window,value=>matchesKey(value,env.ISP_STAGING_KEY));
+  if(access)return access;
+  if(!keyMatches(request,env)&&!await validBrowserCookie(request,env,window)){
+   if(request.method==='GET'&&(request.headers.get('Accept')||'').includes('text/html'))return new Response('',{status:303,headers:{Location:'/__isp_review','Cache-Control':'no-store','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'}});
+   return unavailable();
+  }
+  if(Date.now()>=window.end)return unavailable();
+  const headers=headersWithoutReviewCookie(request);headers.set(KEY_HEADER,env.ISP_STAGING_KEY);
+  return await coreWorker.fetch(deadlineRequest(new Request(request,{headers,cf:request.cf}),window.end),env);
+ }catch{return unavailable();}
 }};

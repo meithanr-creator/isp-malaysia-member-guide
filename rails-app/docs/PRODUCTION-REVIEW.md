@@ -15,9 +15,9 @@ The authoritative area gates and carry-forward/retest rules are in PRODUCTION-AC
 | P2 Neon | Verify-full TLS, all 14 migrations, local Rails persistence and anonymous-route checks | Accepted local/service integration; hosted connection pending |
 | P2 private R2 transport | Actual scoped credential; signed HEAD/PUT/GET, exact bytes, unsigned S3 authentication rejection (400 InvalidArgument, authentication error), DELETE and absence confirmed | Accepted direct transport; Rails file pipeline pending |
 | P2 immutable image | Actual Cloudflare build 7df5ce3e-a847-4533-8ca0-a7bfc6d546e8 succeeded from c9a5142; digest 0187a1e32351a3f7a8f9c87a48798c0adf31f3b6c4116309c78f638582700cd2 | Accepted preparation; no container started |
-| P2 deployment controls | 22 edge tests (9 staging plus 13 existing), real SDK guard bundle 69,809 bytes; 19 operations/watchdog checks passed locally | Source reviewed; exact new commit/CI and actual shutdown pending |
+| P2 deployment controls | 30 edge tests (8 browser-access, 9 staging plus 13 existing), real SDK guard bundle 78,051 bytes; 19 operations/watchdog checks passed locally | Cookie-gate source reviewed; exact new commit/CI and actual shutdown pending |
 | P3 whole-area hosted acceptance | Membership/login, events, Discover, publications, consultation, platform/release checklist documented | Not run; no hosted passes claimed |
-| P4 release | Identity delivery, restore/rollback, physical devices/accessibility, operational ownership, approved real content/data and domain cutover | Open; production NO-GO |
+| P4 release | Identity delivery, restore/rollback, mobile/browser accessibility, operational ownership, approved real content/data and domain cutover | Open; production NO-GO |
 
 Cloudflare API inspection confirmed zero applications named isp-member-production after image preparation. The image-only command did not deploy a Worker/application. Two first attempts stopped during unnecessary host Ruby setup; repository-root builds with explicit rails-app paths and automatic dependency installation disabled fixed the build configuration. Runtime Ruby remains 3.4.12 inside the Docker image. Failures and the successful build logs remain under audit on D.
 
@@ -73,3 +73,10 @@ See [NEON-SETUP.md](NEON-SETUP.md) for commands and corrected failures. Initial 
 | P4 pilot/go-live | Not completed | Pilot/support/rollback readiness, approved real data/content/finance process and domain cutover when owner is ready. |
 
 Do not turn the local development evidence into hosted production acceptance. No extra generic launch approval is imposed: continue the existing production intent once concrete access, sender, data, operations and owner-deferred DNS dependencies are resolved. Preserve exact candidate/image provenance, report failures and reopen affected gates on changes. Never use live credentials in CI or run db:drop/db:reset/full destructive fixtures against the selected staging branch.
+## Private browser access and virtual mobile direction
+
+Owner selected virtual environments for mobile review. Dedicated Playwright 1.64.1 Chromium 156 and WebKit 27.2 packages are installed on drive D. Record the actual engine, viewport, touch profile and result for each run. A WebKit iPhone profile is browser-engine emulation, not physical iOS Safari or native home-screen acceptance; the Android Chromium profile likewise does not prove Android OS behavior.
+
+Astra found no new source blocker in the staging-only review cookie boundary. Its form never acquires a container, requires exact-origin key submission, and issues a fixed-window signed cookie. Both browser and header paths still require the independent Worker/DO guards. Thirty source tests and the real SDK bundle passed locally. Hosted form/cookie handling remains untested until activation.
+
+Source commit 1b78ed5a568189609f9618ae12ed69cb35960694 passed all six push CI jobs (40281704863). Its inactive Worker version d9c83fb9-b1c2-47e7-8c32-8a6e96e6a7e1 created the dedicated application a03ae965-44e9-40b6-9c10-3f8f2c659c34 with zero instances. The newer browser boundary requires its own commit, CI and inactive deployment record. No paid Rails runtime has started. Acceptance runner scripts are being completed and require a director review before execution.
