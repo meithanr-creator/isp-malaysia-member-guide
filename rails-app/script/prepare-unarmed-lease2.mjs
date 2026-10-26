@@ -4,7 +4,7 @@ import {resolve} from 'node:path';
 import {randomBytes,createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {LEASE2,leaseContext,selectLease,buildLease2Seed} from './staging-lease-context.mjs';
-import {validUuid} from '../cloudflare/src/diagnostics.js';
+
 const ROOT='D:/Projects/isp-member-rails',ACCOUNT='a9720867333b64a4f8ee70cdfd673eb9',WORKER='isp-member-production',CANDIDATE='80d32fddf88251a6608ba047a577ce16efe8c834';
 const context=leaseContext(LEASE2),SEED=context.privateRoot+'/runtime-seed.json',CONFIG=context.privateRoot+'/wrangler-v2.jsonc';
 let stage='plan';
@@ -15,7 +15,9 @@ function absent(path){try{fs.lstatSync(path);}catch(error){if(error.code==='ENOE
 const json=path=>JSON.parse(fs.readFileSync(fixed(path),'utf8').replace(/^\uFEFF/,''));
 function exclusive(path,text){const fd=fs.openSync(path,'wx',0o600);try{fs.writeFileSync(fd,text);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}}
 export function buildInactiveConfig(v1,image){
- guard(image?.account===ACCOUNT&&image.worker===WORKER&&image.candidate===CANDIDATE&&image.status==='success'&&image.runtime_started===false&&image.trigger_restored===true&&validUuid(image.build_uuid)&&typeof image.image_digest==='string'&&image.image_digest.length===71&&/^sha256:[a-f0-9]{64}$/.test(image.image_digest));
+ guard(image?.account===ACCOUNT&&image.worker===WORKER&&image.candidate===CANDIDATE&&image.status==='success'&&image.runtime_started===false&&image.commands_inert===true&&image.applications===0&&image.ingress_closed===true&&image.phase==='confirmed'&&image.auth_cleanup_pending===false&&typeof image.image_digest==='string'&&image.image_digest.length===71&&/^sha256:[a-f0-9]{64}$/.test(image.image_digest));
+ guard(!Object.hasOwn(image,'build_uuid')&&!Object.hasOwn(image,'trigger_restored'));
+ guard(image.provider==='github-actions+crane'&&image.workflow_source==='73add85e87235caccb8661208b8fe28a5cdd0a2c'&&image.github_run_id===40351242941&&image.github_job_id===121671738041&&image.artifact_id===12664935022&&image.artifact_sha256==='a9fa0c7dbfe3c340e361809fbb23e7e77e9b01f2a1495be69f79d44679251a1e'&&/^[a-f0-9]{64}$/.test(image.archive_sha256||'')&&/^[a-f0-9]{64}$/.test(image.tar_sha256||'')&&/^sha256:[a-f0-9]{64}$/.test(image.image_id||'')&&image.image_digest===image.expected_digest);
  guard(image.image===`registry.cloudflare.com/${ACCOUNT}/isp-member-rails@${image.image_digest}`);
  guard(v1.name===WORKER&&v1.account_id===ACCOUNT&&v1.workers_dev===false&&v1.preview_urls===false&&Array.isArray(v1.routes)&&v1.routes.length===0&&v1.observability?.enabled===false);
  const vars=v1.vars;const names=['ISP_CONTAINER_ENABLED','APP_HOST','ISP_STAGING_START_AT','ISP_STAGING_EXPIRES_AT','ISP_DEMO_MODE','ISP_ACCOUNT_EMAILS_ENABLED','ISP_ACCOUNT_EMAIL_DISPATCHER_ENABLED','DB_SSLMODE'];guard(vars&&Object.keys(vars).length===names.length&&names.every(name=>Object.hasOwn(vars,name)));guard(vars?.ISP_CONTAINER_ENABLED==='false'&&vars.ISP_STAGING_START_AT===''&&vars.ISP_STAGING_EXPIRES_AT===''&&vars.APP_HOST==='isp-member-production.meithan-r.workers.dev'&&vars.DB_SSLMODE==='verify-full'&&['ISP_DEMO_MODE','ISP_ACCOUNT_EMAILS_ENABLED','ISP_ACCOUNT_EMAIL_DISPATCHER_ENABLED'].every(key=>vars[key]==='false'));

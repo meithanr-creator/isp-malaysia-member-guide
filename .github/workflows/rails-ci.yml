@@ -138,7 +138,7 @@ jobs:
       - name: Test environment isolation and direct-connection guards
         run: npm run test:neon-tools
       - name: Verify private staging controls and safe shutdown
-        run: node --test script/cloudflare-staging-ops.test.mjs script/cloudflare-staging-watchdog.test.mjs script/staging-lease-context.test.mjs script/prepare-unarmed-lease2.test.mjs
+        run: node --test script/cloudflare-staging-ops.test.mjs script/cloudflare-staging-watchdog.test.mjs script/staging-lease-context.test.mjs script/prepare-unarmed-lease2.test.mjs script/upload-reviewed-image-2.test.mjs
       - name: Validate bounded hosted acceptance tools without network or credentials
         run: |
           ruby -c script/hosted-acceptance-fixtures.rb
@@ -184,7 +184,7 @@ jobs:
           node script/local-browser-gate-diagnostic.mjs
 
   reviewed_image_artifact:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/production-readiness'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/production-readiness' && startsWith(github.event.head_commit.message, 'Export reviewed scanner-tested image')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

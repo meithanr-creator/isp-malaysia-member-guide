@@ -1,5 +1,7 @@
 # Production closure ledger — 26 October 2026
 
+Latest disposition: see PRODUCTION-STATUS-2026-10-27.md. Local image verification is complete; registry upload and hosted/launch gates remain open.
+
 **Decision: production NO-GO. Continue reviewed preparation and image-only work; no runtime activation. The completed Cloudflare lease must not be restarted or extended.** All project, private material and evidence remain on drive D. Shop and Plantation Jobs are frozen DEMO references; Academy and Forum remain removed. Production testing does not cover those demos.
 
 ## Evidence that can be retained
