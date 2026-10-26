@@ -2,22 +2,33 @@
 import fs from 'node:fs';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
-const ROOT='D:/Projects/isp-member-rails',PRIVATE='D:/Projects/isp-rails-tools/isp-staging-private';
+import {selectLease,leaseContext,readPreparedRelease,assertActiveRelease,assertWatchdogTuple,assertWritableLease} from './staging-lease-context.mjs';
+const CONTEXT=leaseContext(selectLease());
+if(process.argv[2]==='--execute')assertWritableLease(CONTEXT);
+const ROOT='D:/Projects/isp-member-rails',PRIVATE=CONTEXT.privateRoot;
 const ORIGIN='https://isp-member-production.meithan-r.workers.dev';
 process.env.PLAYWRIGHT_BROWSERS_PATH='D:/Projects/isp-rails-tools/virtual-browsers';
 const require=createRequire('D:/Projects/isp-rails-tools/virtual-browser-tools/package.json');
 const {chromium,webkit,devices}=require('playwright');
 const report={version:1,scope:'Virtual browser engines and mobile profiles; no physical-device or native installation claim',started_at:new Date().toISOString(),profiles:[]};
-const save=()=>fs.writeFileSync(`${ROOT}/audit/virtual-mobile-acceptance.json`,JSON.stringify(report,null,2));
+const save=()=>fs.writeFileSync(`${CONTEXT.auditRoot}/virtual-mobile-acceptance.json`,JSON.stringify(report,null,2));
 const assert=(value,message)=>{if(!value)throw new Error(message)};
 const read=name=>JSON.parse(fs.readFileSync(`${PRIVATE}/${name}`,'utf8'));
 async function main(){
  if(process.argv[2]!=='--execute')throw new Error('Explicit --execute required');if(require('playwright/package.json').version!=='1.64.1')throw new Error('Reviewed browser tool version required');
  const runtime=read('runtime.json'),fixtures=read('acceptance-fixtures.json'),release=read('acceptance-release.json'); report.release={worker_source:release.worker_source,worker_version:release.worker_version,rails_source:release.rails_source,image_digest:release.image_digest}; report.run_marker=fixtures.run_marker;
+ const prepared=readPreparedRelease(CONTEXT);
+ if(CONTEXT.fresh){
+  assertActiveRelease(CONTEXT,runtime,release,prepared);
+  const plan=read('watchdog-plan.json'),state=read('watchdog-state.json'),now=Date.now(),updated=Date.parse(state.updated_at);
+  assertWatchdogTuple(CONTEXT,runtime,plan,state,prepared);
+  assert(state.armed===true&&Number.isFinite(updated)&&updated<=now+5000&&now-updated<=45000&&Date.parse(state.stop_at)===Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-5*60000&&Number.isSafeInteger(state.pid)&&state.pid>0,'Live matching watchdog required');
+  try{process.kill(state.pid,0);}catch{assert(false,'Live matching watchdog required');}
+ }
  const deadline=Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-10*60000;
  assert(runtime.APP_HOST===new URL(ORIGIN).host&&/^[a-f0-9]{64}$/.test(runtime.ISP_STAGING_KEY),'Private runtime missing');
  assert(Number.isFinite(deadline)&&Date.now()<deadline,'Acceptance window unavailable');
- assert(fixtures.phase==='active'&&fixtures.target?.project==='royal-glitter-45740959'&&fixtures.target?.host==='ep-delicate-frost-a1o15wrb.ap-southeast-1.aws.neon.tech'&&fixtures.target?.database==='neondb'&&fixtures.actors.member_b&&/^qa-\d{8}-[a-f0-9]{12}$/.test(fixtures.run_marker),'Controlled active fixture required'); assert(/^[a-f0-9]{40}$/.test(release.worker_source)&&/^[a-f0-9-]{36}$/.test(release.worker_version)&&release.rails_source==='c9a5142bd8c949c6415c3639c0113ee015f9a3f4'&&release.image_digest==='sha256:0187a1e32351a3f7a8f9c87a48798c0adf31f3b6c4116309c78f638582700cd2','Exact release metadata required');
+ assert(fixtures.phase==='active'&&fixtures.target?.project==='royal-glitter-45740959'&&fixtures.target?.host==='ep-delicate-frost-a1o15wrb.ap-southeast-1.aws.neon.tech'&&fixtures.target?.database==='neondb'&&fixtures.actors.member_b&&/^qa-\d{8}-[a-f0-9]{12}$/.test(fixtures.run_marker),'Controlled active fixture required'); if(!CONTEXT.fresh)assert(/^[a-f0-9]{40}$/.test(release.worker_source)&&/^[a-f0-9-]{36}$/.test(release.worker_version)&&release.rails_source==='c9a5142bd8c949c6415c3639c0113ee015f9a3f4'&&release.image_digest==='sha256:0187a1e32351a3f7a8f9c87a48798c0adf31f3b6c4116309c78f638582700cd2','Exact release metadata required');
  for(const [name,engine,profile] of [['iphone-webkit',webkit,'iPhone 13'],['android-chromium',chromium,'Pixel 7']]){
   const result={name,profile,engine:name.includes('webkit')?'WebKit':'Chromium',checks:[],screenshots:[],errors:[],requests:0};report.profiles.push(result);save();
   const browser=await engine.launch({headless:true});
@@ -54,7 +65,7 @@ async function main(){
    const box=await menu.boundingBox();check(box.width>=44&&box.height>=44,'Menu touch target at least 44 CSS pixels');
    check(box.x>devices[profile].viewport.width/2,'Three-line menu stays top right');
    await menu.click();
-   const snap=async label=>{const file=`${ROOT}/audit/${name}-${label}.png`;await page.screenshot({path:file,fullPage:true});result.screenshots.push(file);};
+   const snap=async label=>{const file=`${CONTEXT.auditRoot}/${name}-${label}.png`;await page.screenshot({path:file,fullPage:true});result.screenshots.push(file);};
    await snap('landing');
    await page.goto(`${ORIGIN}/login`);await page.getByLabel('Email address',{exact:true}).fill(fixtures.actors.member_b.email);await page.getByLabel('Password',{exact:true}).fill(fixtures.actors.member_b.password);
    await Promise.all([page.waitForURL('**/member/dashboard'),page.getByRole('button',{name:'Sign in',exact:false}).click()]);
@@ -86,6 +97,6 @@ async function main(){
   }catch(error){result.failure_phase=phase;result.status='fail';result.failure='Virtual browser acceptance failed; detailed error retained privately';fs.writeFileSync(PRIVATE+"/"+name+"-failure.txt",String(error.stack||error),{mode:0o600});process.exitCode=1;}
   finally{clearTimeout(stopTimer);await context.close();await browser.close();result.finished_at=new Date().toISOString();save();}
  }
- report.finished_at=new Date().toISOString();save();console.log(JSON.stringify({profiles:report.profiles.map(p=>({name:p.name,engine:p.engine,version:p.engine_version,status:p.status,checks:p.checks.length,failure:p.failure})),evidence:`${ROOT}/audit/virtual-mobile-acceptance.json`}));
+ report.finished_at=new Date().toISOString();save();console.log(JSON.stringify({profiles:report.profiles.map(p=>({name:p.name,engine:p.engine,version:p.engine_version,status:p.status,checks:p.checks.length,failure:p.failure})),evidence:`${CONTEXT.auditRoot}/virtual-mobile-acceptance.json`}));
 }
 main().catch(()=>{report.failure='Virtual acceptance prerequisites or runner failed; private values suppressed';save();console.error(report.failure);process.exitCode=1});

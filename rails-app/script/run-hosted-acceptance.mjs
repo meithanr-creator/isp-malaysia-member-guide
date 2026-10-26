@@ -2,14 +2,16 @@
 // No retries, no provisioning, no secret output; independent cost watchdog is mandatory.
 import fs from 'node:fs';
 import {spawnSync} from 'node:child_process';
-const ROOT='D:/Projects/isp-member-rails',PRIVATE='D:/Projects/isp-rails-tools/isp-staging-private';
+import {selectLease,leaseContext,readPreparedRelease,assertRuntimeRelease,assertActiveRelease,assertWatchdogTuple,assertWritableLease} from './staging-lease-context.mjs';
+const CONTEXT=leaseContext(selectLease());
+const ROOT='D:/Projects/isp-member-rails',PRIVATE=CONTEXT.privateRoot;
 const get=file=>JSON.parse(fs.readFileSync(PRIVATE+'/'+file,'utf8'));
 function fail(){throw Error('Acceptance sequencing stopped; inspect preserved evidence before any further mutation')}
-let requireWatchdog=false,expectedWindow=null;
+let requireWatchdog=false,expectedWindow=null,expectedRuntime=null,prepared=null;
 function verifyWatchdog(){
  const state=get('watchdog-state.json'),plan=get('watchdog-plan.json'),now=Date.now();
  const updated=Date.parse(state.updated_at),stop=Date.parse(state.stop_at);
- if(plan.account!=='a9720867333b64a4f8ee70cdfd673eb9'||plan.worker!=='isp-member-production'||plan.application_name!=='isp-member-production'||plan.application_id!=='a03ae965-44e9-40b6-9c10-3f8f2c659c34'||state.application_id!==plan.application_id||plan.start_at!==expectedWindow.start||plan.expires_at!==expectedWindow.end)fail();
+ assertWatchdogTuple(CONTEXT,expectedRuntime,plan,state,prepared);
  if(state.armed!==true||!Number.isFinite(updated)||updated>now+5000||now-updated>45000||!Number.isFinite(stop)||stop!==Date.parse(expectedWindow.end)-5*60000||!Number.isSafeInteger(state.pid)||state.pid<=0)fail();
  try{process.kill(state.pid,0)}catch{fail()}
 }
@@ -24,7 +26,12 @@ try{
  if(process.argv.length!==3||process.argv[2]!=='--execute'){
   console.log(JSON.stringify({executes:false,batches:plan.batches,sequence:'HTTPS batch, independent database status, reconcile; halt on failure',automatic_retries:0}));
  }else{
+  assertWritableLease(CONTEXT);
   const runtime=get('runtime.json'),fixture=get('acceptance-fixtures.json'),watchdog=get('watchdog-state.json');
+  prepared=readPreparedRelease(CONTEXT);
+  assertRuntimeRelease(CONTEXT,runtime,prepared);
+  if(CONTEXT.fresh)assertActiveRelease(CONTEXT,runtime,get('acceptance-release.json'),prepared);
+  expectedRuntime=runtime;
   const deadline=Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-10*60000;expectedWindow={start:runtime.ISP_STAGING_START_AT,end:runtime.ISP_STAGING_EXPIRES_AT};requireWatchdog=true;verifyWatchdog();
   if(!Number.isFinite(deadline)||deadline<=Date.now()||fixture.phase!=='active'||watchdog.armed!==true||Date.now()-Date.parse(watchdog.updated_at)>45000)fail();
   for(const batch of plan.batches){

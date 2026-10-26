@@ -7,9 +7,13 @@ require "digest"
 require "pg"
 require "time"
 
+begin
 class HostedAcceptanceFixtures
   class Refused < StandardError; end
-  ROOT = "D:/Projects/isp-rails-tools/isp-staging-private".freeze
+  ROOT = {
+    nil => "D:/Projects/isp-rails-tools/isp-staging-private",
+    "rails-staging-2" => "D:/Projects/isp-rails-tools/isp-staging-private/leases/rails-staging-2"
+  }.fetch(ENV["ISP_STAGING_LEASE"]) { raise Refused, "Fixture lease refused." }.freeze
   MANIFEST = "#{ROOT}/acceptance-fixtures.json".freeze
   OBSERVATIONS = "#{ROOT}/acceptance-db-observations.json".freeze
   PROJECT = "royal-glitter-45740959".freeze
@@ -22,6 +26,9 @@ class HostedAcceptanceFixtures
     "registry" => MembershipRegistryEntry }.freeze
   def refuse! = raise(Refused, "Fixture operation refused; review the private staging prerequisites.")
   def guard!
+    if ENV["ISP_STAGING_LEASE"].nil? && ARGV.first != "status"
+      refuse! if File.exist?("D:/Projects/isp-rails-tools/isp-staging-private/leases/rails-staging-2/prepared-release.json")
+    end
     refuse! unless Rails.env.production? && ENV["ISP_ACCEPTANCE_FIXTURES"] == "true"
     refuse! unless ENV["ISP_ACCEPTANCE_NEON_PROJECT"] == PROJECT
     refuse! unless ENV["ISP_DEMO_MODE"] == "false"
@@ -260,6 +267,9 @@ class HostedAcceptanceFixtures
   end
 
   def guard!
+    if ENV["ISP_STAGING_LEASE"].nil? && ARGV.first != "status"
+      refuse! if File.exist?("D:/Projects/isp-rails-tools/isp-staging-private/leases/rails-staging-2/prepared-release.json")
+    end
     original_guard!
     raw = @db.raw_connection
     refuse! unless ENV["NEON_VERIFY_HOST"] == APPROVED_HOST
@@ -565,10 +575,11 @@ class HostedAcceptanceFixtures
   end
 end
 
-begin
   HostedAcceptanceFixtures.new.run!(ARGV)
 rescue StandardError => error
-  File.write("D:/Projects/isp-rails-tools/isp-staging-private/fixture-last-exception.txt", "#{error.class}: #{error.message}\n#{Array(error.backtrace).first(12).join("\n")}", mode: "w", perm: 0o600)
+  if defined?(HostedAcceptanceFixtures::ROOT)
+    File.write("#{HostedAcceptanceFixtures::ROOT}/fixture-last-exception.txt", "#{error.class}: #{error.message}\n#{Array(error.backtrace).first(12).join("\n")}", mode: "w", perm: 0o600)
+  end
   # Never print inherited adapter/S3 exceptions or connection configuration.
   warn JSON.generate(ok: false, error: "Fixture operation refused or failed; inspect private state before retrying.")
   exit 1

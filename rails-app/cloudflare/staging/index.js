@@ -140,3 +140,5 @@ export default {async fetch(request,env) {
   return await fetchWithTrace(deadlineRequest(new Request(request,{headers,cf:request.cf}),window.end),env,trustedTrace);
  }catch{return unavailable();}
 }};
+// A distinct exported class creates a fresh namespace; the expired v1 state stays intact.
+export {RailsContainer as RailsStaging2};

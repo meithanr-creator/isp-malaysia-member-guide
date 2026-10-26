@@ -6,7 +6,7 @@ import { parseEnv } from 'node:util';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = 'D:/Projects/isp-member-rails';
-const PRIVATE = 'D:/Projects/isp-rails-tools/isp-staging-private';
+import {LEGACY_LEASE,selectLease,leaseContext,assertWritableLease} from './staging-lease-context.mjs';
 const TEMP = 'D:/Projects/isp-rails-tools/tmp';
 const CA = 'D:/Projects/isp-rails-tools/ruby34-devkit/lib/ruby/3.4.0/etc/ssl/cert.pem';
 const HOST = 'ep-delicate-frost-a1o15wrb.ap-southeast-1.aws.neon.tech';
@@ -65,7 +65,8 @@ function directUrl(local) {
   return local.DATABASE_URL_UNPOOLED;
 }
 
-export function buildEnvironment() {
+export function buildEnvironment({leaseId=LEGACY_LEASE}={}) {
+  const selected=leaseContext(leaseId),PRIVATE=selected.privateRoot;
   if (process.platform !== 'win32') fail('This operator is restricted to the approved Windows staging workspace.');
   fixedPath(ROOT, true);
   fixedPath(PRIVATE, true);
@@ -79,7 +80,7 @@ export function buildEnvironment() {
     if (error instanceof SafeError) throw error;
     fail('The ignored local Neon configuration is unavailable.');
   }
-  const r2 = json(join(PRIVATE, 'r2.json'));
+  const r2 = json(join(selected.credentialRoot, 'r2.json'));
   const runtime = json(join(PRIVATE, 'runtime.json'));
   if (r2.STORAGE_BUCKET !== BUCKET ||
       !/^[A-Za-z0-9_+/=-]{16,256}$/.test(r2.AWS_ACCESS_KEY_ID || '') ||
@@ -109,6 +110,7 @@ export function buildEnvironment() {
   const database = directUrl(local);
   return {
     ...env, ...keys,
+    ...(selected.fresh?{ISP_STAGING_LEASE:selected.leaseId}:{}),
     DATABASE_URL: database, DATABASE_URL_UNPOOLED: database,
     NEON_VERIFY_HOST: HOST, PGSSLROOTCERT: CA, SSL_CERT_FILE: CA, AWS_CA_BUNDLE: CA, DB_SSLMODE: 'verify-full',
     RAILS_ENV: 'production', RAILS_LOG_LEVEL: 'fatal',
@@ -132,7 +134,9 @@ export function main(args = process.argv.slice(2)) {
     fail('Usage: node script/hosted-acceptance-operator.mjs setup|capture-ids|status|cleanup');
   }
   const action = args[0];
-  const env = buildEnvironment();
+  const selected=leaseContext(selectLease());
+  if(action!=='status')assertWritableLease(selected);
+  const env = buildEnvironment({leaseId:selected.leaseId});
   const result = spawnSync('powershell.exe', [
     '-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
     '-File', fixedPath(join(ROOT, 'script', 'rails.ps1')),
@@ -143,7 +147,7 @@ export function main(args = process.argv.slice(2)) {
     timeout: 180000, maxBuffer: 2 * 1024 * 1024,
   });
   if (result.error || result.status !== 0) {
-    writeFileSync(PRIVATE + '/fixture-last-error.txt', String(result.stderr || '') + '\n' + String(result.stdout || ''), {mode:0o600});
+    writeFileSync(selected.privateRoot + '/fixture-last-error.txt', String(result.stderr || '') + '\n' + String(result.stdout || ''), {mode:0o600});
     fail('Fixture command failed; private child output was withheld. Inspect private state before retrying.');
   }
   const summaries = [];

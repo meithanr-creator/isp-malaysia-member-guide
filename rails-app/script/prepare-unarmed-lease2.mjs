@@ -1,0 +1,39 @@
+// Offline preparation only: no provider API, runtime window, data import or activation.
+import fs from 'node:fs';
+import {resolve} from 'node:path';
+import {randomBytes,createHash} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
+import {LEASE2,leaseContext,selectLease,buildLease2Seed} from './staging-lease-context.mjs';
+import {validUuid} from '../cloudflare/src/diagnostics.js';
+const ROOT='D:/Projects/isp-member-rails',ACCOUNT='a9720867333b64a4f8ee70cdfd673eb9',WORKER='isp-member-production',CANDIDATE='98d271dd2e105a263a214f238795b7331f7c001f';
+const context=leaseContext(LEASE2),SEED=context.privateRoot+'/runtime-seed.json',CONFIG=context.privateRoot+'/wrangler-v2.jsonc';
+let stage='plan';
+function guard(value){if(!value)throw Error('Unarmed preparation refused');}
+const normalized=path=>resolve(path).replaceAll('\\','/').toLowerCase();
+function fixed(path,directory=false){const stat=fs.lstatSync(path);guard(!stat.isSymbolicLink()&&normalized(fs.realpathSync(path))===normalized(path));guard(directory?stat.isDirectory():stat.isFile()&&stat.size<=65536);return path;}
+function absent(path){try{fs.lstatSync(path);}catch(error){if(error.code==='ENOENT')return;throw error;}throw Error('Unarmed output already exists');}
+const json=path=>JSON.parse(fs.readFileSync(fixed(path),'utf8').replace(/^\uFEFF/,''));
+function exclusive(path,text){const fd=fs.openSync(path,'wx',0o600);try{fs.writeFileSync(fd,text);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}}
+export function buildInactiveConfig(v1,image){
+ guard(image?.account===ACCOUNT&&image.worker===WORKER&&image.candidate===CANDIDATE&&image.status==='success'&&image.runtime_started===false&&image.trigger_restored===true&&validUuid(image.build_uuid)&&typeof image.image_digest==='string'&&image.image_digest.length===71&&/^sha256:[a-f0-9]{64}$/.test(image.image_digest));
+ guard(image.image===`registry.cloudflare.com/${ACCOUNT}/isp-member-rails@${image.image_digest}`);
+ guard(v1.name===WORKER&&v1.account_id===ACCOUNT&&v1.workers_dev===false&&v1.preview_urls===false&&Array.isArray(v1.routes)&&v1.routes.length===0&&v1.observability?.enabled===false);
+ const vars=v1.vars;const names=['ISP_CONTAINER_ENABLED','APP_HOST','ISP_STAGING_START_AT','ISP_STAGING_EXPIRES_AT','ISP_DEMO_MODE','ISP_ACCOUNT_EMAILS_ENABLED','ISP_ACCOUNT_EMAIL_DISPATCHER_ENABLED','DB_SSLMODE'];guard(vars&&Object.keys(vars).length===names.length&&names.every(name=>Object.hasOwn(vars,name)));guard(vars?.ISP_CONTAINER_ENABLED==='false'&&vars.ISP_STAGING_START_AT===''&&vars.ISP_STAGING_EXPIRES_AT===''&&vars.APP_HOST==='isp-member-production.meithan-r.workers.dev'&&vars.DB_SSLMODE==='verify-full'&&['ISP_DEMO_MODE','ISP_ACCOUNT_EMAILS_ENABLED','ISP_ACCOUNT_EMAIL_DISPATCHER_ENABLED'].every(key=>vars[key]==='false'));
+ guard(Array.isArray(v1.containers)&&v1.containers.length===1&&Array.isArray(v1.durable_objects?.bindings)&&v1.durable_objects.bindings.length===1);
+ const container=v1.containers[0],binding=v1.durable_objects.bindings[0];
+ guard(container.name===WORKER&&container.class_name==='RailsContainer'&&container.scheduling_policy==='default'&&container.instance_type==='standard-2'&&container.max_instances===1&&container.observability?.enabled===false&&container.image!==image.image);
+ guard(Object.keys(binding).length===2&&binding.name==='RAILS_CONTAINER'&&binding.class_name==='RailsContainer'&&JSON.stringify(v1.migrations)===JSON.stringify([{tag:'rails-container-v1',new_sqlite_classes:['RailsContainer']}]));
+ const config=structuredClone(v1);config.$schema=ROOT+'/cloudflare/node_modules/wrangler/config-schema.json';config.main=ROOT+'/cloudflare/staging/index.js';
+ config.containers[0].class_name='RailsStaging2';config.containers[0].image=image.image;config.durable_objects.bindings[0].class_name='RailsStaging2';config.migrations.push({tag:'rails-staging-v2',new_sqlite_classes:['RailsStaging2']});return config;
+}
+export function prepare(){
+ guard(selectLease()===LEASE2);stage='paths';
+ for(const path of [context.credentialRoot,context.credentialRoot+'/leases',context.privateRoot,context.auditRoot])fixed(path,true);
+ for(const path of [SEED,CONFIG,context.privateRoot+'/runtime.json'])absent(path);
+ stage='image_and_config';const image=json(context.auditRoot+'/image-build.json'),config=buildInactiveConfig(json(ROOT+'/cloudflare/staging/wrangler.jsonc'),image),text=JSON.stringify(config,null,2)+'\n';
+ stage='seed';const seed=buildLease2Seed(json(context.credentialRoot+'/runtime.json'),randomBytes);
+ stage='exclusive_outputs';exclusive(SEED,JSON.stringify(seed,null,2)+'\n');exclusive(CONFIG,text);
+ return {prepared:true,lease_id:LEASE2,seed_key_count:5,candidate:CANDIDATE,image_digest:image.image_digest,config_sha256:createHash('sha256').update(text).digest('hex'),runtime_created:false,timestamps_armed:false,activation:false,network_requests:0};
+}
+function main(){const mode=process.argv[2]||'--plan';if(mode==='--plan')return console.log(JSON.stringify({lease_id:LEASE2,outputs:['runtime-seed.json','wrangler-v2.jsonc'],runtime_created:false,activation:false,network_requests:0}));guard(mode==='--prepare'&&process.argv.length===3);console.log(JSON.stringify(prepare()));}
+if(process.argv[1]&&fileURLToPath(import.meta.url)===resolve(process.argv[1]))try{main();}catch{console.error(JSON.stringify({error:'Unarmed lease2 preparation refused; inspect fixed private files.',stage}));process.exitCode=1;}

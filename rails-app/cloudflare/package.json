@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --import ./test/register-loader.mjs --test test/*.test.mjs staging/*.test.mjs",
-    "deploy": "wrangler deploy",
+    "deploy": "node manual-deploy-guard.mjs",
     "check": "node check.mjs && node staging/check.mjs"
   },
   "engines": {

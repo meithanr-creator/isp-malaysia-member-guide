@@ -7,17 +7,25 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import {cleanTrace} from '../cloudflare/staging/diagnostics.js';
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const PRIVATE='D:/Projects/isp-rails-tools/isp-staging-private';
+import {selectLease,leaseContext,readPreparedRelease,assertActiveRelease,assertWatchdogTuple,assertWritableLease} from './staging-lease-context.mjs';
+const CONTEXT=leaseContext(selectLease()),PRIVATE=CONTEXT.privateRoot;
 const ORIGIN='https://isp-member-production.meithan-r.workers.dev';
 const HTTP_FILE=path.join(PRIVATE,'acceptance-http.json');
 const OBS_FILE=path.join(PRIVATE,'acceptance-db-observations.json');
-const RESULT_FILE=path.join(ROOT,'audit','hosted-acceptance.json');
+const RESULT_FILE=path.join(CONTEXT.auditRoot,'hosted-acceptance.json');
 const decode=s=>String(s).replace(/&(#x[0-9a-f]+|#\d+|amp|quot|apos|lt|gt);/gi,(_,x)=>x[0]==='#'?String.fromCodePoint(parseInt(x.slice(x[1]==='x'?2:1),x[1]==='x'?16:10)):({amp:'&',quot:'"',apos:"'",lt:'<',gt:'>'}[x.toLowerCase()]));
 const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
 class Blocked extends Error {}
 function check(ok,message){if(!ok)throw new Error(message);}
 function safePath(file){const target=path.resolve(file);check(/^[dD]:[\\/]/.test(target),'Artifacts must stay on D');let cursor=target;while(!fs.existsSync(cursor))cursor=path.dirname(cursor);for(;;){check(!fs.lstatSync(cursor).isSymbolicLink(),'Reparse/symbolic paths refused');const parent=path.dirname(cursor);if(parent===cursor)break;cursor=parent;}check(/^[dD]:[\\/]/.test(fs.realpathSync(path.dirname(target))),'Resolved destination must stay on D');return target;}
 function json(file){return JSON.parse(fs.readFileSync(safePath(file),'utf8'));}
+function verifyLeaseWatchdog(runtime,prepared){
+ const plan=json(path.join(PRIVATE,'watchdog-plan.json')),state=json(path.join(PRIVATE,'watchdog-state.json')),now=Date.now();
+ assertWatchdogTuple(CONTEXT,runtime,plan,state,prepared);
+ const updated=Date.parse(state.updated_at),stop=Date.parse(state.stop_at);
+ check(state.armed===true&&Number.isFinite(updated)&&updated<=now+5000&&now-updated<=45000&&stop===Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-5*60000&&Number.isSafeInteger(state.pid)&&state.pid>0,'Live matching watchdog required');
+ try{process.kill(state.pid,0);}catch{check(false,'Live matching watchdog required');}
+}
 function atomic(file,value){safePath(file);const tmp=file+'.tmp-'+crypto.randomBytes(5).toString('hex');fs.writeFileSync(tmp,JSON.stringify(value,null,2),{mode:0o600,flag:'wx'});fs.renameSync(tmp,file);}
 function attrs(tag){const out={};for(const m of tag.matchAll(/([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g))out[m[1].toLowerCase()]=decode(m[2]??m[3]??m[4]??'');return out;}
 function sameOrigin(target){const url=new URL(target,ORIGIN);check(url.origin===ORIGIN&&!url.username&&!url.password,'Cross-origin credential forwarding refused');return url;}
@@ -154,16 +162,22 @@ function observationRulesMatch(obs, rules) {
 function reconcile(state){let obs;try{obs=json(OBS_FILE);}catch{return;}const captured=Date.parse(obs.captured_at);if(obs.version!==1||obs.run_marker!==state.run_marker||JSON.stringify(obs.target)!==JSON.stringify(state.target)||!Number.isFinite(captured)||captured>Date.now()+5000)return;for(const c of Object.values(state.cases)){if(c.http!=='PASS'||c.status!=='BLOCKED'||!c.db?.length)continue;const cutoff=Date.parse(c.observed_after);if(!Number.isFinite(cutoff)||captured<cutoff)continue;const valid=observationRulesMatch(obs,c.db);c.status=valid?'PASS':'FAIL';c.db_observed_at=obs.captured_at;c.observation_sha256=hash(Buffer.from(JSON.stringify(obs)));const evidence=path.join(PRIVATE,'acceptance-db-'+INVENTORY[c.id][0]+'.json');atomic(evidence,obs);c.observation_file=evidence;c.reason=valid?undefined:'Independent persisted-state assertion failed';c.assertions.push(valid?'Fresh independent persisted-state assertions matched':'Fresh independent persisted-state assertions failed');}}
 function publicReport(state){const cases=Object.entries(INVENTORY).map(([id,[batch,area]])=>{const c=state.cases[id]??{id,area,status:'NOT RUN',http:'NOT RUN',assertions:[]};return{id,area,batch,status:c.status,http:c.http,started_at:c.started_at,finished_at:c.finished_at,assertions:c.assertions,requests:c.requests,db_observed_at:c.db_observed_at,observation_sha256:c.observation_sha256,reason:c.reason};});return{version:1,run_marker:state.run_marker,candidate:state.candidate,deployment_id:state.deployment_id,origin:ORIGIN,generated_at:new Date().toISOString(),requests:state.request_count??0,areas:Object.fromEntries([...new Set(cases.map(c=>c.area))].map(area=>{const rows=cases.filter(c=>c.area===area);return[area,rows.some(c=>c.status==='FAIL')?'FAIL':rows.every(c=>c.status==='PASS')?'PASS':'BLOCKED'];})),cases};}
 async function execute(batch){
+  assertWritableLease(CONTEXT);
   check(!process.env.NODE_TLS_REJECT_UNAUTHORIZED||process.env.NODE_TLS_REJECT_UNAUTHORIZED==='1','Insecure ambient TLS setting refused');
   const runtime=json(path.join(PRIVATE,'runtime.json')),fixtures=json(path.join(PRIVATE,'acceptance-fixtures.json'));
+  const prepared=readPreparedRelease(CONTEXT);
+  if(CONTEXT.fresh){assertActiveRelease(CONTEXT,runtime,json(path.join(PRIVATE,'acceptance-release.json')),prepared);verifyLeaseWatchdog(runtime,prepared);}
   check(fixtures.version===1&&fixtures.phase==='active'&&/^qa-\d{8}-[a-f0-9]{12}$/.test(fixtures.run_marker),'Active reviewed fixture manifest required');
   check(runtime.APP_HOST===new URL(ORIGIN).hostname&&runtime.RAILS_ENV==='production'&&runtime.ISP_DEMO_MODE==='false','Exact hosted production mode required');
   check(runtime.ISP_ACCOUNT_EMAILS_ENABLED==='false'&&runtime.ISP_ACCOUNT_EMAIL_DISPATCHER_ENABLED==='false','Disabled identity mail flags required');
   check(/^[a-f0-9]{40}$/.test(runtime.CANDIDATE_COMMIT??'')&&/^[a-zA-Z0-9_-]{6,128}$/.test(runtime.CLOUDFLARE_DEPLOYMENT_ID??''),'Pinned candidate commit and deployment ID required');
   check(BATCHES.includes(batch),'Choose one listed batch');
-  let state;if(fs.existsSync(HTTP_FILE))state=json(HTTP_FILE);
+  const savedState=fs.existsSync(HTTP_FILE);
+  let state;if(savedState)state=json(HTTP_FILE);
+  if(savedState&&CONTEXT.fresh)check(state.lease_id===CONTEXT.leaseId&&state.prepared_release_sha256===prepared.prepared_release_sha256,'Checkpoint lease identity mismatch');
   if(state){check(state.run_marker===fixtures.run_marker&&state.candidate===runtime.CANDIDATE_COMMIT&&state.deployment_id===runtime.CLOUDFLARE_DEPLOYMENT_ID&&JSON.stringify(state.target)===JSON.stringify(fixtures.target),'Checkpoint candidate/deployment/target mismatch');check(!state.halted&&!state.running_batch,'Prior interrupted/failed execution requires inspection; automatic retry refused');check(!state.completed_batches?.includes(batch),'Completed batch cannot be replayed');reconcile(state);check(!Object.values(state.cases).some(c=>c.http==='PASS'&&c.db?.length&&c.status!=='PASS'),'Capture fresh independent observations and reconcile before another batch');}
   else {check(batch==='identity','Identity must be the first batch');state={version:1,run_marker:fixtures.run_marker,target:fixtures.target,candidate:runtime.CANDIDATE_COMMIT,deployment_id:runtime.CLOUDFLARE_DEPLOYMENT_ID,execution_started:new Date().toISOString(),cases:{},actors:{},completed_batches:[],created:{events:[],publications:[],consultations:[],imports:[],discover:[]}};}
+  if(CONTEXT.fresh&&!savedState)Object.assign(state,{lease_id:CONTEXT.leaseId,prepared_release_sha256:prepared.prepared_release_sha256});
   check(BATCHES.slice(0,BATCHES.indexOf(batch)).every(b=>state.completed_batches.includes(b)),'Prior batches must finish with independent evidence');
   state.running_batch=batch;
   const t=new Transport(runtime,state),mark=fixtures.run_marker;atomic(HTTP_FILE,state);
@@ -280,8 +294,7 @@ if(batch==='aged-stepup'){
   if(Date.now()+wait+150000>=t.stopAt)throw new Blocked('Insufficient fixed window for natural verification aging');
   state.natural_aging={started_at:new Date().toISOString(),duration_ms:wait};atomic(HTTP_FILE,state);
   await new Promise(resolve=>setTimeout(resolve,wait));
-  const wd=json(path.join(PRIVATE,'watchdog-state.json')),stamp=Date.parse(wd.updated_at);
-  check(wd.armed===true&&wd.application_id==='a03ae965-44e9-40b6-9c10-3f8f2c659c34'&&Number.isFinite(stamp)&&stamp<=Date.now()+5000&&Date.now()-stamp<=45000,'Live watchdog required after natural aging');
+  verifyLeaseWatchdog(runtime,prepared);
   expectStatus(await t.request('visitor','/ready',{startup:true}),200);
   const rejected=await submit(t,'admin_a',editor,{...fields('event',{title:mark+' rejected aged editor'}),intent:'draft'});
   expectStatus(rejected,422);expectText(rejected,'Nothing was saved.');
