@@ -6,6 +6,7 @@ module Admin
     rescue_from AdministrativeAction::VerificationRequired, with: :render_editor_verification
     rescue_from AdministrativeAction::Unauthorized, with: :render_revoked_administrator
     rescue_from AdministrativeAction::AuditFailure, with: :render_audit_failure
+    rescue_from UploadOperation::StorageFailure, with: :render_audit_failure
 
     def index
       @publications = Publication.order(updated_at: :desc)
@@ -88,11 +89,14 @@ module Admin
     def update_draft
       attributes = params.require(:publication).permit(*Publication::FIELDS, :lock_version, :pdf, :cover, :remove_pdf, :remove_cover)
       @submitted_lock_version = attributes[:lock_version]
-      success = AdministrativeAction.call(actor: current_user, authentication: current_user_session, target: @publication, action: "publication_draft_update") do
-        @publication.save! if @publication.new_record?
-        PublicationDraftUpdater.new(@publication).call(attributes: attributes.slice(*Publication::FIELDS).to_h,
-          pdf: attributes[:pdf], cover: attributes[:cover], remove_pdf: attributes[:remove_pdf] == "1", remove_cover: attributes[:remove_cover] == "1",
-          expected_lock_version: attributes[:lock_version])
+      operation = UploadOperation.for_publication(pdf: attributes[:pdf], cover: attributes[:cover])
+      success = operation.run do |uploads|
+        AdministrativeAction.call(actor: current_user, authentication: current_user_session, target: @publication, action: "publication_draft_update") do
+          @publication.save! if @publication.new_record?
+          PublicationDraftUpdater.new(@publication).call(attributes: attributes.slice(*Publication::FIELDS).to_h,
+            remove_pdf: attributes[:remove_pdf] == "1", remove_cover: attributes[:remove_cover] == "1",
+            expected_lock_version: attributes[:lock_version], uploads: uploads)
+        end
       end
       @submitted_lock_version = @publication.lock_version if success
       if success && params[:intent] == "preview"

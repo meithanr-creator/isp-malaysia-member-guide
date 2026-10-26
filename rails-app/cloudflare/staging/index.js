@@ -57,9 +57,14 @@ export class RailsContainer extends BaseRailsContainer {
    return await super.fetch(deadlineRequest(request,deadline,true));
   }catch{return unavailable();}
  }
- async startAndWaitForPorts(...args) {
+ async startAndWaitForPorts(options={}) {
   if(this.expired||!this.armedDeadline||Date.now()>=this.armedDeadline)throw new Error('Staging window is closed.');
-  await super.startAndWaitForPorts(...args);
+  // Shared startup is independent of a cancelled caller, but never of the lease.
+  const signals=[AbortSignal.timeout(Math.max(1,Math.ceil(this.armedDeadline-Date.now())))];
+  if(options.cancellationOptions?.abort)signals.push(options.cancellationOptions.abort);
+  await super.startAndWaitForPorts({...options,cancellationOptions:{
+   ...options.cancellationOptions,abort:AbortSignal.any(signals)
+  }});
   if(this.expired||Date.now()>=this.armedDeadline){await this.expireStaging();throw new Error('Staging window is closed.');}
  }
  async expireStaging() {

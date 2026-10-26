@@ -1,5 +1,7 @@
 # Hosted acceptance runbook
 
+> Current authority: [26 October closure ledger](PRODUCTION-CLOSURE-2026-10-26.md). The first hosted rehearsal ran and is stopped; production is NO-GO. Nine initial identity cases and a bounded database restore passed. Event upload and both hosted mobile attempts failed. Offline whole-area fixes are being verified. Statements below that say the runtime has not started are historical. The owner accepted virtual mobile scope; physical-device/native-install evidence is unclaimed and is not a new owner-action gate.
+
 Prepared from current Rails source. This document defines required execution; it records no hosted passes. Pin the exact commit, image digest and Cloudflare deployment ID. Existing application/CI results remain regression evidence and do not close hosted gates.
 
 ## Envelope and fixtures

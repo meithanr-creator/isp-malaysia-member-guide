@@ -1,5 +1,7 @@
 # Astra production acceptance direction
 
+> Current authority: [26 October closure ledger](PRODUCTION-CLOSURE-2026-10-26.md). The first hosted rehearsal ran and is stopped; production is NO-GO. Nine initial identity cases and a bounded database restore passed. Event upload and both hosted mobile attempts failed. Offline whole-area fixes are being verified. Statements below that say the runtime has not started are historical. The owner accepted virtual mobile scope; physical-device/native-install evidence is unclaimed and is not a new owner-action gate.
+
 Recorded 26 October 2026 (Asia/Kuala_Lumpur).
 
 **Director decision: continue towards full production acceptance. Production release remains NO-GO.** Preparation has passed several concrete checks; the deployed application has not yet undergone functional acceptance.

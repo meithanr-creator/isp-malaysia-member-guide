@@ -66,10 +66,16 @@ module IspCloudflare
     def run
       validate_local_scanner!
       deadline = @clock.call + @startup_timeout
+      # Ordinary Rails traffic may serve while scanning initializes. Upload
+      # decisions still use UploadScanner and cannot accept an unscanned file.
+      @processes.start(:rails, RAILS) unless @smoke
       @processes.start(:signature_update, FRESHCLAM)
       loop do
         check_stop!
         exits = @processes.exited
+        unless (exits.keys - [:signature_update]).empty?
+          raise StartupError, "A required child exited during initialization"
+        end
         if exits.key?(:signature_update)
           raise StartupError, "Initial signature update failed" unless exits.fetch(:signature_update)
           break
@@ -97,7 +103,6 @@ module IspCloudflare
         return 0
       end
       @processes.start(:freshclam, FRESHCLAM + ["--daemon", "--foreground"])
-      @processes.start(:rails, RAILS)
       next_probe = @clock.call + 30
       loop do
         check_stop!
@@ -119,13 +124,15 @@ module IspCloudflare
       @processes.stop_all
     end
 
-    def self.http_ready?(env: ENV)
+    def self.http_ready?(env: ENV, full: false,
+      http_factory: -> { Net::HTTP.new("127.0.0.1", 3000, nil) })
       host = env.fetch("APP_HOST")
-      http = Net::HTTP.new("127.0.0.1", 3000, nil)
+      http = http_factory.call
       http.open_timeout = 3
       http.read_timeout = 20
-      response = http.get("/ready", { "Host" => host })
-      response.code == "200" && response.body == "ready"
+      path, expected = full ? ["/ready", "ready"] : ["/app-ready", "application ready"]
+      response = http.get(path, { "Host" => host, "X-Forwarded-Proto" => "https" })
+      response.code == "200" && response.body == expected
     rescue StandardError
       false
     end
@@ -151,6 +158,8 @@ if $PROGRAM_NAME == __FILE__
   case ARGV
   when ["--check"]
     exit(IspCloudflare::Supervisor.http_ready? ? 0 : 1)
+  when ["--check-full"]
+    exit(IspCloudflare::Supervisor.http_ready?(full: true) ? 0 : 1)
   when [], ["--scanner-smoke"]
     smoke = nil
     if ARGV == ["--scanner-smoke"]
@@ -161,6 +170,6 @@ if $PROGRAM_NAME == __FILE__
     %w[TERM INT].each { |signal| Signal.trap(signal) { supervisor.request_stop } }
     exit(supervisor.run)
   else
-    abort "Only normal start, --check or --scanner-smoke is supported; no migration command is run"
+    abort "Only normal start, --check, --check-full or --scanner-smoke is supported; no migration command is run"
   end
 end

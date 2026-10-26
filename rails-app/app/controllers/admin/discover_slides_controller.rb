@@ -28,10 +28,13 @@ module Admin
     def update
       @slide = DiscoverSlide.find(params[:id])
       attributes = params.require(:discover_slide).permit(:tag, :title, :description, :website_url, :image_alt, :image, :lock_version)
-      saved = AdministrativeAction.call(actor: current_user, authentication: current_user_session,
-        target: @slide, action: "discover_update") do
-        DiscoverSlideUpdater.new(@slide).call(attributes: attributes.slice(:tag, :title, :description, :website_url, :image_alt).to_h,
-          image: attributes[:image], expected_lock_version: attributes[:lock_version])
+      operation = UploadOperation.for_discover(image: attributes[:image])
+      saved = operation.run do |uploads|
+        AdministrativeAction.call(actor: current_user, authentication: current_user_session,
+          target: @slide, action: "discover_update") do
+          DiscoverSlideUpdater.new(@slide).call(attributes: attributes.slice(:tag, :title, :description, :website_url, :image_alt).to_h,
+            expected_lock_version: attributes[:lock_version], uploads: uploads)
+        end
       end
       if saved
         redirect_to admin_discover_path(anchor: "discover-card-#{@slide.id}"), notice: "Discover card #{@slide.position} saved. The homepage now shows this version."
@@ -39,6 +42,8 @@ module Admin
         @slides = DiscoverSlide.ordered.map { |slide| slide.id == @slide.id ? @slide : slide }
         render :index, status: :unprocessable_entity
       end
+    rescue UploadOperation::StorageFailure => error
+      render_action_failure(error)
     rescue AdministrativeAction::VerificationRequired => error
       render_action_failure(error, verification: true)
     rescue AdministrativeAction::AuditFailure => error
@@ -79,4 +84,3 @@ module Admin
     end
   end
 end
-

@@ -34,7 +34,7 @@ class EventDraftUpdaterTest < ActiveSupport::TestCase
     assert_equal "Private revision", event.draft_data.fetch("title")
   end
 
-  test "invalid files are rejected before storage and cannot create a publishable preview" do
+  test "invalid files are rejected before storage and preserve the saved preview" do
     event = create_event
     event.prepare_preview!
     revision = event.revision
@@ -45,7 +45,7 @@ class EventDraftUpdaterTest < ActiveSupport::TestCase
     assert_match(/valid JPG, PNG or WebP/, event.errors.full_messages.join)
     assert_equal revision, event.reload.revision
     assert_equal [], event.draft_data.fetch("images")
-    assert_not event.preview_current?
+    assert event.preview_current?
   end
 
   test "images and brochure are stored by signed reference and removed only from the draft" do

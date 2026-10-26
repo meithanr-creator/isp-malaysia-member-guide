@@ -1,0 +1,1070 @@
+{
+  "version": 1,
+  "run_marker": "qa-20261026-5fec518122c9",
+  "candidate": "c9a5142bd8c949c6415c3639c0113ee015f9a3f4",
+  "deployment_id": "ebe55939-c4ac-448c-b39d-2a47209d22b1",
+  "origin": "https://isp-member-production.meithan-r.workers.dev",
+  "generated_at": "2026-10-26T09:42:41.829Z",
+  "requests": 64,
+  "areas": {
+    "consultation": "BLOCKED",
+    "platform": "BLOCKED",
+    "discover": "BLOCKED",
+    "publications": "BLOCKED",
+    "identity": "BLOCKED",
+    "events": "FAIL"
+  },
+  "cases": [
+    {
+      "id": "consultation_csrf_negative",
+      "area": "consultation",
+      "batch": "critical-guards",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "scanner_eicar_rejection",
+      "area": "platform",
+      "batch": "critical-guards",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "discover_replaced_key",
+      "area": "discover",
+      "batch": "critical-replace",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "publication_replaced_key",
+      "area": "publications",
+      "batch": "critical-replace",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "edge_denial",
+      "area": "platform",
+      "batch": "identity",
+      "status": "PASS",
+      "http": "PASS",
+      "started_at": "2026-10-26T09:41:13.818Z",
+      "finished_at": "2026-10-26T09:41:14.520Z",
+      "assertions": [
+        "Missing and wrong API keys denied generically; HTML opens private review; Rails authentication not claimed"
+      ],
+      "requests": [
+        {
+          "alias": "edge",
+          "method": "GET",
+          "path": "/member/dashboard",
+          "status": 503,
+          "duration_ms": 540
+        },
+        {
+          "alias": "edge",
+          "method": "GET",
+          "path": "/member/dashboard",
+          "status": 503,
+          "duration_ms": 96
+        },
+        {
+          "alias": "edge",
+          "method": "GET",
+          "path": "/member/dashboard",
+          "status": 303,
+          "duration_ms": 65
+        }
+      ]
+    },
+    {
+      "id": "health",
+      "area": "platform",
+      "batch": "identity",
+      "status": "PASS",
+      "http": "PASS",
+      "started_at": "2026-10-26T09:41:14.523Z",
+      "finished_at": "2026-10-26T09:41:17.749Z",
+      "assertions": [
+        "Hosted process and dependency readiness returned 200"
+      ],
+      "requests": [
+        {
+          "alias": "visitor",
+          "method": "GET",
+          "path": "/ready",
+          "status": 200,
+          "duration_ms": 2355
+        },
+        {
+          "alias": "visitor",
+          "method": "GET",
+          "path": "/up",
+          "status": 200,
+          "duration_ms": 871
+        }
+      ]
+    },
+    {
+      "id": "visitor_denial",
+      "area": "identity",
+      "batch": "identity",
+      "status": "PASS",
+      "http": "PASS",
+      "started_at": "2026-10-26T09:41:17.752Z",
+      "finished_at": "2026-10-26T09:41:24.216Z",
+      "assertions": [
+        "Rails visitor denied across member and administrator routes"
+      ],
+      "requests": [
+        {
+          "alias": "visitor",
+          "method": "GET",
+          "path": "/member/dashboard",
+          "status": 302,
+          "duration_ms": 907
+        },
+        {
+          "alias": "visitor",
+          "method": "GET",
+          "path": "/member/membership",
+          "status": 302,
+          "duration_ms": 924
+        },
+        {
+          "alias": "visitor",
+          "method": "GET",
+          "path": "/admin/events",
+          "status": 302,
+          "duration_ms": 925
+        },
+        {
+          "alias": "visitor",
+          "method": "GET",
+          "path": "/admin/publications",
+          "status": 302,
+          "duration_ms": 1059
+        },
+        {
+          "alias": "visitor",
+          "method": "GET",
+          "path": "/admin/discover",
+          "status": 302,
+          "duration_ms": 882
+        },
+        {
+          "alias": "visitor",
+          "method": "GET",
+          "path": "/admin/consultation_requests",
+          "status": 302,
+          "duration_ms": 879
+        },
+        {
+          "alias": "visitor",
+          "method": "GET",
+          "path": "/member/consultation_requests",
+          "status": 302,
+          "duration_ms": 885
+        }
+      ]
+    },
+    {
+      "id": "credential_rejection",
+      "area": "identity",
+      "batch": "identity",
+      "status": "PASS",
+      "http": "PASS",
+      "started_at": "2026-10-26T09:41:24.219Z",
+      "finished_at": "2026-10-26T09:41:45.405Z",
+      "assertions": [
+        "Pending, suspended, unverified, ineligible, unknown and sample identities receive generic rejection",
+        "Fresh independent persisted-state assertions matched"
+      ],
+      "requests": [
+        {
+          "alias": "reject_pending",
+          "method": "GET",
+          "path": "/login",
+          "status": 200,
+          "duration_ms": 951
+        },
+        {
+          "alias": "reject_pending",
+          "method": "POST",
+          "path": "/session",
+          "status": 422,
+          "duration_ms": 1851
+        },
+        {
+          "alias": "reject_pending",
+          "method": "GET",
+          "path": "/member/dashboard",
+          "status": 302,
+          "duration_ms": 897
+        },
+        {
+          "alias": "reject_suspended",
+          "method": "GET",
+          "path": "/login",
+          "status": 200,
+          "duration_ms": 1287
+        },
+        {
+          "alias": "reject_suspended",
+          "method": "POST",
+          "path": "/session",
+          "status": 422,
+          "duration_ms": 1368
+        },
+        {
+          "alias": "reject_suspended",
+          "method": "GET",
+          "path": "/member/dashboard",
+          "status": 302,
+          "duration_ms": 927
+        },
+        {
+          "alias": "reject_unverified",
+          "method": "GET",
+          "path": "/login",
+          "status": 200,
+          "duration_ms": 1045
+        },
+        {
+          "alias": "reject_unverified",
+          "method": "POST",
+          "path": "/session",
+          "status": 422,
+          "duration_ms": 1321
+        },
+        {
+          "alias": "reject_unverified",
+          "method": "GET",
+          "path": "/member/dashboard",
+          "status": 302,
+          "duration_ms": 855
+        },
+        {
+          "alias": "reject_ineligible",
+          "method": "GET",
+          "path": "/login",
+          "status": 200,
+          "duration_ms": 1046
+        },
+        {
+          "alias": "reject_ineligible",
+          "method": "POST",
+          "path": "/session",
+          "status": 422,
+          "duration_ms": 1667
+        },
+        {
+          "alias": "reject_ineligible",
+          "method": "GET",
+          "path": "/member/dashboard",
+          "status": 302,
+          "duration_ms": 890
+        },
+        {
+          "alias": "reject_unknown",
+          "method": "GET",
+          "path": "/login",
+          "status": 200,
+          "duration_ms": 962
+        },
+        {
+          "alias": "reject_unknown",
+          "method": "POST",
+          "path": "/session",
+          "status": 422,
+          "duration_ms": 1553
+        },
+        {
+          "alias": "reject_unknown",
+          "method": "GET",
+          "path": "/member/dashboard",
+          "status": 302,
+          "duration_ms": 909
+        },
+        {
+          "alias": "reject_sample",
+          "method": "GET",
+          "path": "/login",
+          "status": 200,
+          "duration_ms": 1407
+        },
+        {
+          "alias": "reject_sample",
+          "method": "POST",
+          "path": "/session",
+          "status": 422,
+          "duration_ms": 1340
+        },
+        {
+          "alias": "reject_sample",
+          "method": "GET",
+          "path": "/member/dashboard",
+          "status": 302,
+          "duration_ms": 904
+        }
+      ],
+      "db_observed_at": "2026-10-26T09:42:37.331059Z",
+      "observation_sha256": "7a42eed55f96bdb34fbcf283f4ce7a1ad5b9161a39368007b1eb8d9d7961cf6d"
+    },
+    {
+      "id": "member_login",
+      "area": "identity",
+      "batch": "identity",
+      "status": "PASS",
+      "http": "PASS",
+      "started_at": "2026-10-26T09:41:45.407Z",
+      "finished_at": "2026-10-26T09:41:53.135Z",
+      "assertions": [
+        "Two independent synthetic members signed in; stored leading-zero references rendered",
+        "Fresh independent persisted-state assertions matched"
+      ],
+      "requests": [
+        {
+          "alias": "member_a",
+          "method": "GET",
+          "path": "/login",
+          "status": 200,
+          "duration_ms": 950
+        },
+        {
+          "alias": "member_a",
+          "method": "POST",
+          "path": "/session",
+          "status": 302,
+          "duration_ms": 1904
+        },
+        {
+          "alias": "member_b",
+          "method": "GET",
+          "path": "/login",
+          "status": 200,
+          "duration_ms": 873
+        },
+        {
+          "alias": "member_b",
+          "method": "POST",
+          "path": "/session",
+          "status": 302,
+          "duration_ms": 1701
+        },
+        {
+          "alias": "member_a",
+          "method": "GET",
+          "path": "/member/membership",
+          "status": 200,
+          "duration_ms": 1200
+        },
+        {
+          "alias": "member_b",
+          "method": "GET",
+          "path": "/member/membership",
+          "status": 200,
+          "duration_ms": 1097
+        }
+      ],
+      "db_observed_at": "2026-10-26T09:42:37.331059Z",
+      "observation_sha256": "7a42eed55f96bdb34fbcf283f4ce7a1ad5b9161a39368007b1eb8d9d7961cf6d"
+    },
+    {
+      "id": "admin_enrollment",
+      "area": "identity",
+      "batch": "identity",
+      "status": "PASS",
+      "http": "PASS",
+      "started_at": "2026-10-26T09:41:53.137Z",
+      "finished_at": "2026-10-26T09:42:11.302Z",
+      "assertions": [
+        "Two actual protected setup keys enrolled via current TOTP; pending challenge denied admin routes; recovery display shown once",
+        "Fresh independent persisted-state assertions matched"
+      ],
+      "requests": [
+        {
+          "alias": "admin_a",
+          "method": "GET",
+          "path": "/login",
+          "status": 200,
+          "duration_ms": 1022
+        },
+        {
+          "alias": "admin_a",
+          "method": "POST",
+          "path": "/session",
+          "status": 302,
+          "duration_ms": 1776
+        },
+        {
+          "alias": "admin_a",
+          "method": "GET",
+          "path": "/admin/events",
+          "status": 302,
+          "duration_ms": 867
+        },
+        {
+          "alias": "admin_a",
+          "method": "GET",
+          "path": "/two-factor",
+          "status": 200,
+          "duration_ms": 1135
+        },
+        {
+          "alias": "admin_a",
+          "method": "POST",
+          "path": "/two-factor",
+          "status": 302,
+          "duration_ms": 2312
+        },
+        {
+          "alias": "admin_a",
+          "method": "GET",
+          "path": "/two-factor/recovery-codes",
+          "status": 200,
+          "duration_ms": 1310
+        },
+        {
+          "alias": "admin_a",
+          "method": "GET",
+          "path": "/two-factor/recovery-codes",
+          "status": 302,
+          "duration_ms": 1032
+        },
+        {
+          "alias": "admin_b",
+          "method": "GET",
+          "path": "/login",
+          "status": 200,
+          "duration_ms": 880
+        },
+        {
+          "alias": "admin_b",
+          "method": "POST",
+          "path": "/session",
+          "status": 302,
+          "duration_ms": 1688
+        },
+        {
+          "alias": "admin_b",
+          "method": "GET",
+          "path": "/admin/events",
+          "status": 302,
+          "duration_ms": 875
+        },
+        {
+          "alias": "admin_b",
+          "method": "GET",
+          "path": "/two-factor",
+          "status": 200,
+          "duration_ms": 1024
+        },
+        {
+          "alias": "admin_b",
+          "method": "POST",
+          "path": "/two-factor",
+          "status": 302,
+          "duration_ms": 1858
+        },
+        {
+          "alias": "admin_b",
+          "method": "GET",
+          "path": "/two-factor/recovery-codes",
+          "status": 200,
+          "duration_ms": 1320
+        },
+        {
+          "alias": "admin_b",
+          "method": "GET",
+          "path": "/two-factor/recovery-codes",
+          "status": 302,
+          "duration_ms": 1061
+        }
+      ],
+      "db_observed_at": "2026-10-26T09:42:37.331059Z",
+      "observation_sha256": "7a42eed55f96bdb34fbcf283f4ce7a1ad5b9161a39368007b1eb8d9d7961cf6d"
+    },
+    {
+      "id": "profile_forgery",
+      "area": "identity",
+      "batch": "identity",
+      "status": "PASS",
+      "http": "PASS",
+      "started_at": "2026-10-26T09:42:11.304Z",
+      "finished_at": "2026-10-26T09:42:13.728Z",
+      "assertions": [
+        "Allowed profile fields saved; forged security and ownership fields ignored",
+        "Fresh independent persisted-state assertions matched"
+      ],
+      "requests": [
+        {
+          "alias": "member_a",
+          "method": "GET",
+          "path": "/member/profile/edit",
+          "status": 200,
+          "duration_ms": 1122
+        },
+        {
+          "alias": "member_a",
+          "method": "POST",
+          "path": "/member/profile",
+          "status": 302,
+          "duration_ms": 1301
+        }
+      ],
+      "db_observed_at": "2026-10-26T09:42:37.331059Z",
+      "observation_sha256": "7a42eed55f96bdb34fbcf283f4ce7a1ad5b9161a39368007b1eb8d9d7961cf6d"
+    },
+    {
+      "id": "role_boundaries",
+      "area": "identity",
+      "batch": "identity",
+      "status": "PASS",
+      "http": "PASS",
+      "started_at": "2026-10-26T09:42:13.731Z",
+      "finished_at": "2026-10-26T09:42:22.797Z",
+      "assertions": [
+        "Member/admin read boundaries enforced"
+      ],
+      "requests": [
+        {
+          "alias": "member_a",
+          "method": "GET",
+          "path": "/admin/events",
+          "status": 403,
+          "duration_ms": 1134
+        },
+        {
+          "alias": "member_a",
+          "method": "GET",
+          "path": "/admin/publications",
+          "status": 403,
+          "duration_ms": 1542
+        },
+        {
+          "alias": "member_a",
+          "method": "GET",
+          "path": "/admin/discover",
+          "status": 403,
+          "duration_ms": 1056
+        },
+        {
+          "alias": "member_a",
+          "method": "GET",
+          "path": "/admin/membership_imports/new",
+          "status": 403,
+          "duration_ms": 1059
+        },
+        {
+          "alias": "member_a",
+          "method": "GET",
+          "path": "/admin/consultation_requests",
+          "status": 403,
+          "duration_ms": 1082
+        },
+        {
+          "alias": "admin_a",
+          "method": "GET",
+          "path": "/member/membership",
+          "status": 403,
+          "duration_ms": 1078
+        },
+        {
+          "alias": "admin_a",
+          "method": "GET",
+          "path": "/member/consultation_requests/new",
+          "status": 403,
+          "duration_ms": 1067
+        },
+        {
+          "alias": "admin_a",
+          "method": "GET",
+          "path": "/member/profile/edit",
+          "status": 403,
+          "duration_ms": 1047
+        }
+      ]
+    },
+    {
+      "id": "response_headers",
+      "area": "platform",
+      "batch": "identity",
+      "status": "PASS",
+      "http": "PASS",
+      "started_at": "2026-10-26T09:42:22.800Z",
+      "finished_at": "2026-10-26T09:42:25.207Z",
+      "assertions": [
+        "No-store, nosniff, CSP nonce and secure HttpOnly session cookie verified"
+      ],
+      "requests": [
+        {
+          "alias": "member_a",
+          "method": "GET",
+          "path": "/member/dashboard",
+          "status": 200,
+          "duration_ms": 1361
+        },
+        {
+          "alias": "header_probe",
+          "method": "GET",
+          "path": "/login",
+          "status": 200,
+          "duration_ms": 1045
+        }
+      ]
+    },
+    {
+      "id": "event_draft",
+      "area": "events",
+      "batch": "event-draft",
+      "status": "FAIL",
+      "http": "FAIL",
+      "started_at": "2026-10-26T09:42:38.228Z",
+      "finished_at": "2026-10-26T09:42:41.811Z",
+      "assertions": [],
+      "requests": [
+        {
+          "alias": "admin_a",
+          "method": "GET",
+          "path": "/admin/events/new",
+          "status": 200,
+          "duration_ms": 1564
+        },
+        {
+          "alias": "admin_a",
+          "method": "POST",
+          "path": "/admin/events",
+          "status": 503,
+          "duration_ms": 2015
+        }
+      ],
+      "reason": "HTTP assertion failed; inspect private checkpoint"
+    },
+    {
+      "id": "event_draft_files",
+      "area": "events",
+      "batch": "event-draft",
+      "status": "BLOCKED",
+      "http": "BLOCKED",
+      "started_at": "2026-10-26T09:42:41.816Z",
+      "finished_at": "2026-10-26T09:42:41.816Z",
+      "assertions": [],
+      "requests": [],
+      "reason": "Earlier failure halted the run; inspect before any further requests"
+    },
+    {
+      "id": "event_stale_edit",
+      "area": "events",
+      "batch": "event-draft",
+      "status": "BLOCKED",
+      "http": "BLOCKED",
+      "started_at": "2026-10-26T09:42:41.821Z",
+      "finished_at": "2026-10-26T09:42:41.821Z",
+      "assertions": [],
+      "requests": [],
+      "reason": "Earlier failure halted the run; inspect before any further requests"
+    },
+    {
+      "id": "event_publish",
+      "area": "events",
+      "batch": "event-publish",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "event_public_files",
+      "area": "events",
+      "batch": "event-publish",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "publication_draft",
+      "area": "publications",
+      "batch": "publication-draft",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "publication_draft_privacy",
+      "area": "publications",
+      "batch": "publication-draft",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "publication_publish",
+      "area": "publications",
+      "batch": "publication-publish",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "publication_member_hash",
+      "area": "publications",
+      "batch": "publication-publish",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "publication_later_draft",
+      "area": "publications",
+      "batch": "publication-publish",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "discover_setup",
+      "area": "discover",
+      "batch": "discover",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "discover_save",
+      "area": "discover",
+      "batch": "discover",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "discover_rejections",
+      "area": "discover",
+      "batch": "discover",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "interest_concurrency",
+      "area": "events",
+      "batch": "engagement",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "consultation_concurrency",
+      "area": "consultation",
+      "batch": "engagement",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "consultation_boundaries",
+      "area": "consultation",
+      "batch": "engagement",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "roster_boundaries",
+      "area": "events",
+      "batch": "engagement",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "event_free_republish",
+      "area": "events",
+      "batch": "event-republish",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "interest_snapshot",
+      "area": "events",
+      "batch": "event-republish",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "interest_withdraw",
+      "area": "events",
+      "batch": "snapshot-withdraw",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "csv_confirm",
+      "area": "identity",
+      "batch": "imports",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "csv_other_admin",
+      "area": "identity",
+      "batch": "imports",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "csv_malformed",
+      "area": "identity",
+      "batch": "imports",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "mail_disabled",
+      "area": "identity",
+      "batch": "imports",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "logout_revocation",
+      "area": "identity",
+      "batch": "logout",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "login_throttle",
+      "area": "identity",
+      "batch": "throttle",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "mfa_replay_recovery_cancel",
+      "area": "identity",
+      "batch": "critical-guards",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "mfa_aged_stepup_revocation",
+      "area": "identity",
+      "batch": "aged-stepup",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "constructed_session_expiry",
+      "area": "identity",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "constructed_activation_reset",
+      "area": "identity",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "membership_suspension_reeligibility",
+      "area": "identity",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "csv_stale_collision_expiry",
+      "area": "identity",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "mfa_throttle",
+      "area": "identity",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "event_limits_timezone_payment_matrix",
+      "area": "events",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "roster_51_pagination",
+      "area": "events",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "event_csrf_negative",
+      "area": "events",
+      "batch": "critical-guards",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "publication_limits_republish_old_keys",
+      "area": "publications",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "publication_csrf_negative",
+      "area": "publications",
+      "batch": "critical-guards",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "discover_carousel_browser",
+      "area": "discover",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "discover_cross_orphan_replacement",
+      "area": "discover",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "consultation_limits_csrf",
+      "area": "consultation",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "neon_tls_schema",
+      "area": "platform",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "r2_private_roundtrip",
+      "area": "platform",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "scanner_eicar_outage_integrity",
+      "area": "platform",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "dependency_host_proxy_failures",
+      "area": "platform",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "runtime_memory_overlap",
+      "area": "platform",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "browser_mobile_accessibility_pwa",
+      "area": "platform",
+      "batch": "browser",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires browser execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "restore_rollback",
+      "area": "platform",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "sender_lost_mfa",
+      "area": "identity",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "cleanup_shutdown_cost",
+      "area": "platform",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    }
+  ]
+}

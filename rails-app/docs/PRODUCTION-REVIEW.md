@@ -1,5 +1,7 @@
 # Production director review and release evidence
 
+> Current authority: [26 October closure ledger](PRODUCTION-CLOSURE-2026-10-26.md). The first hosted rehearsal ran and is stopped; production is NO-GO. Nine initial identity cases and a bounded database restore passed. Event upload and both hosted mobile attempts failed. Offline whole-area fixes are being verified. Statements below that say the runtime has not started are historical. The owner accepted virtual mobile scope; physical-device/native-install evidence is unclaimed and is not a new owner-action gate.
+
 Updated 26 October 2026, Asia/Kuala_Lumpur. Director: Astra (high); implementation/testing: GPT-6.1 Sol (extra high) and coordinator. Source/evidence on D:\Projects\isp-member-rails. Repository meithanr-creator/isp-malaysia-member-guide, production-readiness, draft PR1.
 
 **Decision: the bounded application, Cloudflare package and local Rails–Neon integration source are accepted. Production release remains NO-GO pending hosted and operational evidence.** Astra's source review was read-only; actual executions below were coordinator-run/reported. Shop and Plantation Jobs stay frozen demos. No real member records, account activation or identity emails were used.

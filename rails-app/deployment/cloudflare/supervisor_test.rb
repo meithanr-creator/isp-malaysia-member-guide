@@ -41,21 +41,22 @@ class CloudflareSupervisorTest < Minitest::Test
     end
   end
 
-  def test_no_rails_process_starts_until_a_fresh_scanner_is_ready
+  def test_rails_starts_before_scanner_initialization_and_all_children_remain_managed
     events = []
-    processes = FakeProcesses.new(events, fail_child: :rails)
+    processes = FakeProcesses.new(events, fail_child: :freshclam)
     result = supervisor(processes, FakeProbe.new(events, [false, false, true])).run
     assert_equal 1, result
-    assert_equal [:signature_update, :clamd, :freshclam, :rails], processes.starts
-    assert_operator events.index(:scanner_ready), :<, events.index(:rails)
+    assert_equal [:rails, :signature_update, :clamd, :freshclam], processes.starts
+    assert_operator events.index(:rails), :<, events.index(:signature_update)
+    assert_operator events.index(:rails), :<, events.index(:scanner_ready)
     assert processes.stopped
   end
 
-  def test_failed_initial_updates_never_start_scanner_or_rails
+  def test_failed_initial_updates_stop_the_early_rails_process_without_starting_scanner
     events = []
     processes = FakeProcesses.new(events, update_success: false)
     assert_equal 1, supervisor(processes, FakeProbe.new(events, [true])).run
-    assert_equal [:signature_update], processes.starts
+    assert_equal [:rails, :signature_update], processes.starts
     assert processes.stopped
   end
 
@@ -63,7 +64,7 @@ class CloudflareSupervisorTest < Minitest::Test
     events = []
     processes = FakeProcesses.new(events)
     assert_equal 1, supervisor(processes, FakeProbe.new(events, [false]), startup_timeout: 0.5).run
-    assert_equal [:signature_update, :clamd], processes.starts
+    assert_equal [:rails, :signature_update, :clamd], processes.starts
     assert processes.stopped
   end
 
@@ -141,6 +142,39 @@ class CloudflareSupervisorTest < Minitest::Test
     refute_match(/^TCPAddr (?:0\.0\.0\.0|::)$/, config)
     assert_match(/^MaxScanTime 12000$/, config)
     assert_match(/^ConcurrentDatabaseReload no$/, config)
+  end
+
+  def test_early_rails_exit_aborts_scanner_initialization_and_stops_managed_children
+    events = []
+    processes = FakeProcesses.new(events, fail_child: :rails)
+    assert_equal 1, supervisor(processes, FakeProbe.new(events, [false])).run
+    assert processes.stopped
+    refute_includes events, :scanner_ready
+  end
+
+  def test_container_healthcheck_uses_application_readiness_and_full_check_is_explicit
+    fake_class = Class.new do
+      attr_accessor :open_timeout, :read_timeout
+      attr_reader :requests
+      def initialize
+        @requests = []
+      end
+      def get(path, headers)
+        @requests << [path, headers]
+        Struct.new(:code, :body).new(
+          "200", path == "/app-ready" ? "application ready" : "ready"
+        )
+      end
+    end
+    http = fake_class.new
+    options = { env: { "APP_HOST" => "planterapp.co" }, http_factory: -> { http } }
+    assert IspCloudflare::Supervisor.http_ready?(**options)
+    assert IspCloudflare::Supervisor.http_ready?(**options, full: true)
+    assert_equal ["/app-ready", "/ready"], http.requests.map(&:first)
+    assert_equal "planterapp.co", http.requests.first.last.fetch("Host")
+    assert_equal "https", http.requests.first.last.fetch("X-Forwarded-Proto")
+    assert_equal 3, http.open_timeout
+    assert_equal 20, http.read_timeout
   end
 
   private

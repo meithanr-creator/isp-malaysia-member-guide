@@ -39,7 +39,7 @@ class DiscoverSlideUpdaterTest < ActiveSupport::TestCase
     before = slide.reload.attributes
     image_id = slide.image.blob_id
     [nil, "invalid", slide.lock_version - 1].each do |token|
-      assert_no_difference("ActiveStorage::Blob.count") do
+      ActiveStorage::Blob.service.stub(:upload, ->(*) { flunk "Rejected edit reached object storage" }) do
         assert_not DiscoverSlideUpdater.new(slide).call(attributes: { "title" => "Stale overwrite" }, image: discover_upload(filename: "replacement.png"), expected_lock_version: token)
       end
       assert_equal before, slide.reload.attributes
@@ -65,7 +65,7 @@ class DiscoverSlideUpdaterTest < ActiveSupport::TestCase
     slide = create_discover_slide
     before = slide.attributes
     [{ "title" => "x" * 141 }, { "website_url" => "javascript:alert(1)" }].each do |attributes|
-      assert_no_difference("ActiveStorage::Blob.count") do
+      ActiveStorage::Blob.service.stub(:upload, ->(*) { flunk "Rejected edit reached object storage" }) do
         assert_not DiscoverSlideUpdater.new(slide).call(attributes: attributes, image: discover_upload, expected_lock_version: slide.lock_version)
       end
       assert_equal before, slide.reload.attributes

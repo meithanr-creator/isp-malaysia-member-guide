@@ -16,6 +16,7 @@ class HostedAcceptanceFixtures
   ENDPOINT = "https://a9720867333b64a4f8ee70cdfd673eb9.r2.cloudflarestorage.com".freeze
   DOMAIN = "staging.planterapp.co".freeze
   MARKER = /\Aqa-\d{8}-[0-9a-f]{12}\z/
+  BLOB_KEY = %r{\A(?:[a-z0-9]{28,128}|managed-uploads/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/[0-9a-f]{48})\z}
   CONTENT = { "events" => Event, "publications" => Publication,
     "consultations" => ConsultationRequest, "imports" => MembershipImport,
     "registry" => MembershipRegistryEntry }.freeze
@@ -174,6 +175,11 @@ class HostedAcceptanceFixtures
   def capture_blobs!(slide_ids)
     blobs = ActiveStorage::Blob.order(:id).to_a
     refuse! unless blobs.all? { |b| recent?(b) && b.filename.to_s.start_with?(@m["run_marker"]) }
+    blobs.each do |blob|
+      match = BLOB_KEY.match(blob.key.to_s)
+      refuse! unless match
+      UploadOperation.verify_owned!(blob, match[1]) if match[1]
+    end
     allowed = { "Event" => ids("events"), "Publication" => ids("publications"), "DiscoverSlide" => slide_ids }
     refuse! unless ActiveStorage::Attachment.all.all? { |a| allowed.fetch(a.record_type, []).include?(a.record_id) }
     @m["records"]["blobs"] = blobs.map { |b| b.attributes.slice("id", "key", "filename", "service_name", "created_at") }
@@ -284,7 +290,7 @@ class HostedAcceptanceFixtures
     @m["bucket_initially_empty"] = true if @initial_bucket_empty
     history = Array(@m["blob_history"]) + previous + @m.fetch("records").fetch("blobs")
     history.each do |row|
-      refuse! unless row["id"].to_i.positive? && row["key"].to_s.match?(/\A[a-z0-9]{28,128}\z/) &&
+      refuse! unless row["id"].to_i.positive? && BLOB_KEY.match?(row["key"].to_s) &&
         row["filename"].to_s.start_with?(@m.fetch("run_marker")) && row["service_name"] == "production_private"
     end
     grouped = history.group_by { |row| row.fetch("key") }
@@ -389,6 +395,10 @@ class HostedAcceptanceFixtures
       else
         refuse! if %w[cleaned rolled_back].include?(@m["phase"])
         checked_capture!
+        # Never erase the only recovery record for an uncertain late PUT.
+        refuse! if ActiveStorage::Blob.where(id: ids("blobs")).any? { |blob|
+          %w[pending tombstone].include?(blob.metadata.dig(UploadOperation::LEDGER, "state"))
+        }
         @m["phase"] = "cleanup_started"
         save!(MANIFEST, @m)
         # Keep metadata until each exact captured object's deletion is confirmed.

@@ -1,0 +1,610 @@
+{
+  "version": 1,
+  "run_marker": "qa-20261026-5fec518122c9",
+  "candidate": "c9a5142bd8c949c6415c3639c0113ee015f9a3f4",
+  "deployment_id": "ebe55939-c4ac-448c-b39d-2a47209d22b1",
+  "origin": "https://isp-member-production.meithan-r.workers.dev",
+  "generated_at": "2026-10-26T09:35:54.782Z",
+  "requests": 4,
+  "areas": {
+    "consultation": "BLOCKED",
+    "platform": "BLOCKED",
+    "discover": "BLOCKED",
+    "publications": "BLOCKED",
+    "identity": "BLOCKED",
+    "events": "BLOCKED"
+  },
+  "cases": [
+    {
+      "id": "consultation_csrf_negative",
+      "area": "consultation",
+      "batch": "critical-guards",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "scanner_eicar_rejection",
+      "area": "platform",
+      "batch": "critical-guards",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "discover_replaced_key",
+      "area": "discover",
+      "batch": "critical-replace",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "publication_replaced_key",
+      "area": "publications",
+      "batch": "critical-replace",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "edge_denial",
+      "area": "platform",
+      "batch": "identity",
+      "status": "PASS",
+      "http": "PASS",
+      "started_at": "2026-10-26T09:35:34.462Z",
+      "finished_at": "2026-10-26T09:35:34.721Z",
+      "assertions": [
+        "Missing and wrong API keys denied generically; HTML opens private review; Rails authentication not claimed"
+      ],
+      "requests": [
+        {
+          "alias": "edge",
+          "method": "GET",
+          "path": "/member/dashboard",
+          "status": 503,
+          "duration_ms": 160
+        },
+        {
+          "alias": "edge",
+          "method": "GET",
+          "path": "/member/dashboard",
+          "status": 503,
+          "duration_ms": 53
+        },
+        {
+          "alias": "edge",
+          "method": "GET",
+          "path": "/member/dashboard",
+          "status": 303,
+          "duration_ms": 44
+        }
+      ]
+    },
+    {
+      "id": "health",
+      "area": "platform",
+      "batch": "identity",
+      "status": "BLOCKED",
+      "http": "BLOCKED",
+      "started_at": "2026-10-26T09:35:34.724Z",
+      "finished_at": "2026-10-26T09:35:54.748Z",
+      "assertions": [],
+      "requests": [
+        {
+          "alias": "visitor",
+          "method": "GET",
+          "path": "/up",
+          "status": null,
+          "duration_ms": null
+        }
+      ],
+      "reason": "HTTPS request failed or timed out; mutation outcome requires DB inspection"
+    },
+    {
+      "id": "visitor_denial",
+      "area": "identity",
+      "batch": "identity",
+      "status": "BLOCKED",
+      "http": "BLOCKED",
+      "started_at": "2026-10-26T09:35:54.752Z",
+      "finished_at": "2026-10-26T09:35:54.752Z",
+      "assertions": [],
+      "requests": [],
+      "reason": "Earlier failure halted the run; inspect before any further requests"
+    },
+    {
+      "id": "credential_rejection",
+      "area": "identity",
+      "batch": "identity",
+      "status": "BLOCKED",
+      "http": "BLOCKED",
+      "started_at": "2026-10-26T09:35:54.755Z",
+      "finished_at": "2026-10-26T09:35:54.755Z",
+      "assertions": [],
+      "requests": [],
+      "reason": "Earlier failure halted the run; inspect before any further requests"
+    },
+    {
+      "id": "member_login",
+      "area": "identity",
+      "batch": "identity",
+      "status": "BLOCKED",
+      "http": "BLOCKED",
+      "started_at": "2026-10-26T09:35:54.760Z",
+      "finished_at": "2026-10-26T09:35:54.760Z",
+      "assertions": [],
+      "requests": [],
+      "reason": "Earlier failure halted the run; inspect before any further requests"
+    },
+    {
+      "id": "admin_enrollment",
+      "area": "identity",
+      "batch": "identity",
+      "status": "BLOCKED",
+      "http": "BLOCKED",
+      "started_at": "2026-10-26T09:35:54.763Z",
+      "finished_at": "2026-10-26T09:35:54.763Z",
+      "assertions": [],
+      "requests": [],
+      "reason": "Earlier failure halted the run; inspect before any further requests"
+    },
+    {
+      "id": "profile_forgery",
+      "area": "identity",
+      "batch": "identity",
+      "status": "BLOCKED",
+      "http": "BLOCKED",
+      "started_at": "2026-10-26T09:35:54.766Z",
+      "finished_at": "2026-10-26T09:35:54.766Z",
+      "assertions": [],
+      "requests": [],
+      "reason": "Earlier failure halted the run; inspect before any further requests"
+    },
+    {
+      "id": "role_boundaries",
+      "area": "identity",
+      "batch": "identity",
+      "status": "BLOCKED",
+      "http": "BLOCKED",
+      "started_at": "2026-10-26T09:35:54.769Z",
+      "finished_at": "2026-10-26T09:35:54.769Z",
+      "assertions": [],
+      "requests": [],
+      "reason": "Earlier failure halted the run; inspect before any further requests"
+    },
+    {
+      "id": "response_headers",
+      "area": "platform",
+      "batch": "identity",
+      "status": "BLOCKED",
+      "http": "BLOCKED",
+      "started_at": "2026-10-26T09:35:54.773Z",
+      "finished_at": "2026-10-26T09:35:54.773Z",
+      "assertions": [],
+      "requests": [],
+      "reason": "Earlier failure halted the run; inspect before any further requests"
+    },
+    {
+      "id": "event_draft",
+      "area": "events",
+      "batch": "event-draft",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "event_draft_files",
+      "area": "events",
+      "batch": "event-draft",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "event_stale_edit",
+      "area": "events",
+      "batch": "event-draft",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "event_publish",
+      "area": "events",
+      "batch": "event-publish",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "event_public_files",
+      "area": "events",
+      "batch": "event-publish",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "publication_draft",
+      "area": "publications",
+      "batch": "publication-draft",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "publication_draft_privacy",
+      "area": "publications",
+      "batch": "publication-draft",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "publication_publish",
+      "area": "publications",
+      "batch": "publication-publish",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "publication_member_hash",
+      "area": "publications",
+      "batch": "publication-publish",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "publication_later_draft",
+      "area": "publications",
+      "batch": "publication-publish",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "discover_setup",
+      "area": "discover",
+      "batch": "discover",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "discover_save",
+      "area": "discover",
+      "batch": "discover",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "discover_rejections",
+      "area": "discover",
+      "batch": "discover",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "interest_concurrency",
+      "area": "events",
+      "batch": "engagement",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "consultation_concurrency",
+      "area": "consultation",
+      "batch": "engagement",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "consultation_boundaries",
+      "area": "consultation",
+      "batch": "engagement",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "roster_boundaries",
+      "area": "events",
+      "batch": "engagement",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "event_free_republish",
+      "area": "events",
+      "batch": "event-republish",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "interest_snapshot",
+      "area": "events",
+      "batch": "event-republish",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "interest_withdraw",
+      "area": "events",
+      "batch": "snapshot-withdraw",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "csv_confirm",
+      "area": "identity",
+      "batch": "imports",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "csv_other_admin",
+      "area": "identity",
+      "batch": "imports",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "csv_malformed",
+      "area": "identity",
+      "batch": "imports",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "mail_disabled",
+      "area": "identity",
+      "batch": "imports",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "logout_revocation",
+      "area": "identity",
+      "batch": "logout",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "login_throttle",
+      "area": "identity",
+      "batch": "throttle",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "mfa_replay_recovery_cancel",
+      "area": "identity",
+      "batch": "critical-guards",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "mfa_aged_stepup_revocation",
+      "area": "identity",
+      "batch": "aged-stepup",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "constructed_session_expiry",
+      "area": "identity",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "constructed_activation_reset",
+      "area": "identity",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "membership_suspension_reeligibility",
+      "area": "identity",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "csv_stale_collision_expiry",
+      "area": "identity",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "mfa_throttle",
+      "area": "identity",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "event_limits_timezone_payment_matrix",
+      "area": "events",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "roster_51_pagination",
+      "area": "events",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "event_csrf_negative",
+      "area": "events",
+      "batch": "critical-guards",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "publication_limits_republish_old_keys",
+      "area": "publications",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "publication_csrf_negative",
+      "area": "publications",
+      "batch": "critical-guards",
+      "status": "NOT RUN",
+      "http": "NOT RUN",
+      "assertions": []
+    },
+    {
+      "id": "discover_carousel_browser",
+      "area": "discover",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "discover_cross_orphan_replacement",
+      "area": "discover",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "consultation_limits_csrf",
+      "area": "consultation",
+      "batch": "manual",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires manual execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "neon_tls_schema",
+      "area": "platform",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "r2_private_roundtrip",
+      "area": "platform",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "scanner_eicar_outage_integrity",
+      "area": "platform",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "dependency_host_proxy_failures",
+      "area": "platform",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "runtime_memory_overlap",
+      "area": "platform",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "browser_mobile_accessibility_pwa",
+      "area": "platform",
+      "batch": "browser",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires browser execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "restore_rollback",
+      "area": "platform",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "sender_lost_mfa",
+      "area": "identity",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    },
+    {
+      "id": "cleanup_shutdown_cost",
+      "area": "platform",
+      "batch": "operator",
+      "status": "BLOCKED",
+      "http": "NOT RUN",
+      "assertions": [],
+      "reason": "Requires operator execution/evidence; this HTTP driver does not claim it"
+    }
+  ]
+}

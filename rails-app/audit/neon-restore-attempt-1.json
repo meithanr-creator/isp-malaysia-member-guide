@@ -1,0 +1,15 @@
+{
+  "scope": "Rows, schema, constraints, indexes and encrypted MFA; sequence state, write journey and files are not claimed",
+  "started_at": "2026-10-26T10:44:29.090Z",
+  "project": "royal-glitter-45740959",
+  "finalize_restore": false,
+  "plan": "free",
+  "failure": "Isolated restore did not complete; inspect private stage evidence",
+  "cleanup": {
+    "restored_branch_absent": true,
+    "snapshot_absent": true,
+    "created_compute_absent": true,
+    "original_endpoints_preserved": true
+  },
+  "finished_at": "2026-10-26T10:45:03.781Z"
+}

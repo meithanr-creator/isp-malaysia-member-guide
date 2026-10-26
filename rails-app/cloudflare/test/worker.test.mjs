@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
-import worker, { RailsContainer } from "../src/index.js";
+import worker, { RailsContainer, APPLICATION_READINESS_TTL_MS } from "../src/index.js";
 import { REQUIRED_VALUES, INSTANCE_NAME, EDGE_IP_HEADER, runtimeConfiguration, validClientIp } from "../src/runtime.js";
 import { REQUEST_LIFETIME_MS } from "../src/lifetime.js";
 
@@ -39,7 +39,13 @@ function containerContext(options = {}) {
         assert.equal(port, 3000);
         return { async fetch(request) {
           requests.push(request);
+          if (new URL(request.url).pathname === "/app-ready") {
+            return options.appReady
+              ? options.appReady(request)
+              : new Response("application ready", { status: options.appReadyStatus || 200 });
+          }
           if (new URL(request.url).pathname === "/ready") return new Response("ready", { status: options.readyStatus || 200 });
+          if (new URL(request.url).pathname === "/up") return new Response("live");
           return options.fetch ? options.fetch(request) : new Response("member page", { headers: { "Set-Cookie": "session=synthetic; Secure; HttpOnly", "Cache-Control": "public" } });
         } };
       }
@@ -151,8 +157,8 @@ test("runtime environment is explicitly allowlisted and sensitive unsafe knobs c
   assert.equal(instance.activeRequests, 0);
 });
 
-test("readiness failure blocks application traffic and releases activity", async () => {
-  const ctx = containerContext({ readyStatus: 503 });
+test("application readiness failure blocks application traffic and releases activity", async () => {
+  const ctx = containerContext({ appReadyStatus: 503 });
   const instance = new RailsContainer(ctx, environment());
   await assertUnavailable(await instance.fetch(internalRequest("/member/dashboard")));
   assert.equal(ctx.requests.length, 1);
@@ -248,4 +254,244 @@ test("proposed configuration stays private, capped and disabled", async () => {
   assert.equal(config.containers[0].image_build_context, "..");
   assert.equal(config.containers[0].image, "../deployment/cloudflare/Dockerfile.runtime");
   assert.equal(new RailsContainer(containerContext(), environment()).sleepAfter, "60s");
+});
+
+function appProbes(ctx) {
+  return ctx.requests.filter((request) => new URL(request.url).pathname === "/app-ready");
+}
+
+test("ordinary traffic serves while full scanner/storage readiness is unavailable", async () => {
+  const ctx = containerContext({ readyStatus: 503 });
+  const instance = new RailsContainer(ctx, environment());
+  assert.equal(await (await instance.fetch(internalRequest("/login"))).text(), "member page");
+  assert.equal(ctx.requests.some((request) => new URL(request.url).pathname === "/ready"), false);
+  await assertUnavailable(await instance.fetch(internalRequest("/ready")));
+  assert.equal(await (await instance.fetch(internalRequest("/up"))).text(), "live");
+  assert.equal(instance.activeRequests, 0);
+});
+
+test("nearby asset and page requests reuse only application readiness", async () => {
+  const ctx = containerContext();
+  const instance = new RailsContainer(ctx, environment());
+  for (const path of ["/login", "/assets/application.css", "/assets/application.js"]) {
+    assert.equal(await (await instance.fetch(internalRequest(path))).text(), "member page");
+  }
+  assert.equal(ctx.starts.length, 1);
+  assert.equal(appProbes(ctx).length, 1);
+  assert.equal(ctx.requests.filter((request) => new URL(request.url).pathname.startsWith("/assets/")).length, 2);
+});
+
+test("application readiness expires after the short TTL", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout", "Date"] });
+  const ctx = containerContext();
+  const instance = new RailsContainer(ctx, environment());
+  await (await instance.fetch(internalRequest("/login"))).text();
+  await (await instance.fetch(internalRequest("/events"))).text();
+  assert.equal(appProbes(ctx).length, 1);
+  await advance(t, APPLICATION_READINESS_TTL_MS + 1);
+  await (await instance.fetch(internalRequest("/events"))).text();
+  assert.equal(appProbes(ctx).length, 2);
+});
+
+test("concurrent requests share one application readiness probe", async () => {
+  let finishProbe;
+  const ctx = containerContext({
+    appReady: () => new Promise((resolve) => { finishProbe = resolve; })
+  });
+  const instance = new RailsContainer(ctx, environment());
+  const pending = ["/login", "/assets/a.css", "/assets/a.js"].map(
+    (path) => instance.fetch(internalRequest(path))
+  );
+  for (let i = 0; i < 20; i++) await Promise.resolve();
+  assert.equal(ctx.starts.length, 1);
+  assert.equal(appProbes(ctx).length, 1);
+  finishProbe(new Response("application ready"));
+  const responses = await Promise.all(pending);
+  for (const response of responses) assert.equal(await response.text(), "member page");
+  assert.equal(instance.activeRequests, 0);
+});
+
+test("failed application requests invalidate the readiness cache without replay", async () => {
+  const ctx = containerContext({
+    fetch: async (request) => new URL(request.url).pathname === "/failure"
+      ? new Response("private diagnostic", { status: 500 })
+      : new Response("ok")
+  });
+  const instance = new RailsContainer(ctx, environment());
+  assert.equal(await (await instance.fetch(internalRequest("/login"))).text(), "ok");
+  await assertUnavailable(await instance.fetch(internalRequest("/failure", {
+    method: "POST", body: "synthetic=1"
+  })));
+  assert.equal(await (await instance.fetch(internalRequest("/login"))).text(), "ok");
+  assert.equal(appProbes(ctx).length, 2);
+  assert.equal(ctx.requests.filter((request) => new URL(request.url).pathname === "/failure").length, 1);
+});
+
+test("stop, start and error callbacks invalidate lifecycle readiness", async () => {
+  const ctx = containerContext();
+  const instance = new RailsContainer(ctx, environment());
+  await (await instance.fetch(internalRequest())).text();
+  instance.onStart();
+  await (await instance.fetch(internalRequest())).text();
+  instance.onError(new Error("private diagnostic"));
+  await (await instance.fetch(internalRequest())).text();
+  instance.onStop();
+  await (await instance.fetch(internalRequest())).text();
+  assert.equal(appProbes(ctx).length, 4);
+  assert.equal(instance.activeRequests, 0);
+});
+
+test("an obsolete readiness promise cannot populate a later lifecycle cache", async () => {
+  let finishProbe;
+  let probes = 0;
+  const ctx = containerContext({
+    appReady: () => ++probes === 1
+      ? new Promise((resolve) => { finishProbe = resolve; })
+      : new Response("application ready")
+  });
+  const instance = new RailsContainer(ctx, environment());
+  const first = instance.fetch(internalRequest("/login"));
+  for (let i = 0; i < 20; i++) await Promise.resolve();
+  instance.onStop();
+  finishProbe(new Response("application ready"));
+  await assertUnavailable(await first);
+  assert.equal(instance.applicationReadyUntil, 0);
+  assert.equal(await (await instance.fetch(internalRequest("/login"))).text(), "member page");
+  assert.equal(probes, 2);
+});
+
+test("cancelling one client does not abort another client's shared readiness", async () => {
+  let finishProbe;
+  const ctx = containerContext({
+    appReady: () => new Promise((resolve) => { finishProbe = resolve; })
+  });
+  const instance = new RailsContainer(ctx, environment());
+  const abort = new AbortController();
+  const first = instance.fetch(internalRequest("/login", { signal: abort.signal }));
+  const second = instance.fetch(internalRequest("/events"));
+  for (let i = 0; i < 20; i++) await Promise.resolve();
+  abort.abort();
+  await assertUnavailable(await first);
+  finishProbe(new Response("application ready"));
+  assert.equal(await (await second).text(), "member page");
+  assert.equal(appProbes(ctx).length, 1);
+  assert.equal(instance.activeRequests, 0);
+});
+
+test("cancelling the first client during port startup preserves another waiting client", async () => {
+  let finishStartup;
+  const ctx = containerContext({
+    start: () => new Promise((resolve) => { finishStartup = resolve; })
+  });
+  const instance = new RailsContainer(ctx, environment());
+  const abort = new AbortController();
+  const first = instance.fetch(internalRequest("/login", { signal: abort.signal }));
+  const second = instance.fetch(internalRequest("/events"));
+
+  for (let i = 0; i < 20; i++) await Promise.resolve();
+  assert.equal(ctx.starts.length, 1);
+  const startupSignal = ctx.starts[0].settings.cancellationOptions.abort;
+  assert.notEqual(startupSignal, abort.signal);
+
+  abort.abort();
+  await assertUnavailable(await first);
+  assert.equal(startupSignal.aborted, false);
+  assert.equal(instance.activeRequests, 1);
+
+  finishStartup();
+  assert.equal(await (await second).text(), "member page");
+  assert.equal(ctx.starts.length, 1);
+  assert.equal(instance.activeRequests, 0);
+});
+
+test("obsolete startup completion or failure cannot poison a newer port cache", async () => {
+  for (const outcome of ["resolve", "reject"]) {
+    let finishOld;
+    let rejectOld;
+    let starts = 0;
+    const ctx = containerContext({
+      start: () => ++starts === 1
+        ? new Promise((resolve, reject) => { finishOld = resolve; rejectOld = reject; })
+        : Promise.resolve()
+    });
+    const instance = new RailsContainer(ctx, environment());
+    const oldRequest = instance.fetch(internalRequest("/login"));
+    for (let i = 0; i < 20; i++) await Promise.resolve();
+
+    const oldStartupSignal = ctx.starts[0].settings.cancellationOptions.abort;
+    instance.onStop();
+    assert.equal(oldStartupSignal.aborted, true);
+    assert.equal(instance.startup, null);
+
+    assert.equal(await (await instance.fetch(internalRequest("/events"))).text(), "member page");
+    assert.equal(instance.portReady, true);
+    assert.equal(starts, 2);
+
+    if (outcome === "resolve") {
+      // Simulate the SDK's late callback as well as late promise completion.
+      instance.onStart();
+      finishOld();
+    } else {
+      rejectOld(new Error("obsolete private startup diagnostic"));
+    }
+    await assertUnavailable(await oldRequest);
+
+    assert.equal(instance.portReady, true);
+    assert.equal(instance.startup, null);
+    assert.equal(await (await instance.fetch(internalRequest("/login"))).text(), "member page");
+    assert.equal(starts, 2);
+    assert.equal(instance.activeRequests, 0);
+  }
+});
+
+test("obsolete forwarded failures cannot abort or invalidate a newer lifecycle", async () => {
+  for (const outcome of ["transport", "http"]) {
+    let rejectOld, finishOld, finishNew;
+    let starts = 0;
+    const ctx = containerContext({
+      start: () => ++starts === 2 ? new Promise(resolve => { finishNew = resolve; }) : Promise.resolve(),
+      fetch: request => new URL(request.url).pathname === "/old"
+        ? new Promise((resolve, reject) => { finishOld = resolve; rejectOld = reject; })
+        : new Response("member page")
+    });
+    const instance = new RailsContainer(ctx, environment());
+    const oldRequest = instance.fetch(internalRequest("/old"));
+    for (let i = 0; i < 40 && !finishOld; i++) await Promise.resolve();
+    assert.ok(finishOld);
+    instance.onStop();
+    const newRequest = instance.fetch(internalRequest("/login"));
+    for (let i = 0; i < 40 && !finishNew; i++) await Promise.resolve();
+    assert.ok(finishNew);
+    const signal = ctx.starts[1].settings.cancellationOptions.abort;
+    if (outcome === "transport") rejectOld(new Error("old private transport failure"));
+    else finishOld(new Response("old private backend failure", {status: 500}));
+    await assertUnavailable(await oldRequest);
+    assert.equal(signal.aborted, false);
+    finishNew();
+    assert.equal(await (await newRequest).text(), "member page");
+    const probes = appProbes(ctx).length;
+    assert.equal(await (await instance.fetch(internalRequest("/events"))).text(), "member page");
+    assert.equal(appProbes(ctx).length, probes);
+    assert.equal(starts, 2);
+    assert.equal(instance.activeRequests, 0);
+  }
+});
+
+test("a cancelled forwarded client cannot invalidate current readiness", async () => {
+  let failClient;
+  const ctx = containerContext({fetch: request => new URL(request.url).pathname === "/cancelled"
+    ? new Promise((_resolve, reject) => {failClient = reject;})
+    : new Response("member page")});
+  const instance = new RailsContainer(ctx, environment());
+  const abort = new AbortController();
+  const pending = instance.fetch(internalRequest("/cancelled", {signal: abort.signal}));
+  for (let i = 0; i < 40 && !failClient; i++) await Promise.resolve();
+  assert.ok(failClient);
+  const generation = instance.lifecycleGeneration, probes = appProbes(ctx).length;
+  abort.abort(); failClient(new Error("cancelled transport"));
+  await assertUnavailable(await pending);
+  assert.equal(instance.lifecycleGeneration, generation);
+  assert.equal(await (await instance.fetch(internalRequest("/login"))).text(), "member page");
+  assert.equal(appProbes(ctx).length, probes);
+  assert.equal(ctx.starts.length, 1);
 });

@@ -26,16 +26,25 @@ async function main(){
   let deadlineHit=false; const stopTimer=setTimeout(()=>{deadlineHit=true;void context.close().catch(()=>{});},Math.max(1,deadline-Date.now())); const page=await context.newPage();page.setDefaultTimeout(12000);page.setDefaultNavigationTimeout(20000); const admit=()=>assert(!deadlineHit&&Date.now()<deadline&&result.requests<180,'Bounded mobile admission refused'); const api=async(method,url,options={})=>{admit();result.requests++;return context.request[method](url,{...options,timeout:Math.min(20000,deadline-Date.now())});};
   const check=(ok,label)=>{assert(ok,label);result.checks.push(label)};
   context.on('request',()=>{result.requests++;}); await context.route('**/*',route=>Date.now()>=deadline||result.requests>180?route.abort():route.continue());
+  let phase='browser_setup',phaseStart=Date.now();result.navigation=[];result.lifecycle_events=[];
+  page.on('response',response=>{if(response.request().isNavigationRequest()&&response.frame()===page.mainFrame())result.navigation.push({phase,status:response.status(),elapsed_ms:Date.now()-phaseStart});});
+  page.on('domcontentloaded',()=>result.lifecycle_events.push({phase,event:'domcontentloaded',elapsed_ms:Date.now()-phaseStart}));
+  page.on('requestfailed',request=>{const raw=request.failure()?.errorText||'';result.errors.push(/timed?out|timeout/i.test(raw)?'Request timeout':/abort|cancel/i.test(raw)?'Request cancelled':'Request transport failure');});
   page.on('pageerror',()=>result.errors.push('Application JavaScript error'));
   try{
-   const form=await api('get',`${ORIGIN}/__isp_review`);check(form.status()===200&&(await form.text()).includes('Review access code'),'Private review form loads');
-   const opened=await api('post',`${ORIGIN}/__isp_review`,{headers:{Origin:ORIGIN},form:{access_key:runtime.ISP_STAGING_KEY},maxRedirects:0});
-   check(opened.status()===303,'Same-origin review entry accepted');
+   phase='full_readiness'; phaseStart=Date.now();
+   admit();result.requests++;const readiness=await context.request.get(ORIGIN+'/ready',{headers:{'x-isp-staging-key':runtime.ISP_STAGING_KEY},timeout:Math.min(120000,deadline-Date.now())});check(readiness.status()===200,'Bounded scanner and Rails readiness before navigation');
+   phase='review_form'; phaseStart=Date.now();
+   const form=await page.goto(`${ORIGIN}/__isp_review`);check(form.status()===200,'Private review form loads in rendered browser');
+   await page.getByLabel('Review access code',{exact:true}).fill(runtime.ISP_STAGING_KEY);
+   const pending=page.waitForResponse(r=>r.url()===ORIGIN+'/__isp_review'&&r.request().method()==='POST');
+   const [opened]=await Promise.all([pending,page.getByRole('button',{name:'Open private review',exact:true}).click()]);
+   check(opened.status()===303,'Rendered same-origin review entry accepted');
    const cookies=await context.cookies(ORIGIN),gate=cookies.find(c=>c.name==='__Host-isp_acceptance');
    check(gate&&gate.secure&&gate.httpOnly&&gate.sameSite==='Strict'&&!gate.value.includes(runtime.ISP_STAGING_KEY)&&gate.expires*1000<=Date.parse(runtime.ISP_STAGING_EXPIRES_AT)+1000,'Browser accepts secure fixed-expiry cookie without raw key');
-   admit();result.requests++;const readiness=await context.request.get(ORIGIN+'/ready',{headers:{'x-isp-staging-key':runtime.ISP_STAGING_KEY},timeout:Math.min(120000,deadline-Date.now())});check(readiness.status()===200,'Bounded scanner and Rails readiness before navigation');
-   const home=await page.goto(ORIGIN);check(home.status()===200,'Landing page loads in actual engine');
-   await page.locator('.welcome-hero').waitFor();await page.evaluate(()=>document.fonts.ready);
+   phase='landing'; phaseStart=Date.now();
+   await page.waitForURL(ORIGIN+'/');
+   const home=await page.goto(ORIGIN);check(home.status()===200,'Landing page loads in actual engine');   await page.locator('.welcome-hero').waitFor();await page.evaluate(()=>document.fonts.ready);
    check((await page.locator('img[alt="Official ISP crest"]').count())===1,'Official crest present');
    check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Landing has no horizontal overflow');
    const menu=page.getByLabel('Explore ISP menu',{exact:true});await menu.click();
@@ -53,6 +62,7 @@ async function main(){
    check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Member dashboard fits mobile viewport');
    await snap('dashboard');
    for(const [label,route,selector] of [['events','/events','main h1'],['profile','/member/profile/edit','form'],['consultation','/member/consultation_requests/new','textarea'],['publications','/member/publications','main h1']]){
+    phase='member_'+label; phaseStart=Date.now();
     const response=await page.goto(ORIGIN+route);check(response.status()===200,`${label} member page accessible`);await page.locator(selector).first().waitFor();
     check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${label} has no horizontal overflow`);
     if(label==='consultation'){await page.locator('textarea').focus();check(await page.evaluate(()=>document.activeElement?.tagName==='TEXTAREA'),'Consultation input receives mobile focus');}
@@ -73,7 +83,7 @@ async function main(){
    await Promise.all([page.waitForURL(url=>url.pathname==='/'||url.pathname==='/login'),page.getByRole('button',{name:'Sign out',exact:true}).click()]);
    const denied=await page.goto(`${ORIGIN}/member/dashboard`);check(new URL(page.url()).pathname==='/login','Logout prevents dashboard access');
    check(result.errors.length===0,'No uncaught application JavaScript errors');result.status='pass';
-  }catch(error){result.status='fail';result.failure='Virtual browser acceptance failed; detailed error retained privately';fs.writeFileSync(PRIVATE+"/"+name+"-failure.txt",String(error.stack||error),{mode:0o600});process.exitCode=1;}
+  }catch(error){result.failure_phase=phase;result.status='fail';result.failure='Virtual browser acceptance failed; detailed error retained privately';fs.writeFileSync(PRIVATE+"/"+name+"-failure.txt",String(error.stack||error),{mode:0o600});process.exitCode=1;}
   finally{clearTimeout(stopTimer);await context.close();await browser.close();result.finished_at=new Date().toISOString();save();}
  }
  report.finished_at=new Date().toISOString();save();console.log(JSON.stringify({profiles:report.profiles.map(p=>({name:p.name,engine:p.engine,version:p.engine_version,status:p.status,checks:p.checks.length,failure:p.failure})),evidence:`${ROOT}/audit/virtual-mobile-acceptance.json`}));

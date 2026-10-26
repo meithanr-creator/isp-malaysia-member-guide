@@ -16,7 +16,7 @@ test('review form is private, does not echo credentials, and never acquires a co
  const response=await worker.fetch(request('/__isp_review'),env);
  assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');
  const body=await response.text();assert.match(body,/type="password"/);assert.equal(body.includes(KEY),false);
- assert.equal(response.headers.get('referrer-policy'),'no-referrer');
+ assert.equal(response.headers.get('referrer-policy'),'same-origin');
  assert.match(response.headers.get('content-security-policy'),/frame-ancestors 'none'/);
  assert.equal((await worker.fetch(request('/__isp_review'),{...env,ISP_CONTAINER_ENABLED:'false'})).status,503);
 });

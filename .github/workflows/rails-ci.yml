@@ -152,3 +152,29 @@ jobs:
         run: npm run build
       - name: Audit Neon tooling dependencies
         run: npm audit --audit-level=high --fetch-timeout=30000 --fetch-retries=1
+
+  virtual_browser_gate:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      ISP_LOCAL_BROWSER_PRIVATE: ${{ github.workspace }}/rails-app/tmp/browser-fixture/private
+      ISP_BROWSER_TOOL_ROOT: ${{ github.workspace }}/rails-app/tmp/browser-fixture/tools
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/rails-app/tmp/browser-fixture/browsers
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.12'
+      - name: Install pinned isolated virtual browsers
+        run: |
+          mkdir -p "$ISP_LOCAL_BROWSER_PRIVATE" "$ISP_BROWSER_TOOL_ROOT"
+          npm install --prefix "$ISP_BROWSER_TOOL_ROOT" --ignore-scripts --no-audit --no-fund playwright@1.64.1
+          node "$ISP_BROWSER_TOOL_ROOT/node_modules/playwright/cli.js" install --with-deps chromium webkit
+      - name: Verify native review form and strict cross-site cookie behavior
+        run: |
+          ruby script/make-local-test-certificate.rb
+          node script/local-browser-gate-diagnostic.mjs

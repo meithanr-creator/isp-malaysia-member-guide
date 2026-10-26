@@ -66,7 +66,7 @@ function harness(env, options = {}, store = new Map()) {
       running: true,
       getTcpPort() { return { async fetch(req) {
         requests.push(req);
-        if(new URL(req.url).pathname !== '/ready' && options.response) return options.response(req);
+        if(!['/ready','/app-ready','/up'].includes(new URL(req.url).pathname) && options.response) return options.response(req);
         return new Response(new URL(req.url).pathname === "/ready" ? "ready" : "synthetic page");
       } }; }
     }

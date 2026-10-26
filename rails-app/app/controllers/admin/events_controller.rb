@@ -6,6 +6,7 @@ module Admin
     rescue_from AdministrativeAction::VerificationRequired, with: :render_editor_verification
     rescue_from AdministrativeAction::Unauthorized, with: :render_revoked_administrator
     rescue_from AdministrativeAction::AuditFailure, with: :render_audit_failure
+    rescue_from UploadOperation::StorageFailure, with: :render_audit_failure
 
     def index
       @events = Event.order(updated_at: :desc)
@@ -86,9 +87,16 @@ module Admin
     def update_draft
       attributes = params.require(:event).permit(*Event::FIELDS, :lock_version, :brochure, :remove_brochure, images: [], remove_images: [])
       @submitted_lock_version = attributes[:lock_version]
-      success = AdministrativeAction.call(actor: current_user, authentication: current_user_session, target: @event, action: "event_draft_update") do
-        @event.save! if @event.new_record?
-        EventDraftUpdater.new(@event).call(attributes: attributes.slice(*Event::FIELDS), images: attributes[:images], brochure: attributes[:brochure], remove_images: Array(attributes[:remove_images]), remove_brochure: attributes[:remove_brochure] == "1", expected_lock_version: attributes[:lock_version])
+      operation = UploadOperation.for_event(@event, images: attributes[:images],
+        brochure: attributes[:brochure], remove_images: Array(attributes[:remove_images]))
+      success = operation.run do |uploads|
+        AdministrativeAction.call(actor: current_user, authentication: current_user_session, target: @event, action: "event_draft_update") do
+          @event.save! if @event.new_record?
+          EventDraftUpdater.new(@event).call(attributes: attributes.slice(*Event::FIELDS),
+            remove_images: Array(attributes[:remove_images]),
+            remove_brochure: attributes[:remove_brochure] == "1",
+            expected_lock_version: attributes[:lock_version], uploads: uploads)
+        end
       end
       @submitted_lock_version = @event.lock_version if success
       if success && params[:intent] == "preview"

@@ -1,5 +1,7 @@
 # Director evidence map — 26 October 2026
 
+> Current authority: [26 October closure ledger](PRODUCTION-CLOSURE-2026-10-26.md). The first hosted rehearsal ran and is stopped; production is NO-GO. Nine initial identity cases and a bounded database restore passed. Event upload and both hosted mobile attempts failed. Offline whole-area fixes are being verified. Statements below that say the runtime has not started are historical. The owner accepted virtual mobile scope; physical-device/native-install evidence is unclaimed and is not a new owner-action gate.
+
 Astra high directs; Sol 6.1 extra high executes; coordinator verifies deployments and source publication. This map separates verified source behavior, actual hosted integration, and owner-dependent release conditions. Never relabel source/CI as hosted PASS. Carry evidence forward when its source and dependency boundary are unchanged; reopen the affected area after relevant changes.
 
 Runtime application/image source c9a5142bd8c949c6415c3639c0113ee015f9a3f4 passed all six CI jobs in40268599968. The immutable registry digest is0187a1e32351a3f7a8f9c87a48798c0adf31f3b6c4116309c78f638582700cd2. Worker browser-control source3d893feaa921166eff9f99196f2297f5259680f8 passed six jobs in40288777006. Execution tools require their own final commit and checks. Record the actual active Worker version separately.

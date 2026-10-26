@@ -1,6 +1,6 @@
 const NAME='__Host-isp_acceptance',PATH='/__isp_review',MAX_BODY=1024;
 const encoder=new TextEncoder();
-const headers={'Cache-Control':'no-store','Pragma':'no-cache','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"};
+const headers={'Cache-Control':'no-store','Pragma':'no-cache','Referrer-Policy':'same-origin','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"};
 function response(body,status=200,extra={}){return new Response(body,{status,headers:{...headers,...extra}});}
 function base64(bytes){return btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');}
 function unbase64(value){if(!/^[A-Za-z0-9_-]+$/.test(value))throw Error('Invalid review credential');return Uint8Array.from(atob(value.replaceAll('-','+').replaceAll('_','/')),c=>c.charCodeAt(0));}
