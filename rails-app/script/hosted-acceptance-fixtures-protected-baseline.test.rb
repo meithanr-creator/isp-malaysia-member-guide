@@ -1,15 +1,13 @@
 # Offline fixture boundary tests: no Rails boot, database, storage client or private data.
 require "minitest/autorun"
 require "minitest/mock"
+require "active_support/core_ext/object/deep_dup"
 require "json"
 require "digest"
 require "time"
 require "securerandom"
 require_relative "../app/services/upload_operation"
 
-class Object
-  def deep_dup = Marshal.load(Marshal.dump(self))
-end
 class Numeric
   def second = self
 end
