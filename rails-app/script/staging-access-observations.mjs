@@ -16,7 +16,7 @@ export const ACCESS=Object.freeze({
 const KINDS=Object.freeze({database:'postgresql-readonly-access',storage:'r2-readonly-access'});
 const LEAVES=Object.freeze({database:'database-access-observation.json',storage:'storage-access-observation.json'});
 const AUTH_CODES=Object.freeze(['InvalidArgument','InvalidRequest','AuthorizationHeaderMalformed','SignatureDoesNotMatch']);
-const CHILD_CODES=new Set(['postgresql_access_failed','r2_access_failed','r2_metadata_permission_required','r2_public_access_enabled','r2_metadata_incomplete','r2_anonymous_access_not_denied']);
+const CHILD_CODES=new Set(['postgresql_access_failed','r2_access_failed',"r2_dns_failed","r2_connect_failed","r2_tls_failed","r2_access_timeout","r2_authenticated_head_failed","r2_authenticated_list_failed","r2_anonymous_transport_failed","r2_metadata_transport_failed",'r2_metadata_permission_required','r2_public_access_enabled','r2_metadata_incomplete','r2_anonymous_access_not_denied']);
 const HEX=/^[a-f0-9]{64}$/;
 const object=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 export class AccessRefused extends Error{constructor(code){super('Read-only dependency observation refused');this.code=code;}}

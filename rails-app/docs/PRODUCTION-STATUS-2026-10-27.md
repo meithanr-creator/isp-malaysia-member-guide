@@ -1,3 +1,23 @@
+# Current source and access checkpoint — 27 October 2026
+
+Astra approved the saved Windows storage transport correction for source publication. Actual276 release tests passed with zero failures/skips/cancellations. It uses only current public IPv4 routes for the two fixed endpoints through a client-local SDK transport, preserving original hostname/signing/strict TLS and existing bounds. No application/image change or global patch. Native79 SDK/transport and25 privacy assertions passed. Corrected exact-commit CI is pending; baseline8f86873 already passed all seven checks.
+
+The corrected full live read-only capture9eb06e5a-64de-4025-9749-2f8b0dc1b23b passed BOTH Neon and private R2; child exits were observed. The owner approved the ISP-bucket-only24-hour storage key. A separate owner-approved expiry-only extension of the same five-permission deployment key was applied and independently verified through the provider: expires27October11:35UTC (19:35Malaysia). Prior authorization records are privately archived; no new key value or permission was introduced.
+
+Next: corrected exact-commit CI, preserve/repackage the unarmed packet against its new source/helper proof and S3 credential, director review, fresh actual preflight and one inactive provision/seal. Only then admit the separate<=55minute runtime/watchdog and hosted tests within the cumulativeUS$5 budget. No new application provider mutation or runtime has occurred. Hosted remains0/63; production NO-GO. Current evidence: audit/staging-3/storage-transport-source-review.json. Earlier paragraphs below are historical.
+
+---
+# Latest hosting checkpoint — 27 October 2026
+
+Corrected source8f86873c9469788c9c47a06fda42e12de2004aaf passed all seven required push jobs40466418990 and applicable PR checks40466423565. All22 actual CI source blobs, Worker bundle and helper identities match the immutable published tree. Astra approved the source, unarmed config and nonsecret offline package; actual final local release274 and adapter56 tests passed. See audit/staging-2/ci-8f86873-summary.json and draft PR1.
+
+The owner approved and privately captured the new two-hour selected-account key. Actual token verification reports active27October07:35–09:35UTC (15:35–17:35MYT); selected account GET passed. Actual read-only Neon access passed. The storage collector failed; its ready pair is BLOCKED and both child exits were observed. A follow-up actual SDK HEAD received HTTP403 Forbidden, while an unsigned endpoint HEAD returned400. An earlier diagnostic timed out. This proves the stored S3 key is rejected; it does not prove a particular expiry cause.
+
+The owner approved a replacement Object Read & Write credential limited to isp-staging-private, initially24hours in the R2 form and shortened to17:35MYT before use. The form and private D input window are prepared; creation/capture is the pending user step. The rejected key is preserved privately. After approved shortening and actual access success, preserve/archive the unarmed package artifacts, update only storage credential fields and generate/review a fresh offline package nonce. Existing access authority, source/CI proof, config, seed and all historical lease evidence remain unchanged. No package-specific grant or app mutation may precede that review.
+
+No new application provider mutation or runtime has occurred. Hosting remains BLOCKED on storage access, revised hosted acceptance remains0/63 and production NO-GO. Test ceiling remains cumulativeUS$5. Current sanitized evidence: audit/staging-3/hosting-preflight-status.json. Earlier status paragraphs below are historical.
+
+---
 ## Exact-commit CI correction
 
 Source4ec70fd6b7f18e65a19bd75a09245f53acd44f96 published the complete lease3 integration after Astra source/config approval. GitHub push40466092854 and PR40466097242 stopped in one new validation command: the Ubuntu job invoked the Windows-only drive-D orchestration launcher. The pure274-test release suite and explicit standalone lease3 planning/selftest completed successfully before that failure. The failed attempt is retained in audit/staging-2/ci-4ec70fd-first-attempt.json.

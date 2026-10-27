@@ -39,9 +39,17 @@ The tests use synthetic receipts/processes and pure Ruby metadata checks. The sa
 
 Prepared UTF-8 source SHA256 values:
 
-- script/staging-access-observations.mjs: 0d34bce6d74038d92ccc292c93fa4c82e4478c23f1c5b7797f73f59885bb237b
-- script/staging-access-observations.test.mjs: 8520b17138205efe3a88f7ae39b20b044c2c76dcd1ed99b42a523325af325cc0
+- script/staging-access-observations.mjs: 64e510657d3c4b395cb722f780840e8886c4e0d9914634c9a5687c0160014165
+- script/staging-access-observations.test.mjs: fd7ef567e4ec8f2030e768c49dd389ed48250ecc2a9856acd7493f5d5bf782d3
 - script/staging-postgres-access.rb: 10e8d6c2fc7ac9993476841d839b3eee2092c3edc7f6987eeafbd0ac8195078f
-- script/staging-storage-access.rb: 19eaab0d76b15de972f460229705c2bd883c11148bd87c8608784410dac07a10
+- script/staging-storage-access.rb: 5206ea2db23110a146dca2676240bbabbe849d8e0ee20eabd5536d72964bc534
 
 Connected-host readback accepts only nonempty repetitions of the exact approved Neon hostname because pg1.7 may expand a single DNS host to multiple resolved addresses. Original URL and parsed-input restrictions still allow only one fixed hostname; empty, mixed, foreign and non-string actual values fail. The regression loads the actual Ruby helper without making a connection.
+
+## Current Windows connection route
+
+Live diagnostics confirmed authenticated HEAD/LIST200 with the new ISP-only key, but fresh hostname-based TCP connection attempts timed out before TLS. Two explicit current public IPv4 probes completed unsigned denial400 while retaining the original hostname and full certificate/hostname verification. The underlying timeout cause is unproven.
+
+The dedicated Windows helper now resolves the two fixed hosts through current AF_INET DNS, rejects empty/private/mixed results, and uses a client-local SDK Handler/ConnectionPool and shared strict NetHTTP factory. The selected IP changes only the TCP peer. Original Host, TLS/SNI hostname, signing, pinned CA, certificate/hostname verification and TLS1.2 minimum remain. No global patch, proxy fallback, automatic retries, target override, body-bound change or timeout extension is introduced. Static allowlisted diagnostic codes identify DNS/connect/TLS/authenticated/unsigned/metadata failures without arbitrary errors, responses or credentials.
+
+Saved-file validation passed276 release tests. The actual pinned SDK signing/XML request pipeline, five fake transport responses and TLS/Host/proxy/DNS safety properties passed79 native assertions; privacy/body bounds passed25. The corrected full live read-only capture9eb06e5a-64de-4025-9749-2f8b0dc1b23b passed both Neon and R2 with observed child exits. This is dependency access proof, not hosted Rails acceptance, object-write proof, recovery or production approval. Exact new-commit CI remains required before application mutation.
