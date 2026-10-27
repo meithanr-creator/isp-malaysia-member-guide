@@ -41,6 +41,14 @@ class RecoveryFingerprintInventoryTest < Minitest::Test
     assert conn.statements.all? { |sql| sql.start_with?("SELECT", "SHOW") }
     assert_equal "NOT RUN", I.compare!(value, JSON.parse(JSON.generate(value)))["restore_rollback"]
   end
+  def test_ci_accepts_only_the_selected_local_host_even_after_resolver_expansion
+    target={expected_host:"localhost",hosts:"localhost,localhost",address:"::1",database:"isp_test",server_version:180006,idle:true}
+    assert I.validate_ci_target!(**target)
+    assert I.validate_ci_target!(**target.merge(expected_host:"127.0.0.1",hosts:"127.0.0.1",address:"127.0.0.1"))
+    [{expected_host:"db.example"},{hosts:"localhost,db.example"},{hosts:"localhost,"},{hosts:""},{hosts:nil},{hosts:"127.0.0.1"},{address:"192.0.2.1"},{address:nil},{database:"other"},{server_version:170001},{server_version:"180006"},{idle:false}].each do |change|
+      assert_raises(I::Refused) { I.validate_ci_target!(**target.merge(change)) }
+    end
+  end
   def test_catalog_equality_is_separate_from_recovery_sequence_suitability
     base=inventory
     base["sequences"][0]["state"]={"last_value"=>"11","is_called"=>"false"}

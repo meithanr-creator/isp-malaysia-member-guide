@@ -19,7 +19,7 @@ begin
   ActiveRecord::Base.connection_pool.with_connection do |connection|
     raw = connection.raw_connection
     info = raw.conninfo_hash
-    raise "ci_target" unless %w[localhost 127.0.0.1].include?(info[:host]) && raw.db == "isp_test" && raw.server_version / 10_000 == 18 && raw.transaction_status == PG::PQTRANS_IDLE
+    RecoveryFingerprintInventory.validate_ci_target!(expected_host:config.fetch("host"),hosts:info[:host],address:raw.hostaddr,database:raw.db,server_version:raw.server_version,idle:raw.transaction_status == PG::PQTRANS_IDLE)
     original_error = nil
     begin
       stage = "read_only_transaction"

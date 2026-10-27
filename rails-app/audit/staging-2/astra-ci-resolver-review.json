@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "reviewer": "Astra high",
+  "agent": "/root/astra_release_review",
+  "source_base": "061590ad0dab32db21e6cf2e2ebc852ffdb3e2cc",
+  "disposition": "GO_FOR_PUBLICATION_ONLY",
+  "exact_file_sha256": {
+    "script/recovery-fingerprint-inventory.rb": "3518c3578bdeb06eda2895b0b69ab80545c467af4993c972cfec9590fb66787b",
+    "script/recovery-fingerprint-inventory.test.rb": "8203e4bf5bacd0be07ca0a1a12ca3236d7eaa5838382d2905b0ddc30c3d1eb82",
+    "script/recovery-inventory-ci.rb": "1c46d3ad8853fd16b1bcec234c69b67f0cd1d3fab8eed5136786ebbf47fdec17"
+  },
+  "actual_results": {
+    "ruby_runs": 9,
+    "ruby_assertions": 57,
+    "ruby_failures": 0,
+    "ruby_errors": 0,
+    "ruby_skips": 0,
+    "brakeman_warnings": 0,
+    "brakeman_errors": 0
+  },
+  "scope": "CI localhost resolver expansion only; preserves single selected input host, actual loopback, isp_test, PostgreSQL18 and idle connection",
+  "exact_new_commit_ci_required": true,
+  "singleton_sequence_risk": "Separate unresolved P2 risk, not the observed prior CI cause",
+  "production_approved": false
+}

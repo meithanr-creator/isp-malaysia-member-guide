@@ -88,6 +88,17 @@ module RecoveryFingerprintInventory
     raise Refused, code unless value
   end
 
+  # pg1.7 may repeat an approved hostname once per resolved address.
+  # This guard is for the isolated CI service only, never a hosted target.
+  def validate_ci_target!(expected_host:, hosts:, address:, database:, server_version:, idle:)
+    demand(%w[localhost 127.0.0.1].include?(expected_host), "ci_expected_host_required")
+    demand(hosts.is_a?(String) && !hosts.empty? && hosts.split(",", -1).all? { |host| host == expected_host }, "ci_resolved_host_required")
+    demand(%w[::1 127.0.0.1].include?(address), "ci_loopback_address_required")
+    demand(database == "isp_test", "ci_database_required")
+    demand(server_version.is_a?(Integer) && server_version / 10_000 == 18, "ci_postgres18_required")
+    demand(idle == true, "ci_idle_connection_required")
+    true
+  end
   def canonical(value)
     case value
     when Hash then value.keys.sort.to_h { |k| [k, canonical(value.fetch(k))] }
