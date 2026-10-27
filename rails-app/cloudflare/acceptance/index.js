@@ -69,7 +69,8 @@ export class ISPPrivateAcceptance extends DurableObject {
  async alarm(){if((await this.stop('deadline')).status!=='PASS')throw failure();}
  async status(){const s=await this.ctx.storage.get(STATE);return {version:1,stage:checkedState(s)?s.stage:'unavailable',running:this.ctx.container.running===true,stopped:this.stopped||s?.stopped===true,rails_up:checkedState(s)&&s.ready&&!s.stopped&&Date.now()<s.end,requests:checkedState(s)?s.requests:null,bytes:checkedState(s)?s.bytes:null,active:this.active,expires_at:checkedState(s)?new Date(s.end).toISOString():null};}
  async record(id,fields){const now=Date.now(),s=await this.ctx.storage.get(STATE);if(!checkedState(s))throw failure();return this.ctx.storage.transaction(async txn=>{const rows=await txn.get(TRACES)??[],old=rows.find(t=>t.id===id);const trace=cleanTrace({id,revision:(old?.revision??-1)+1,started_at:old?.started_at??now,updated_at:now,stage:'backend_http',outcome:'pending',dispatched:false,response_received:false,status:null,operation_id:null,exception_class:null,...old,...fields,revision:(old?.revision??-1)+1,updated_at:now},s.end);if(!trace)throw failure();await txn.put(TRACES,[...rows.filter(t=>t.id!==id),trace].slice(-16));});}
- async countBytes(size){if(!Number.isSafeInteger(size)||size<0)throw failure();try{await this.change(s=>{if(s.stopped||Date.now()>=s.end||s.bytes+size>LIMITS.bytes)throw failure();s.bytes+=size;});}catch{await this.stop('limit');throw failure();}}
+ get transferLimit(){return LIMITS.bytes;}
+ async countBytes(size){if(!Number.isSafeInteger(size)||size<0)throw failure();try{await this.change(s=>{if(s.stopped||Date.now()>=s.end||s.bytes+size>this.transferLimit)throw failure();s.bytes+=size;});}catch{await this.stop('limit');throw failure();}}
  async ensureStarted(){
  if(this.work)return this.work;
  this.work=(async()=>{let s=await this.live();const config=acceptanceRuntime(this.env);if(!config||this.ctx.container.images.rails!==IMAGE)throw failure();if(s.ready){if(!this.ctx.container.running)throw failure();return;}if(this.ctx.container.running)throw failure();
@@ -117,3 +118,5 @@ export class ISPPrivateAcceptanceFinal extends ISPPrivateAcceptance {}
 export class ISPPrivateAcceptanceFinalStable extends ISPPrivateAcceptance {}
 
 export class ISPPrivateAcceptanceMobile extends ISPPrivateAcceptance {}
+
+export class ISPPrivateAcceptanceMobilePrepared extends ISPPrivateAcceptance { get transferLimit(){return 64*1024*1024;} }

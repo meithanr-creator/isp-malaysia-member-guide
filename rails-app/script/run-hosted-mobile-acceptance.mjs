@@ -1,5 +1,6 @@
 // Hosted launcher; importing this module performs no I/O.
 import fs from 'node:fs';
+import path from 'node:path';
 import {spawn} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
@@ -12,7 +13,10 @@ export const PREFIX=Object.freeze(['-d','Ubuntu-24.04','--exec','/usr/bin/env','
 export function cleanEnvironment(source,extra={},leaseId=CONTEXT.leaseId){
  const context=selectedMobileContext(leaseId);ensure(extra.ISP_STAGING_LEASE===undefined||extra.ISP_STAGING_LEASE===leaseId);
  const env={...source};for(const key of Object.keys(env))if(['DEBUG','PWDEBUG','NODE_OPTIONS','NODE_PATH','NODE_COMPILE_CACHE','PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS','WSLENV'].includes(key.toUpperCase()))delete env[key];
- return {...env,...extra,TEMP:context.privateRoot+'/virtual-browser-tmp',TMP:context.privateRoot+'/virtual-browser-tmp',TMPDIR:context.privateRoot+'/virtual-browser-tmp',ISP_STAGING_LEASE:leaseId};
+ const supplied=[extra.TEMP,extra.TMP,extra.TMPDIR],tmp=extra.TEMP??context.privateRoot+'/virtual-browser-tmp';
+ ensure(supplied.every(v=>v===undefined)||supplied.every(v=>v===tmp),'Explicit browser temporary paths must match');
+ ensure(tmp===context.privateRoot+'/virtual-browser-tmp'||/^D:\/Projects\/isp-rails-tools\/offline-browser-preflight\/(?:windows\/[a-f0-9-]{36}|virtual-browser-tmp)$/.test(tmp),'Fixed browser temporary scope required');
+ return {...env,...extra,TEMP:tmp,TMP:tmp,TMPDIR:tmp,ISP_STAGING_LEASE:leaseId};
 }
 export function completeReceipt({profile,leaseId,runMarker,controller,snapshot,observation,server,id,finishedAt,now=Date.now()}){
  const receipt={version:1,lease_id:leaseId,profile,run_marker:runMarker,controller_pid:controller?.pid,controller_exit_code:controller?.code,controller_exited:controller?.finished===true,browser_absent:!!snapshot&&observation?.absent===true,observed_at:new Date(now).toISOString()};
@@ -71,6 +75,15 @@ const PY=[
 " print(json.dumps({'lease_id':lease,'tracked_pids_present':present,'own_server_pids':own,'absent':not present and not own}))"
 ].join('\n');
 function fixed(path,directory=false){const st=fs.lstatSync(path);ensure(!st.isSymbolicLink()&&fs.realpathSync(path).replaceAll('\\','/').toLowerCase()===path.toLowerCase()&&(directory?st.isDirectory():st.isFile()));return st;}
+export function prepareMobileWorkdirs(privateRoot){
+ ensure(typeof privateRoot==='string'&&path.isAbsolute(privateRoot)&&!privateRoot.split(/[\\/]/).some(part=>part==='.'||part==='..'),'Absolute browser work root required');
+ const root=path.resolve(privateRoot),same=(a,b)=>process.platform==='win32'?a.toLowerCase()===b.toLowerCase():a===b;
+ const verify=directory=>{const st=fs.lstatSync(directory);ensure(st.isDirectory()&&!st.isSymbolicLink()&&same(fs.realpathSync(directory),directory),'Existing browser work path must be a real directory');};
+ let ancestor=path.dirname(root);for(;;){verify(ancestor);const parent=path.dirname(ancestor);if(parent===ancestor)break;ancestor=parent;}
+ const dirs={privateRoot:root,controlParent:path.join(root,'mobile-browser-control'),temporary:path.join(root,'virtual-browser-tmp'),linuxParent:path.join(root,'linux-webkit')};
+ for(const directory of Object.values(dirs)){try{fs.mkdirSync(directory,{mode:0o700});}catch(error){ensure(error.code==='EEXIST','Browser work directory creation failed');}verify(directory);}
+ return Object.freeze(dirs);
+}
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 export function linuxServerArguments(leaseId,id){
  ensure(typeof leaseId==='string');selectedMobileContext(leaseId);ensure(validServerId(id),'Exact Linux server identity required');
@@ -81,9 +94,9 @@ export async function main(args=process.argv.slice(2)){
  ensure(command.mode==='execute','Use controller --reconcile after root capture-ids/status');
  const name=command.profile,input=readMobileInputs(name),window=profileWindow(input.runtime);
  ensure(fs.realpathSync(process.execPath).replaceAll('\\','/').toLowerCase()===NODE.toLowerCase());
- const id=randomUUID(),parent=PRIVATE+'/mobile-browser-control',control=parent+'/'+id,run=PRIVATE+'/linux-webkit/'+id,lock=PRIVATE+'/mobile-browser-wrapper.lock',receiptPath=PRIVATE+'/virtual-mobile-'+name+'-process.json';
+ const workdirs=prepareMobileWorkdirs(PRIVATE);
+ const id=randomUUID(),parent=workdirs.controlParent.replaceAll('\\','/'),control=parent+'/'+id,run=PRIVATE+'/linux-webkit/'+id,lock=PRIVATE+'/mobile-browser-wrapper.lock',receiptPath=PRIVATE+'/virtual-mobile-'+name+'-process.json';
  ensure(!fs.existsSync(receiptPath),'Existing receipt cannot be replayed');
- for(const dir of [parent,PRIVATE+'/virtual-browser-tmp']){try{fs.mkdirSync(dir,{mode:0o700});}catch(e){ensure(e.code==='EEXIST');}fixed(dir,true);}
  fs.mkdirSync(control,{mode:0o700});const lockFd=fs.openSync(lock,'wx',0o600);fs.writeFileSync(lockFd,JSON.stringify({pid:process.pid,id,profile:name})+'\n');fs.fsyncSync(lockFd);
  const jobs=[];let seq=0,server,controller,connection,snapshot,observation,phase='server_start',successful=false,finishedAt;
  function launch(exe,args,label,extra={}){

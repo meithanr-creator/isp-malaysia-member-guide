@@ -1,17 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker,{ISPPrivateAcceptance,ISPStartup,ISPNeonProof,HOST,IMAGE,SINGLETON,LIMITS,acceptanceWindow,acceptanceRuntime} from './index.js';
+import worker,{ISPPrivateAcceptance,ISPPrivateAcceptanceContinuation,ISPPrivateAcceptanceFinal,ISPPrivateAcceptanceFinalStable,ISPPrivateAcceptanceMobile,ISPPrivateAcceptanceMobilePrepared,ISPStartup,ISPNeonProof,HOST,IMAGE,SINGLETON,LIMITS,acceptanceWindow,acceptanceRuntime} from './index.js';
 import {issueBrowserCookie} from '../staging/browser-access.js';
 import {cleanTrace} from '../staging/diagnostics.js';
 const KEY='a'.repeat(64),ACTOR='c'.repeat(64),STATE='acceptance:v1';
-function fixture(t,{http,stored,running=false}={}){
+function fixture(t,{http,stored,running=false,runtimeClass=ISPPrivateAcceptance}={}){
  const now=Date.now(),records=new Map(stored??[]),calls=[],tasks=[];
  const runtime={AWS_REQUEST_CHECKSUM_CALCULATION:'when_required',RAILS_ENV:'production',APP_HOST:HOST,DATABASE_URL:'postgresql://synthetic:synthetic@ep-delicate-frost-a1o15wrb.ap-southeast-1.aws.neon.tech/neondb?sslmode=verify-full',DB_SSLMODE:'verify-full',SECRET_KEY_BASE:'s'.repeat(64),STORAGE_BUCKET:'isp-staging-private',STORAGE_ENDPOINT:'https://a9720867333b64a4f8ee70cdfd673eb9.r2.cloudflarestorage.com',STORAGE_FORCE_PATH_STYLE:'true',AWS_REGION:'auto',AWS_ACCESS_KEY_ID:'synthetic',AWS_SECRET_ACCESS_KEY:'synthetic',MAIL_FROM:'acceptance@isp.test',ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY:'1'.repeat(32),ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY:'2'.repeat(32),ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT:'3'.repeat(32),ISP_DEMO_MODE:'false',ISP_ACCOUNT_EMAILS_ENABLED:'false',ISP_ACCOUNT_EMAIL_DISPATCHER_ENABLED:'false'};
  const env={APP_HOST:HOST,ISP_STAGING_KEY:KEY,ISP_ACCEPTANCE_ENABLED:'true',ISP_STAGING_START_AT:new Date(now-1000).toISOString(),ISP_STAGING_EXPIRES_AT:new Date(now+1800000).toISOString(),RUNTIME_ENV:JSON.stringify(runtime)};
  const storage={async get(k){return structuredClone(records.get(k));},async put(k,v){records.set(k,structuredClone(v));},async setAlarm(end){records.set('alarm',end);},async deleteAlarm(){records.delete('alarm');}};let tail=Promise.resolve();storage.transaction=action=>{const result=tail.then(()=>action(storage));tail=result.catch(()=>{});return result;};
  const container={images:{rails:IMAGE},running,start(options){calls.push({type:'start',options});this.running=true;},monitor(){return new Promise(()=>{});},async destroy(){calls.push({type:'destroy'});this.running=false;},async setInactivityTimeout(ms){calls.push({type:'idle',ms});},getTcpPort(port){assert.equal(port,3000);return {async fetch(request){calls.push({type:'http',request});return http?http(request):new Response(new URL(request.url).pathname==='/up'?'up':'Rails member login');}};}};
  const ctx={id:{toString:()=>ACTOR},storage,container,blockConcurrencyWhile:fn=>fn(),waitUntil(p){tasks.push(p);}};
- const binding={idFromName(name){assert.equal(name,SINGLETON);return {toString:()=>ACTOR};},get(){calls.push({type:'lookup'});return obj;}};env.ACCEPTANCE=binding;const obj=new ISPPrivateAcceptance(ctx,env);t.after(async()=>{await obj.stop();});return {obj,ctx,env,runtime,calls,records};
+ const binding={idFromName(name){assert.equal(name,SINGLETON);return {toString:()=>ACTOR};},get(){calls.push({type:'lookup'});return obj;}};env.ACCEPTANCE=binding;const obj=new runtimeClass(ctx,env);t.after(async()=>{await obj.stop();});return {obj,ctx,env,runtime,calls,records};
 }
 function req(path='/',{method='GET',key=KEY,headers={},body,signal}={}){return new Request('https://'+HOST+path,{method,headers:{...(key===null?{}:{'x-isp-staging-key':key}),...headers},...(body===undefined?{}:{body,duplex:'half'}),signal});}
 async function text(response){const value=await response.text();return {status:response.status,value};}
@@ -54,6 +54,31 @@ test('private Rails runtime binds only the reviewed R2 request-checksum setting'
 
 test('only trace-correlated valid Rails operation/class metadata enters private diagnostics',async t=>{const operation='00000000-0000-4000-8000-000000000002';for(const mode of ['correlated','unrelated','malformed','missing']){const id=crypto.randomUUID();const f=fixture(t,{http:async r=>{if(new URL(r.url).pathname==='/up')return new Response('up');const headers=mode==='missing'?{}:{'x-isp-trace':mode==='unrelated'?crypto.randomUUID():id,'x-isp-diagnostic-operation':mode==='malformed'?'private-value':operation,'x-isp-diagnostic-exception':mode==='malformed'?'private message':'UploadOperation::StorageFailure'};return new Response('safe rejection',{status:422,headers});}});const response=await f.obj.fetch(req('/admin/events',{method:'POST',body:'synthetic',headers:{'x-isp-trace':id}}));assert.equal(response.status,422);assert.equal(response.headers.get('x-isp-diagnostic-operation'),null);assert.equal(response.headers.get('x-isp-diagnostic-exception'),null);await response.text();const record=await(await f.obj.fetch(req('/__isp_diagnostics/'+id))).json();assert.equal(record.trace.operation_id,mode==='correlated'?operation:null);assert.equal(record.trace.exception_class,mode==='correlated'?'UploadOperation::StorageFailure':null);assert.equal(record.trace.status,422);assert.equal(record.trace.response_received,true);}});
 
-import {ISPPrivateAcceptanceContinuation} from './index.js';
 import fs from 'node:fs';
 test('fresh continuation binding preserves the previous namespace migration and reuses the same implementation',()=>{assert.equal(Object.getPrototypeOf(ISPPrivateAcceptanceContinuation.prototype),ISPPrivateAcceptance.prototype);const config=JSON.parse(fs.readFileSync(new URL('./wrangler.json',import.meta.url),'utf8'));assert.equal(config.durable_objects.bindings[0].class_name,'ISPPrivateAcceptanceContinuation');assert.equal(config.containers[0].class_name,'ISPPrivateAcceptanceContinuation');assert.equal(config.workers_dev,false);assert.equal(config.preview_urls,false);assert.deepEqual(config.migrations.slice(-2),[{tag:'private-acceptance-v1',new_sqlite_classes:['ISPPrivateAcceptance']},{tag:'private-acceptance-continuation-v1',new_sqlite_classes:['ISPPrivateAcceptanceContinuation']}]);});
+
+const PREPARED_TRANSFER_LIMIT=64*1024*1024;
+test('prepared mobile class shares one exact64MiB allowance across inbound and outbound streams, then permanently stops on one more byte',async t=>{
+ const f=fixture(t,{runtimeClass:ISPPrivateAcceptanceMobilePrepared,http:async request=>{if(new URL(request.url).pathname==='/up')return new Response('up');await request.arrayBuffer();return new Response('x');}});
+ assert.equal(f.obj.transferLimit,PREPARED_TRANSFER_LIMIT);await text(await f.obj.fetch(req('/start')));
+ const state=f.records.get(STATE);state.bytes=PREPARED_TRANSFER_LIMIT-4;f.records.set(STATE,state);
+ const exact=await f.obj.fetch(req('/upload',{method:'POST',body:'abc'}));assert.equal(exact.status,200);assert.equal(await exact.text(),'x');assert.equal(f.records.get(STATE).bytes,PREPARED_TRANSFER_LIMIT);assert.equal(f.records.get(STATE).stopped,false);assert.equal(f.ctx.container.running,true);
+ const over=await f.obj.fetch(req('/one-more-byte'));await assert.rejects(()=>over.text(),/Private acceptance unavailable/);assert.equal(f.records.get(STATE).bytes,PREPARED_TRANSFER_LIMIT);assert.equal(f.records.get(STATE).stopped,true);assert.equal(f.ctx.container.running,false);
+ const starts=f.calls.filter(c=>c.type==='start').length,http=f.calls.filter(c=>c.type==='http').length;assert.equal((await f.obj.fetch(req('/refused'))).status,503);const restarted=new ISPPrivateAcceptanceMobilePrepared(f.ctx,f.env);await restarted.initialized;assert.equal((await restarted.fetch(req('/refused-after-restart'))).status,503);assert.equal(f.calls.filter(c=>c.type==='start').length,starts);assert.equal(f.calls.filter(c=>c.type==='http').length,http);
+});
+test('prepared mobile inbound stream crossing64MiB by one byte stops before charging the refused chunk',async t=>{
+ const f=fixture(t,{runtimeClass:ISPPrivateAcceptanceMobilePrepared,http:async request=>{if(new URL(request.url).pathname==='/up')return new Response('up');await request.arrayBuffer();return new Response('x');}});await text(await f.obj.fetch(req('/start')));
+ const state=f.records.get(STATE);state.bytes=PREPARED_TRANSFER_LIMIT-2;f.records.set(STATE,state);
+ const response=await f.obj.fetch(req('/upload',{method:'POST',body:'abc'}));assert.equal(response.status,503);assert.equal(f.records.get(STATE).bytes,PREPARED_TRANSFER_LIMIT-2);assert.equal(f.records.get(STATE).stopped,true);assert.equal(f.ctx.container.running,false);assert.equal((await f.obj.fetch(req('/later'))).status,503);
+});
+test('prepared byte accounting preserves invalid-size refusal and the unchanged per-upload bound',async t=>{
+ const f=fixture(t,{runtimeClass:ISPPrivateAcceptanceMobilePrepared});await f.obj.initialized;seed(f);
+ for(const size of [-1,0.5,NaN,Infinity,Number.MAX_SAFE_INTEGER+1,'1']){await assert.rejects(()=>f.obj.countBytes(size),/Private acceptance unavailable/);assert.equal(f.records.get(STATE).bytes,0);assert.equal(f.records.get(STATE).stopped,false);}
+ await f.obj.countBytes(0);assert.equal(f.records.get(STATE).bytes,0);
+ assert.equal((await f.obj.fetch(req('/upload',{method:'POST',body:'x',headers:{'Content-Length':String(LIMITS.upload+1)}}))).status,503);assert.equal(f.calls.some(c=>c.type==='http'||c.type==='start'),false);assert.equal(f.records.get(STATE).bytes,0);
+ await assert.rejects(()=>f.obj.countBytes(PREPARED_TRANSFER_LIMIT+1),/Private acceptance unavailable/);assert.equal(f.records.get(STATE).bytes,0);assert.equal(f.records.get(STATE).stopped,true);
+});
+test('all historical native classes retain their exact256MiB cap and stop latch',async t=>{
+ assert.equal(LIMITS.bytes,256*1024*1024);
+ for(const runtimeClass of [ISPPrivateAcceptance,ISPPrivateAcceptanceContinuation,ISPPrivateAcceptanceFinal,ISPPrivateAcceptanceFinalStable,ISPPrivateAcceptanceMobile]){const f=fixture(t,{runtimeClass});await f.obj.initialized;seed(f);assert.equal(f.obj.transferLimit,LIMITS.bytes);await f.obj.countBytes(PREPARED_TRANSFER_LIMIT+1);assert.equal(f.records.get(STATE).bytes,PREPARED_TRANSFER_LIMIT+1);await f.obj.countBytes(LIMITS.bytes-PREPARED_TRANSFER_LIMIT-1);assert.equal(f.records.get(STATE).bytes,LIMITS.bytes);assert.equal(f.records.get(STATE).stopped,false);await assert.rejects(()=>f.obj.countBytes(1),/Private acceptance unavailable/);assert.equal(f.records.get(STATE).bytes,LIMITS.bytes);assert.equal(f.records.get(STATE).stopped,true);}
+});

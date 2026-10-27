@@ -18,6 +18,7 @@
   "script/lease3-release-policy.mjs",
   "script/linux-webkit-connection.mjs",
   "script/linux-webkit-server.mjs",
+  "script/offline-browser-preflight.mjs",
   "script/private-acceptance-carry.mjs",
   "script/private-acceptance-context.mjs",
   "script/private-acceptance-health.mjs",
