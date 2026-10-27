@@ -2,12 +2,16 @@
 // No retries, no provisioning, no secret output; independent cost watchdog is mandatory.
 import fs from 'node:fs';
 import {spawnSync} from 'node:child_process';
-import {selectLease,leaseContext,readPreparedRelease,assertRuntimeRelease,assertActiveRelease,assertWatchdogTuple,assertWritableLease} from './staging-lease-context.mjs';
+import {randomUUID} from 'node:crypto';
+import {functionalExecutionPlan,functionalExecutionWindow,admitFunctionalBatch,FUNCTIONAL_STAGE_LIMITS,mobileDependenciesReady} from './hosted-execution-phase.mjs';
+import {selectLease,leaseContext,readPreparedRelease,assertRuntimeRelease,assertActiveRelease,assertWatchdogTuple,assertWritableLease,preparedTuple} from './staging-lease-context.mjs';
 const CONTEXT=leaseContext(selectLease());
 const ROOT='D:/Projects/isp-member-rails',PRIVATE=CONTEXT.privateRoot;
 const get=file=>JSON.parse(fs.readFileSync(PRIVATE+'/'+file,'utf8'));
 function fail(){throw Error('Acceptance sequencing stopped; inspect preserved evidence before any further mutation')}
-let requireWatchdog=false,expectedWindow=null,expectedRuntime=null,prepared=null;
+let requireWatchdog=false,expectedWindow=null,expectedRuntime=null,prepared=null,phaseSummary=null;
+const summaryFile=CONTEXT.auditRoot+'/functional-phase-summary.json';
+function saveSummary(){const temp=summaryFile+'.tmp-'+randomUUID(),fd=fs.openSync(temp,'wx',0o600);try{fs.writeFileSync(fd,JSON.stringify(phaseSummary,null,2)+'\n');fs.fsyncSync(fd);}finally{fs.closeSync(fd);}fs.renameSync(temp,summaryFile);}
 function verifyWatchdog(){
  const state=get('watchdog-state.json'),plan=get('watchdog-plan.json'),now=Date.now();
  const updated=Date.parse(state.updated_at),stop=Date.parse(state.stop_at);
@@ -15,34 +19,40 @@ function verifyWatchdog(){
  if(state.armed!==true||!Number.isFinite(updated)||updated>now+5000||now-updated>45000||!Number.isFinite(stop)||stop!==Date.parse(expectedWindow.end)-5*60000||!Number.isSafeInteger(state.pid)||state.pid<=0)fail();
  try{process.kill(state.pid,0)}catch{fail()}
 }
-function command(script,args,deadline,capture=false){
- if(requireWatchdog)verifyWatchdog();const timeout=Math.min(script==='hosted-acceptance.mjs'&&args.includes('aged-stepup')?14*60000:180000,deadline-Date.now());if(timeout<20000)fail();
+function command(script,args,deadline,capture=false,maxMs=180000){
+ if(requireWatchdog)verifyWatchdog();const timeout=Math.min(maxMs,deadline-Date.now());const minimum=script==='hosted-acceptance.mjs'&&args[0]==='--execute'?20000:1000;if(timeout<minimum)fail();
  const result=spawnSync(process.execPath,[ROOT+'/script/'+script,...args],{cwd:ROOT,env:{...process.env,TEMP:'D:/Projects/isp-rails-tools/tmp',TMP:'D:/Projects/isp-rails-tools/tmp'},windowsHide:true,shell:false,stdio:capture?['ignore','pipe','pipe']:'inherit',encoding:'utf8',timeout,maxBuffer:2*1024*1024});
  if(result.error||result.status!==0)fail();return result.stdout;
 }
 try{
  const plan=JSON.parse(command('hosted-acceptance.mjs',['--plan'],Date.now()+30000,true));
  if(!Array.isArray(plan.batches)||plan.batches.length>20||!plan.batches.every(b=>/^[a-z-]+$/.test(b)))fail();
- if(process.argv.length!==3||process.argv[2]!=='--execute'){
-  console.log(JSON.stringify({executes:false,batches:plan.batches,sequence:'HTTPS batch, independent database status, reconcile; halt on failure',automatic_retries:0}));
+ const phase=functionalExecutionPlan(process.argv.slice(2),plan);
+ if(!phase.executes){
+  console.log(JSON.stringify({...phase,sequence:'HTTPS batch, independent database status, reconcile; halt on failure; external cases stay open'}));
  }else{
-  assertWritableLease(CONTEXT);
+  assertWritableLease(CONTEXT);if(!CONTEXT.fresh)fail();
   const runtime=get('runtime.json'),fixture=get('acceptance-fixtures.json'),watchdog=get('watchdog-state.json');
   prepared=readPreparedRelease(CONTEXT);
   assertRuntimeRelease(CONTEXT,runtime,prepared);
   if(CONTEXT.fresh)assertActiveRelease(CONTEXT,runtime,get('acceptance-release.json'),prepared);
   expectedRuntime=runtime;
-  const deadline=Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-10*60000;expectedWindow={start:runtime.ISP_STAGING_START_AT,end:runtime.ISP_STAGING_EXPIRES_AT};requireWatchdog=true;verifyWatchdog();
+  const window=functionalExecutionWindow(runtime),deadline=window.completeBy;expectedWindow={start:runtime.ISP_STAGING_START_AT,end:runtime.ISP_STAGING_EXPIRES_AT};requireWatchdog=true;verifyWatchdog();
   if(!Number.isFinite(deadline)||deadline<=Date.now()||fixture.phase!=='active'||watchdog.armed!==true||Date.now()-Date.parse(watchdog.updated_at)>45000)fail();
-  for(const batch of plan.batches){
-   command('hosted-acceptance.mjs',['--execute','--batch',batch],deadline);
-   command('hosted-acceptance-operator.mjs',['capture-ids'],deadline);
-   command('hosted-acceptance-operator.mjs',['status'],deadline);
-   command('hosted-acceptance.mjs',['--reconcile'],deadline);
-   const state=get('acceptance-http.json');
+  const completed=[];let admissionStopped=false,state=null;
+  const initial={version:1,phase:phase.phase,status:'running',lease_id:CONTEXT.leaseId,release:preparedTuple(prepared),run_marker:fixture.run_marker,selected_case_ids:phase.case_ids,http_complete_by:new Date(window.completeBy).toISOString(),batch_admission_until:new Date(window.admitUntil).toISOString(),test_cutoff:new Date(window.testCutoff).toISOString(),stage_limits_ms:FUNCTIONAL_STAGE_LIMITS,completed_batches:[],deferred_batches:[...phase.batches,...phase.deferred_batches],mobile_eligible:false,non_http_cases_complete:false,started_at:new Date().toISOString()};
+  const initialFd=fs.openSync(summaryFile,'wx',0o600);try{fs.writeFileSync(initialFd,JSON.stringify(initial,null,2)+'\n');fs.fsyncSync(initialFd);}finally{fs.closeSync(initialFd);}phaseSummary=initial;
+  for(const batch of phase.batches){
+   if(!admitFunctionalBatch(window)){admissionStopped=true;break;}
+   command('hosted-acceptance.mjs',['--execute','--batch',batch],deadline,false,FUNCTIONAL_STAGE_LIMITS.http);
+   command('hosted-acceptance-operator.mjs',['capture-ids'],deadline,false,FUNCTIONAL_STAGE_LIMITS.capture);
+   command('hosted-acceptance-operator.mjs',['status'],deadline,false,FUNCTIONAL_STAGE_LIMITS.status);
+   command('hosted-acceptance.mjs',['--reconcile'],deadline,false,FUNCTIONAL_STAGE_LIMITS.reconcile);
+   state=get('acceptance-http.json');
    if(state.halted||state.running_batch||Object.values(state.cases).some(c=>c.status==='FAIL'||(c.http==='PASS'&&c.db?.length&&c.status!=='PASS')))fail();
-   console.log(JSON.stringify({batch,independent_database_checks:'pass',next:'Continue once; no mutation replay'}));
+   completed.push(batch);phaseSummary.completed_batches=[...completed];phaseSummary.deferred_batches=[...phase.batches.filter(b=>!completed.includes(b)),...phase.deferred_batches];saveSummary();console.log(JSON.stringify({batch,independent_database_checks:'pass',next:'Continue once; no mutation replay'}));
   }
-  console.log(JSON.stringify({http_batches_completed:true,production_release_approved:false,next:'Virtual browsers and remaining operational evidence; exact cleanup and verified shutdown'}));
+  phaseSummary.status=completed.length===phase.batches.length?'selected_phase_complete':'partial';phaseSummary.admission_stopped=admissionStopped;phaseSummary.mobile_eligible=mobileDependenciesReady({phase,completed,state,fixtures:fixture,preparedHash:prepared.prepared_release_sha256});phaseSummary.finished_at=new Date().toISOString();saveSummary();
+  console.log(JSON.stringify({selected_phase:phase.phase,selected_phase_completed:completed.length===phase.batches.length,completed_batches:completed,admission_stopped:admissionStopped,deferred_batches:phaseSummary.deferred_batches,http_batches_completed:false,non_http_cases_complete:false,mobile_eligible:phaseSummary.mobile_eligible,production_release_approved:false,evidence:summaryFile,next:phaseSummary.mobile_eligible?'Reviewed mobile assertions may run within remaining cutoff; aggregate stays open until all required evidence.':'Dependent mobile cases NOT RUN; preserve partial state, reconcile and clean up. Never replay a started batch.'}));
  }
-}catch{console.error('Hosted acceptance sequencing refused or stopped. Private credentials were not printed.');process.exitCode=1;}
+}catch{if(phaseSummary)try{phaseSummary.status='failed_or_unresolved';phaseSummary.mobile_eligible=false;phaseSummary.finished_at=new Date().toISOString();saveSummary();}catch{}console.error('Hosted acceptance sequencing refused or stopped. Private credentials were not printed.');process.exitCode=1;}

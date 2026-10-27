@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "scope": "Read-only ISP staging storage access; no file writes to provider",
+  "checked_at": "2026-10-26T18:40:59Z",
+  "tls_verify": true,
+  "provider_mutations": 0,
+  "status": "pass",
+  "http_status": 200,
+  "empty": true
+}
