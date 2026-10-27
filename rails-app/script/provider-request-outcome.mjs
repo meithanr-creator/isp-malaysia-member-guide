@@ -8,10 +8,10 @@ const hex=value=>typeof value==='string'&&/^[a-f0-9]{64}$/.test(value);
 const stages=new Set(['admission_error','intent_write_error','transport_error','body_read_error','body_limit_error','parse_error','provider_error','validation_error','http_error','complete']);
 const fail=()=>{throw Error('Fixed provider request boundary refused');};
 export function validateProviderTarget(method,endpoint){
- const app=new RegExp('^'+APP+'/[a-f0-9-]{36}(?:/instances-v2\\?per_page=100)?$');
+ const app=new RegExp('^'+APP+'/(?:[a-f0-9]{32}|[a-f0-9-]{36})(?:/instances-v2\\?per_page=100)?$');
  const gets=[A,W+'/deployments',W+'/content/v2',W+'/subdomain',A+'/workers/durable_objects/namespaces?per_page=1000',APP+'?per_page=100',A+'/builds/workers/2add92d700014660819ef6b5d266f104/triggers','/user/tokens/verify'];
  if(!((method==='GET'&&(gets.includes(endpoint)||app.test(endpoint)||new RegExp('^'+W+'/versions/[a-f0-9-]{36}$').test(endpoint)))||
-  (method==='PUT'&&endpoint===W)||(method==='POST'&&[APP,W+'/subdomain',W+'/deployments'].includes(endpoint))||
+  (method==='PUT'&&endpoint===W)||(method==='POST'&&[APP,A+'/containers/image-preparations',W+'/subdomain',W+'/deployments'].includes(endpoint))||
   (method==='DELETE'&&app.test(endpoint)&&!endpoint.includes('instances-v2'))))return fail();
  return endpoint;
 }

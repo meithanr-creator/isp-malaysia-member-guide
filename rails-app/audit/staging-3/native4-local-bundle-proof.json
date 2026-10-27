@@ -1,0 +1,27 @@
+{
+  "bundle_sha256": "3bf7f813e26e9013a734aa242e294a1e8b4e01bef3421211447238d0a16f94b0",
+  "files": {
+    "cloudflare/src/diagnostics.js": "8321e530ac1702b25c4b350301aa45485edf5068",
+    "cloudflare/src/lifetime.js": "ec8f0b27097e3532b665f64eff082c7a19e9715b",
+    "cloudflare/src/runtime.js": "7b5835ded8c80ee28a280026ec8e9df45c146a3a",
+    "cloudflare/src/index.js": "5e235fbddba44bb91ba972e248a3fbbb5ec5dede",
+    "cloudflare/staging/diagnostics.js": "4bff3f3d0bbb078d0d932bcdaaaa626bc63331c8",
+    "cloudflare/staging/lease4-container.js": "c77ccc279ec7e9177449d506a69a303779660ea0",
+    "cloudflare/staging/browser-access.js": "867c6b0721fdc44dd30af948c199fb99e054c1b2",
+    "cloudflare/staging/index.js": "61cbcf25af951cacc8efeef8b5c59385904e7bf0",
+    "cloudflare/package.json": "b6847307b3a3e11ee5fd66d51484b5ba16f8982c",
+    "cloudflare/package-lock.json": "73b2531b9299b5893bfe2f3bc6210d11ecfe71ed",
+    "script/native-boot4.mjs": "2a7f2987c6f399803c1118db49811080aa7d035b",
+    "script/native-boot4-spec.mjs": "8300d80dc6b83b404c2fa54f7c51a7807097a9e6",
+    "script/provider-request-outcome.mjs": "39b15f52a77edebf1e1fdca8819d7d6c98fa1933",
+    "script/lease2-provision-core.mjs": "ebac18d3378d4be5ff1d04b4431d502866f0a3aa",
+    "script/staging-credential-provider.mjs": "ed01c82ccb1bbce15e92285095d2b60e76062b4e",
+    "script/staging-lease-context.mjs": "70738461e1d3f02ad7c80e5c01602e64a628a3d1",
+    "script/lease3-release-policy.mjs": "f1ce2349058d20e7e7ba9adc4e3327668a58448f",
+    "script/cloudflare-staging-ops.mjs": "8b8ce5bfaec97df3119449b7e20fdcd40ae00950",
+    "script/cloudflare-staging-watchdog.mjs": "a102145a031dc8198b25a7fa283508b3f24bd7f6",
+    "script/active-staging-admission.mjs": "1ce8a9a431246fd7eba658f6ee2a841324d11e07",
+    "script/immutable-acceptance-evidence.mjs": "c67b83c0f79df18e5929c2fc197fda0ee1ccf461"
+  },
+  "helper_sha256": "3abb4448b07fe203e14fca4c88e2b5b30c02251882bcfcb788e621b1528147bc"
+}

@@ -1,7 +1,8 @@
 import { RailsContainer as BaseRailsContainer, fetchWithTrace } from '../src/index.js';
-import {validUuid} from '../src/diagnostics.js';
+import {validUuid,TRACE_HEADER} from '../src/diagnostics.js';
 import {storeTrace,readTrace} from './diagnostics.js';
-import { unavailable } from '../src/runtime.js';
+import {unavailable,INSTANCE_NAME,EDGE_IP_HEADER,edgeClientIp,privateResponse} from '../src/runtime.js';
+import {nativeLease4Settings} from './lease4-container.js';
 import { browserAccessEndpoint, validBrowserCookie, headersWithoutReviewCookie } from './browser-access.js';
 const HOST='isp-member-production.meithan-r.workers.dev',KEY_HEADER='x-isp-staging-key';
 const DEADLINE_KEY='isp:staging:earliest-deadline',EXPIRED_KEY='isp:staging:expired';
@@ -126,6 +127,15 @@ export default {async fetch(request,env) {
  try {
   const url=new URL(request.url),window=stagingWindow(env);
   if(url.protocol!=='https:'||url.hostname!==HOST||url.port||request.headers.has('upgrade'))return unavailable();
+  if(env.ISP_STAGING_LEASE==='rails-staging-4'||['ISP_CONTAINER_SCHEDULING_POLICY','ISP_CONTAINER_IMAGE_NAME','ISP_CONTAINER_INSTANCE_TYPE','ISP_CONTAINER_SINGLETON_NAME'].some(name=>Object.hasOwn(env,name))){
+   if(!keyMatches(request,env)||!nativeLease4Settings(env)||request.method!=='GET'||!['/up','/app-ready','/ready'].includes(url.pathname)||url.search||url.hash||url.username||url.password)return unavailable();
+   const clientIp=edgeClientIp(request);if(!clientIp||request.signal.aborted||Date.now()>=window.end)return unavailable();
+   const traceId=validUuid(request.headers.get(TRACE_HEADER))?request.headers.get(TRACE_HEADER):crypto.randomUUID();
+   const headers=new Headers(request.headers);headers.set(EDGE_IP_HEADER,clientIp);headers.set(TRACE_HEADER,traceId);
+   const forwarded=deadlineRequest(new Request(request,{headers,cf:request.cf}),window.end);
+   const id=env.RAILS_CONTAINER.idFromName(INSTANCE_NAME),container=env.RAILS_CONTAINER.get(id);
+   return privateResponse(await container.fetch(forwarded),traceId);
+  }
   const lookup=diagnosticLookupId(request);
   if(lookup!==undefined&&(!lookup||!keyMatches(request,env)))return unavailable();
   const access=await browserAccessEndpoint(request,env,window,value=>matchesKey(value,env.ISP_STAGING_KEY));
@@ -145,3 +155,6 @@ export {RailsContainer as RailsStaging2};
 
 // Lease3 retains both retired exports while receiving its own fresh SQLite namespace.
 export {RailsContainer as RailsStaging3};
+
+// Lease4 uses the native scheduling-policy adapter and a fresh namespace.
+export {RailsStaging4} from './lease4-container.js';

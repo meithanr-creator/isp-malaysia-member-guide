@@ -1,3 +1,9 @@
+# Current scope: hosting chunk 1
+
+See HOSTING-CHUNK-1.md for the current small boot/readiness/shutdown scope and expired-access status. Lease3 was rejected and stopped; no lease4 runtime has started. Earlier status paragraphs below are historical. Production remains NO-GO.
+
+---
+
 # Live Windows census correction — 27 October 2026
 
 The actual machine census exposed multiline commands from unrelated tools that the earlier native fixtures did not cover. The anchored parser now retains newline characters in command tails while preserving exact process identity and controller-wrapper rejection. Astra reviewed the single-literal correction. The actual corrected census completed successfully: 594 process rows, zero matching ISP controllers, no provider requests and no release admission. Native Windows regressions passed 33 assertions, including LF/CRLF commands, tabs and controller wrappers.

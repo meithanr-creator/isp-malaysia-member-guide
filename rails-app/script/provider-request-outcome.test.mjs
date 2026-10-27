@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {setTimeout as delay} from 'node:timers/promises';
-import {performProviderRequest,publicProviderOutcome,requestPayloadFingerprint,MAX_ERROR_BODY_BYTES,MAX_RESPONSE_BYTES} from './provider-request-outcome.mjs';
+import {performProviderRequest,publicProviderOutcome,requestPayloadFingerprint,MAX_ERROR_BODY_BYTES,MAX_RESPONSE_BYTES,validateProviderTarget} from './provider-request-outcome.mjs';
 import {stopStaging} from './cloudflare-staging-watchdog.mjs';
 const A='/accounts/a9720867333b64a4f8ee70cdfd673eb9',W=A+'/workers/scripts/isp-member-production',APP=A+'/containers/applications';
 const ID='11111111-2222-4333-8444-555555555555',SECRET='synthetic-secret-never-public';
@@ -173,4 +173,9 @@ test('successful Worker response with invalid MIME never archives content bytes 
  const f=fixture({endpoint:W+'/content/v2',fetchImpl:async()=>json({module:SECRET}),parseSuccess:()=>{throw Error('Expected multipart');}});
  const result=await failure(f.options);assert.equal(result.http_status,200);assert.equal(result.stage,'validation_error');
  assert.equal(f.records.some(r=>r.kind==='error-body'),false);assert.equal(JSON.stringify(f.records).includes(SECRET),false);
+});
+
+test('native bootstrap permits only fixed namespace32 app and exact image preparation routes',()=>{
+ const ns='4'.repeat(32);for(const method of ['GET','DELETE'])assert.equal(validateProviderTarget(method,APP+'/'+ns),APP+'/'+ns);assert.equal(validateProviderTarget('GET',APP+'/'+ns+'/instances-v2?per_page=100'),APP+'/'+ns+'/instances-v2?per_page=100');assert.equal(validateProviderTarget('POST',A+'/containers/image-preparations'),A+'/containers/image-preparations');
+ for(const [method,path] of [['POST',APP+'/'+ns],['DELETE',APP+'/'+ns+'/instances-v2?per_page=100'],['GET',APP+'/'+ns+'?token=x'],['POST',A+'/containers/image-preparations?image=x'],['GET',A+'/containers/image-preparations'],['GET',APP+'/'+'a'.repeat(31)],['GET',APP+'/'+'A'.repeat(32)]])assert.throws(()=>validateProviderTarget(method,path));
 });
