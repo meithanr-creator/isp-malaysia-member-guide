@@ -1,33 +1,25 @@
 # Hosting chunk 1 — private native Rails boot
 
-Current authority: 27 October 2026, Asia/Kuala_Lumpur. This narrows hosting implementation following the owner's request for smaller, simpler chunks. Production remains NO-GO.
+Updated 27 October 2026, Asia/Kuala_Lumpur. Production remains NO-GO. The current hosted evidence is audit/staging-3/native4-hosted-attempt.json.
 
 ## Scope and exit
 
-Use the existing ISP Worker/hostname, unchanged Rails image from source 80d32fddf88251a6608ba047a577ce16efe8c834, and saved native RailsStaging4 adapter. Retain all three retired namespaces, exports and journals. The new gateway permits only authenticated GET /up, /app-ready and /ready. Anonymous, wrong-key, other-path and other-method requests must be rejected before Durable Object lookup.
+Use the ISP Cloudflare Worker and the unchanged Rails image from source 80d32fddf88251a6608ba047a577ce16efe8c834. The gateway admits only authenticated GET /up, /app-ready and /ready; other access must be denied before the container is reached. Full member/admin/mobile acceptance and recovery are subsequent milestones. Shop and Plantation Jobs remain frozen DEMO; Academy and Forum are excluded.
 
-The small fixed boot operator handles package/image preparation/inactive provision/boot/watch/stop/reconcile only. No generic lease registry, full acceptance harness migration, collector port or demo work belongs in this chunk. Exact configuration checks are distinct from actual connectivity proof: successful hosted /app-ready and /ready supply fresh database/schema and private-storage/scanner evidence.
+Exit PASS requires actual authenticated Rails readiness, dependency checks, denial evidence and independent verified shutdown. Source/CI checks and successful inactive deployment do not close this gate.
 
-Exit PASS requires the exact reviewed image and singleton, actual authenticated readiness, anonymous denial, and independent shutdown proof: ingress and previews closed; exact new application absent and no running instances. Any failed or unknown mutation is preserved and reconciled without blind replay. This closes only a hosting slice; the full 63-case acceptance, mobile and recovery gates remain open.
+## Actual attempt
 
-## Constraints
+- Reviewed source a6f841bb35fe2db7421b5450a5ba46ce6547d7d5 passed all seven required CI checks. Native image preparation completed successfully.
+- An initial local preflight failed because the command used a relative script path. The real Windows parser confirmed the cause. The entire failed attempt was preserved; provider readback proved no new deployment or namespace. A fresh package with only a new nonce was reviewed. All operator invocations must use the absolute drive-D executable and script paths.
+- Fresh manifest c27776a5697a11920b49f855ca9f97000877f863da39b0207614decd7d0f103b was admitted. Native application/namespace ede186af45eb414887d11714189ab3b7 was created, verified with zero instances and closed ingress, and independently reviewed by Astra.
+- The approved test window was 21:47:25–22:02:25 Malaysia time. Activation succeeded. Anonymous /up returned503/no-store. The wrong-key /up intent was recorded at21:48:39, but no response or useful failure reason was retained. Its dispatch is unknown. All four subsequent keyed checks were unexecuted. No Rails readiness success was observed.
+- Automatic cleanup completed by21:48:51. Both controllers confirmed exact application absence, closed ingress/previews and preserved namespaces. Concurrent deletion produced200/404, followed by actual404 readbacks; the later read-only reconciliation also confirmed absence and closed ingress. The test was not replayed.
 
-All source, temporary files, credentials and evidence remain on D. No real members, identity emails, DNS cutover or public launch. Runtime is one fixed 15-minute first window with an independently running shutdown process; the existing US$1 reservation sits inside the cumulative US$5 test ceiling. There is no provider max_instances cap under the native mode; code enforces the fixed singleton.
+## Next concrete work
 
-Previous Cloudflare access expired at 7:35 p.m. Malaysia on 27 October. No lease4 runtime started. Source preparation continues; reviewed package and exact CI must be concrete before another access request.
+Retain the failed attempt and add safe stage-specific failure diagnostics to the test runner. Review and test that correction. A further live attempt needs a separately authorized window; the completed single attempt is not silently extended or replayed. Full63-case acceptance remains0/63. Official identity mail, approved member/admin/content, support/retention/ongoing cost and planterapp.co DNS/TLS remain launch gates.
 
-## Verified prior disposition
+## Guardrails and ownership
 
-Lease3 application POST returned HTTP400, code1602: this account requires durable_object scheduling. The original conservative uncertain journal remains intact. Independent reconciliation found no application. Scoped stop observations at 2026-10-27T10:26:12.414Z confirmed application absence, closed ingress and preserved namespace, with abort recorded; a complete cleanup receipt was not invented.
-
-Lease3 namespace: 2fe1c4527c4c4ac1af3dc3f67c9bfe73. Inactive Worker version: 7b6cb3e5-9fff-4ec7-8b74-f15c4a22873d. Deployment: 2ee6f2d1-38c5-4f97-ac81-ee9d177ff5a1. Source: 1a214590a0bd6a1c3fc60c2a8611470feb27976e; all seven checks passed. Native adapter source is saved on D and its 28 saved-file tests passed. Gateway and boot-operator integration are in preparation.
-
-## Owners
-
-Astra high directs and reviews. Sol 6.1 extra high implements the fixed operator/spec/tests and gateway/test-loader changes. Root saves candidates promptly on D, verifies actual saved files, integrates CI/source proof and executes only after review and current authorization.
-
-
-## Final source checkpoint before publication
-
-Astra approved the reduced source. Actual saved-file checks passed: 305 release-tool tests, 95 adapter tests, and 43 focused boot/provider tests including the Windows parser; zero failures or skips. Syntax and workflow YAML passed. The real native Worker bundle and its 21 public source inputs were built and hashed. Exact new-commit CI remains pending. These results do not establish hosted readiness or authorize production. No lease4 runtime has started; temporary access is expired.
-
+All source, temporary files, credentials and evidence stay on D. The US$1 test reservation is inside the existing cumulative US$5 ceiling; it is not actual billed usage. No public launch, real members, identity emails or domain changes were part of this run. Astra directs and reviews; Sol6.1 extra-high agents support implementation and testing.

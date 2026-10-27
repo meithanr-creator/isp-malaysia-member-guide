@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "updated_at": "2026-10-27T13:54:57.858Z",
+  "source": "a6f841bb35fe2db7421b5450a5ba46ce6547d7d5",
+  "ci_run_id": 40509032115,
+  "manifest_sha256": "c27776a5697a11920b49f855ca9f97000877f863da39b0207614decd7d0f103b",
+  "prepared_sha256": "b2962077e3abff6d90e6dca02aec14998fb429a3b7e7a91b06aba95097c9fbd2",
+  "bundle_sha256": "3bf7f813e26e9013a734aa242e294a1e8b4e01bef3421211447238d0a16f94b0",
+  "image": "registry.cloudflare.com/a9720867333b64a4f8ee70cdfd673eb9/isp-member-rails@sha256:152480a896060eae82a380dc54f651e199ff1585cd5dd805d0d51b9f3a587d2a",
+  "scope": "Private health, denial and shutdown only",
+  "inactive_provision": {
+    "status": "PASS",
+    "namespace_id": "ede186af45eb414887d11714189ab3b7",
+    "worker_version": "f21a4319-6b57-4c1c-bafe-12ecaf740a49",
+    "deployment_id": "13862d9b-f208-4dc5-8257-dfc148c4b274",
+    "module_sha256": "3bf7f813e26e9013a734aa242e294a1e8b4e01bef3421211447238d0a16f94b0",
+    "application_id": "ede186af45eb414887d11714189ab3b7",
+    "observed_at": "2026-10-27T13:44:43.052Z",
+    "instance_count": 0
+  },
+  "active_deployment": {
+    "namespace_id": "ede186af45eb414887d11714189ab3b7",
+    "worker_version": "ccec9efb-e897-406d-9103-c5022e4a45f8",
+    "deployment_id": "b639a702-513b-4809-a5b8-e2956164c30a",
+    "module_sha256": "3bf7f813e26e9013a734aa242e294a1e8b4e01bef3421211447238d0a16f94b0"
+  },
+  "approved_window": {
+    "start_at": "2026-10-27T13:47:25Z",
+    "expires_at": "2026-10-27T14:02:25Z",
+    "reserved_test_usd": 1,
+    "cumulative_ceiling_usd": 5
+  },
+  "health_checks": [
+    {
+      "path": "/up",
+      "kind": "anonymous",
+      "status": "PASS",
+      "http_status": 503,
+      "cache_control": "no-store"
+    },
+    {
+      "path": "/up",
+      "kind": "wrong-key",
+      "status": "UNKNOWN",
+      "dispatch_confirmed": false,
+      "response_recorded": false
+    },
+    {
+      "path": "/up",
+      "kind": "keyed",
+      "status": "NOT_RUN"
+    },
+    {
+      "path": "/app-ready",
+      "kind": "keyed",
+      "status": "NOT_RUN"
+    },
+    {
+      "path": "/ready",
+      "kind": "keyed",
+      "status": "NOT_RUN"
+    },
+    {
+      "path": "/",
+      "kind": "keyed",
+      "status": "NOT_RUN"
+    }
+  ],
+  "failure": {
+    "cause": "UNKNOWN",
+    "reason": "The second probe has an intent but no response or failure-stage receipt. The operator returned a generic failure.",
+    "earlier_preflight": "Relative command path failed controller identity; failed package preserved and fresh package admitted after unchanged-provider verification."
+  },
+  "shutdown": {
+    "version": 1,
+    "lease_id": "rails-staging-4",
+    "application_id": "ede186af45eb414887d11714189ab3b7",
+    "application_absent": true,
+    "ingress_closed": true,
+    "namespaces_preserved": true,
+    "provider_evidence_complete": true,
+    "status": "PASS",
+    "observed_at": "2026-10-27T13:48:50.886Z",
+    "last_error_category": "application_delete_unconfirmed"
+  },
+  "watch": {
+    "armed": false,
+    "shutdown_confirmed": true,
+    "watch_failed": false,
+    "updated_at": "2026-10-27T13:48:51.016Z"
+  },
+  "independent_reconciliation": {
+    "provider_mutations": 0,
+    "worker": "ccec9efb-e897-406d-9103-c5022e4a45f8",
+    "application_id": "ede186af45eb414887d11714189ab3b7",
+    "application_http_status": 404,
+    "ingress": {
+      "enabled": false,
+      "previews_enabled": false
+    },
+    "record_sha256": "b5fbe96f531179a70a3b6375ce64ed736ed052299cfef316115b42da89ff29fe"
+  },
+  "cleanup_note": "Overlapping parent/watch DELETE calls returned 200 and 404; subsequent exact application GETs and complete list confirmed absence. The retained delete note occurred after the test aborted.",
+  "hosted_full_acceptance_closed": 0,
+  "hosted_full_acceptance_total": 63,
+  "hosting_chunk_status": "INCOMPLETE",
+  "production_status": "NO_GO",
+  "billing_note": "US$1 reserved within the US$5 ceiling; not an assertion of actual billed usage."
+}

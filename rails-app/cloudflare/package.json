@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --import ./test/register-loader.mjs --test test/*.test.mjs staging/*.test.mjs",
+    "test": "node --import ./test/register-loader.mjs --test test/*.test.mjs staging/*.test.mjs startup/*.test.mjs",
     "deploy": "node manual-deploy-guard.mjs",
     "check": "node check.mjs && node staging/check.mjs"
   },
