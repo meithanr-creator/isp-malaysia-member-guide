@@ -1,3 +1,5 @@
+Owner steering28October: use the four-step critical acceptance track in PRODUCTION-STATUS-2026-10-28.md. Carry forward completed evidence and retest only sections/dependencies affected by a change. No full-coverage claim.
+
 # Private hosted acceptance: prepared scope
 
 Rails startup and the Cloudflare-to-Neon query/schema check already passed on the unchanged pinned Rails image. This package carries that evidence forward. It prepares one private session for the remaining functional workflows and virtual-phone journeys; no hosted business case is marked passed by preparing this package.

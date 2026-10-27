@@ -1,3 +1,9 @@
+# Current review checkpoint — 28 October 2026
+
+Astra SOURCE_GO for1dda060dd5972615cbd48649d7f69674eb4d14de; seven required CI checks passed in40539798941. Four-step track:1 reviewed source complete;2 focused private hosted acceptance awaits replacement access;3 resolve findings only where affected;4 remaining recovery/mail/operations/final approval and controlled domain launch. Existing passed evidence carries forward; no full-coverage claim or demo acceptance. See PRODUCTION-STATUS-2026-10-28.md and audit/private-acceptance/{source-review,ci-proof,fixture-roundtrip}.json. Earlier findings below are historical.
+
+---
+
 > Current authority (27 October): docs/PRODUCTION-STATUS-2026-10-27.md and audit/staging-2/acceptance-closure-ledger.json supersede the historical review below. Published5d5fa26 CI is green; fresh lease3 integration still needs final review/new exact CI and actual provider execution. Revised hosted closures remain0/63. Production NO-GO. Demo areas excluded; virtual mobile scope accepted.
 # Production director review and release evidence
 
