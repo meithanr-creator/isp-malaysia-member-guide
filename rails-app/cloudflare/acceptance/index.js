@@ -113,3 +113,5 @@ export class ISPPrivateAcceptanceContinuation extends ISPPrivateAcceptance {}
 
 // Fixed final tail uses a new namespace and preserves both prior stop latches.
 export class ISPPrivateAcceptanceFinal extends ISPPrivateAcceptance {}
+
+export class ISPPrivateAcceptanceFinalStable extends ISPPrivateAcceptance {}
