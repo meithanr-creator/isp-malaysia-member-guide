@@ -1,7 +1,7 @@
 // Hosted launcher; importing this module performs no I/O.
 import fs from 'node:fs';
 import path from 'node:path';
-import {spawn} from 'node:child_process';
+import {spawn,spawnSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 import {readMobileInputs,readPrivate,durable,ROOT,PRIVATE,CONTEXT,selectedMobileContext} from './virtual-mobile-acceptance.mjs';
@@ -9,7 +9,18 @@ import {argumentsFor,profileWindow,ensure,LIMITS,sha256,encode} from './virtual-
 import {validServerId,validateLinuxWebKitConnection} from './linux-webkit-connection.mjs';
 const WSL='C:/Windows/System32/wsl.exe',NODE='D:/Projects/isp-rails-tools/node24/node.exe',LNODE='/mnt/d/Projects/isp-rails-tools/node24-linux/node',LSERVER='/mnt/d/Projects/isp-member-rails/script/linux-webkit-server.mjs',MINI='/mnt/d/Projects/isp-rails-tools/virtual-browsers-linux/webkit-2370/minibrowser-wpe/bin/MiniBrowser';
 const CHROME='D:/Projects/isp-rails-tools/virtual-browsers/chromium_headless_shell-1248/chrome-headless-shell-win64/chrome-headless-shell.exe';
-export const PREFIX=Object.freeze(['-d','Ubuntu-24.04','--exec','/usr/bin/env','-u','NODE_OPTIONS','-u','NODE_PATH','-u','NODE_COMPILE_CACHE','-u','DEBUG','-u','PWDEBUG','-u','PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS']);
+export const QA_DISTRO='ISP-QA-Ubuntu-24.04',QA_DISTRO_BASE='D:/Projects/isp-rails-tools/isp-mobile-qa/wsl';
+export const PREFIX=Object.freeze(['-d',QA_DISTRO,'--exec','/usr/bin/env','-u','NODE_OPTIONS','-u','NODE_PATH','-u','NODE_COMPILE_CACHE','-u','DEBUG','-u','PWDEBUG','-u','PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS']);
+export function validateQaDistroBasePath(value){
+ const rows=Array.isArray(value)?value:value?[value]:[];ensure(rows.length===1,'One dedicated QA distro required');const r=rows[0],base=typeof r.basePath==='string'?r.basePath.replaceAll('\\','/').replace(/^\/\/\?\//,'').replace(/\/$/,''):'';
+ ensure(r.name===QA_DISTRO&&r.version===2&&base.toLowerCase()===QA_DISTRO_BASE.toLowerCase(),'Dedicated QA distro must use its exact D base path');return {distro:QA_DISTRO,base_path:QA_DISTRO_BASE,version:2};
+}
+export function verifyQaDistroBasePath(){
+ ensure(process.platform==='win32','Dedicated QA registry proof requires Windows');
+ const script='$ErrorActionPreference="Stop";$rows=@(Get-ChildItem -LiteralPath "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Lxss"|ForEach-Object{$r=Get-ItemProperty -LiteralPath $_.PSPath;if($r.DistributionName -eq "'+QA_DISTRO+'"){@{name=$r.DistributionName;basePath=$r.BasePath;version=[int]$r.Version}}});ConvertTo-Json -InputObject $rows -Compress';
+ const probe=spawnSync('C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(script,'utf16le').toString('base64')],{cwd:ROOT,env:process.env,encoding:'utf8',windowsHide:true,timeout:5000,maxBuffer:8192});
+ ensure(!probe.error&&probe.status===0&&typeof probe.stdout==='string'&&probe.stdout.length<=8192,'Dedicated QA registry query failed');const proof=validateQaDistroBasePath(JSON.parse(probe.stdout.replace(/^\uFEFF/,'')));fixed(QA_DISTRO_BASE,true);return proof;
+}
 export function cleanEnvironment(source,extra={},leaseId=CONTEXT.leaseId){
  const context=selectedMobileContext(leaseId);ensure(extra.ISP_STAGING_LEASE===undefined||extra.ISP_STAGING_LEASE===leaseId);
  const env={...source};for(const key of Object.keys(env))if(['DEBUG','PWDEBUG','NODE_OPTIONS','NODE_PATH','NODE_COMPILE_CACHE','PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS','WSLENV'].includes(key.toUpperCase()))delete env[key];
@@ -91,7 +102,7 @@ export function linuxServerArguments(leaseId,id){
 }
 export async function main(args=process.argv.slice(2)){
  const command=argumentsFor(args);if(command.mode==='plan'){console.log(JSON.stringify({status:'OPEN',profiles:['iphone-webkit','android-chromium'],controller_max_ms:LIMITS.profile_ms,server_ready_max_ms:70000,cleanup_max_ms:30000,automatic_retries:0}));return;}
- ensure(command.mode==='execute','Use controller --reconcile after root capture-ids/status');
+ ensure(command.mode==='execute','Use controller --reconcile after root capture-ids/status');verifyQaDistroBasePath();
  const name=command.profile,input=readMobileInputs(name),window=profileWindow(input.runtime);
  ensure(fs.realpathSync(process.execPath).replaceAll('\\','/').toLowerCase()===NODE.toLowerCase());
  const workdirs=prepareMobileWorkdirs(PRIVATE);

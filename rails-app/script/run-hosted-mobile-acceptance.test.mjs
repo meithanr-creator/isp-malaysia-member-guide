@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import {prepareMobileWorkdirs,cleanEnvironment,completeReceipt,ownWindowsSnapshot,processAbsence,PREFIX,linuxServerArguments,main} from './run-hosted-mobile-acceptance.mjs';
+import {QA_DISTRO,QA_DISTRO_BASE,validateQaDistroBasePath,prepareMobileWorkdirs,cleanEnvironment,completeReceipt,ownWindowsSnapshot,processAbsence,PREFIX,linuxServerArguments,main} from './run-hosted-mobile-acceptance.mjs';
 const now=Date.parse('2026-10-27T00:00:00Z'),created='2026-10-27T00:00:00.0000000Z',exe='D:/Projects/isp-rails-tools/virtual-browsers/chromium_headless_shell-1248/chrome-headless-shell-win64/chrome-headless-shell.exe';
 const row=(pid,ppid,path=exe)=>({pid,ppid,exe:path,created});
 const linux=()=>({profile:'iphone-webkit',leaseId:'rails-staging-2',runMarker:'synthetic',controller:{pid:40,finished:true,code:0},snapshot:{lease_id:'rails-staging-2',server:{pid:41},browser:{pid:42}},observation:{lease_id:'rails-staging-2',absent:true,own_server_pids:[]},server:{finished:true,code:0},id:'fresh-uuid',finishedAt:new Date(now-1).toISOString(),now});
@@ -92,4 +92,9 @@ test('offline temporary override must remain in its fixed root and match all thr
 test('offline launch environment equals the live minimal source plus the reviewed temporary scope',async()=>{
  const previous=process.env.ISP_PRIVATE_ACCEPTANCE;process.env.ISP_PRIVATE_ACCEPTANCE='true';
  try{const [{preflightEnvironment},{privateExecutionEnvironment}]=await Promise.all([import('./offline-browser-preflight.mjs'),import('./private-acceptance.mjs')]);const tmp='D:/Projects/isp-rails-tools/offline-browser-preflight/windows/9cbf15d1-2363-47a2-9c39-0ac8d8d27ca0';const expected=cleanEnvironment(privateExecutionEnvironment(),{TEMP:tmp,TMP:tmp,TMPDIR:tmp},'rails-private-acceptance');assert.deepEqual(preflightEnvironment(tmp),expected);assert.equal(expected.ISP_STAGING_LEASE,'rails-private-acceptance');assert.equal(expected.ISP_PRIVATE_ACCEPTANCE,'true');for(const key of ['CLOUDFLARE_API_TOKEN','AWS_SECRET_ACCESS_KEY','DATABASE_URL','NODE_OPTIONS','WSLENV'])assert.equal(expected[key],undefined);}finally{if(previous===undefined)delete process.env.ISP_PRIVATE_ACCEPTANCE;else process.env.ISP_PRIVATE_ACCEPTANCE=previous;}
+});
+
+test('WSL launch selector is isolated and rejects foreign missing duplicate or moved QA registrations',()=>{
+ assert.equal(QA_DISTRO,'ISP-QA-Ubuntu-24.04');assert.deepEqual(PREFIX.slice(0,2),['-d',QA_DISTRO]);const row={name:QA_DISTRO,version:2,basePath:QA_DISTRO_BASE};assert.deepEqual(validateQaDistroBasePath([row]),{distro:QA_DISTRO,base_path:QA_DISTRO_BASE,version:2});
+ for(const rows of [[],[row,row],[{...row,name:'Ubuntu-24.04'}],[{...row,version:1}],[{...row,basePath:'C:/foreign'}],[{...row,basePath:QA_DISTRO_BASE+'/other'}]])assert.throws(()=>validateQaDistroBasePath(rows));
 });

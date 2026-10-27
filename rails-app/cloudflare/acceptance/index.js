@@ -84,6 +84,8 @@ export class ISPPrivateAcceptance extends DurableObject {
  if(!up)throw failure();await this.live();await this.ctx.container.setInactivityTimeout(Math.max(1,s.end-Date.now()));await this.change(s=>{if(s.stopped||Date.now()>=s.end)throw failure();s.ready=true;s.stage='ready';});
  })().catch(async()=>{await this.stop('startup');throw failure();});return this.work;
  }
+ async admitStream(){if(this.active>=LIMITS.concurrent)return null;this.active++;let held=true;return()=>{if(held){held=false;this.active--;}};}
+ async reserveRequest(){await this.change(s=>{if(s.stopped||Date.now()>=s.end||s.requests>=LIMITS.requests)throw failure();s.requests++;});}
  async fetch(request){const id=traceId(request);let release;
  try{if(!validTarget(request)||!keyMatches(request.headers.get('x-isp-staging-key'),this.env)||!this.identity())return unavailable(id);
  const ctl=control(request);if(ctl==='stop')return Response.json(await this.stop(),{headers:{'Cache-Control':'no-store'}});
@@ -92,11 +94,11 @@ export class ISPPrivateAcceptance extends DurableObject {
  if(u.pathname.startsWith('/__isp_diagnostics')){if(request.method!=='GET'||u.search||!u.pathname.startsWith(DIAGNOSTICS)||!validUuid(u.pathname.slice(DIAGNOSTICS.length)))return unavailable(id);const rows=await this.ctx.storage.get(TRACES)??[],trace=rows.find(t=>t.id===u.pathname.slice(DIAGNOSTICS.length));return Response.json({version:1,trace:trace??null},{status:trace?200:404,headers:{'Cache-Control':'no-store'}});}
  const window=acceptanceWindow(this.env);if(!window||this.broken||this.stopped)return unavailable(id);
  if(await this.ctx.storage.get(STATE)===undefined)await this.ctx.storage.transaction(async txn=>{if(await txn.get(STATE)===undefined)await txn.put(STATE,{v:1,...window,attempted:false,stopped:false,ready:false,requests:0,bytes:0,stage:'idle'});});
- await this.live();if(this.active>=LIMITS.concurrent)return quiet(429);this.active++;let released=false,timer;const controller=new AbortController();
- release=()=>{if(released)return;released=true;controller.abort();if(reader)void reader.cancel().catch(()=>{});clearTimeout(timer);request.signal.removeEventListener('abort',cancel);this.abort.signal.removeEventListener('abort',cancel);this.active--;};
+ await this.live();const releaseAdmission=await this.admitStream(request,window);if(!releaseAdmission)return quiet(429);let released=false,timer;const controller=new AbortController();
+ release=()=>{if(released)return;released=true;controller.abort();if(reader)void reader.cancel().catch(()=>{});clearTimeout(timer);request.signal.removeEventListener('abort',cancel);this.abort.signal.removeEventListener('abort',cancel);releaseAdmission();};
  let reader,output,outputController;const writing=!['GET','HEAD','OPTIONS'].includes(request.method);const cancel=()=>{controller.abort();if(reader)void reader.cancel().catch(()=>{});if(output)void output.cancel().catch(()=>{});try{outputController?.error(failure());}catch{}if(writing&&this.work&&!this.stopped)void this.stop('transport');release();};request.signal.addEventListener('abort',cancel,{once:true});this.abort.signal.addEventListener('abort',cancel,{once:true});timer=setTimeout(cancel,Math.max(1,Math.min(600000,window.end-Date.now())));if(request.signal.aborted||this.abort.signal.aborted)cancel();
  const length=request.headers.get('Content-Length');if(length!==null&&(!/^\d+$/.test(length)||Number(length)>LIMITS.upload))throw failure();
- await this.change(s=>{if(s.stopped||Date.now()>=s.end||s.requests>=LIMITS.requests)throw failure();s.requests++;});await this.record(id,{stage:'startup'});await this.ensureStarted();await this.live();if(controller.signal.aborted)throw failure();
+ await this.reserveRequest();await this.record(id,{stage:'startup'});await this.ensureStarted();await this.live();if(controller.signal.aborted)throw failure();
  let inbound=0;const meterUpload=request.body?new ReadableStream({start(c){reader=request.body.getReader();},pull:async c=>{try{const chunk=await reader.read();if(chunk.done){c.close();return;}inbound+=chunk.value.byteLength;if(inbound>LIMITS.upload)throw failure();await this.countBytes(chunk.value.byteLength);if(controller.signal.aborted)throw failure();c.enqueue(chunk.value);}catch{controller.abort();await this.stop('limit');c.error(failure());}},cancel:async()=>{await reader?.cancel().catch(()=>{});}}):null;
  const headers=headersWithoutReviewCookie(request);headers.delete('x-isp-staging-key');headers.delete('x-isp-startup-key');headers.delete('content-length');const clientIp=headers.get(EDGE_IP_HEADER);
  const clean=new Request(request,{headers,body:meterUpload,signal:controller.signal,duplex:'half'}),backend=requestForRails(clean,HOST,clientIp);backend.headers.set(TRACE_HEADER,id);
@@ -120,3 +122,39 @@ export class ISPPrivateAcceptanceFinalStable extends ISPPrivateAcceptance {}
 export class ISPPrivateAcceptanceMobile extends ISPPrivateAcceptance {}
 
 export class ISPPrivateAcceptanceMobilePrepared extends ISPPrivateAcceptance { get transferLimit(){return 64*1024*1024;} }
+
+// Separate bounded read admission serves normal browser asset bursts without
+// letting reads occupy either of the two write slots. Historical classes retain
+// their original immediate two-stream admission behavior.
+export const MOBILE_READ_ADMISSION_LIMITS=Object.freeze({readers:4,queued_reads:64,writers:2,wait_ms:10000});
+export class ISPPrivateAcceptanceMobileQueued extends ISPPrivateAcceptanceMobilePrepared {
+ constructor(ctx,env){super(ctx,env);this.activeReaders=0;this.activeWriters=0;this.readQueue=[];}
+ get readAdmissionLimits(){return MOBILE_READ_ADMISSION_LIMITS;}
+ async reserveRequest(){} // admitStream reserves exactly once before any wait.
+ async status(){return {...await super.status(),active_readers:this.activeReaders,active_writers:this.activeWriters,queued_reads:this.readQueue.length};}
+ admitStream(request,window){
+  const read=['GET','HEAD'].includes(request.method),limits=this.readAdmissionLimits;
+  if(this.stopped||this.abort.signal.aborted||request.signal.aborted||Date.now()>=window.end)return Promise.reject(failure());
+  if(read?this.activeReaders>=limits.readers&&this.readQueue.length>=limits.queued_reads:this.activeWriters>=limits.writers)return Promise.resolve(null);
+  let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});
+  const entry={read,request,end:window.end,held:false,reserved:false,settled:false,cancel:null,promote:null};
+  const clean=()=>{clearTimeout(entry.timer);request.signal.removeEventListener('abort',entry.cancel);this.abort.signal.removeEventListener('abort',entry.cancel);};
+  const release=()=>{if(!entry.held)return;entry.held=false;this.active--;if(read)this.activeReaders--;else this.activeWriters--;this.drainReads();};
+  entry.cancel=()=>{if(entry.settled)return;entry.settled=true;clean();const index=this.readQueue.indexOf(entry);if(index>=0)this.readQueue.splice(index,1);release();reject(failure());};
+  entry.promote=()=>{if(entry.settled)return;if(this.stopped||this.abort.signal.aborted||request.signal.aborted||Date.now()>=entry.end){entry.cancel();return;}if(entry.held&&entry.reserved){entry.settled=true;clean();resolve(release);}};
+  const hold=()=>{entry.held=true;this.active++;if(read)this.activeReaders++;else this.activeWriters++;};
+  entry.hold=hold;
+  if(read&&this.activeReaders>=limits.readers)this.readQueue.push(entry);else hold();
+  request.signal.addEventListener('abort',entry.cancel,{once:true});this.abort.signal.addEventListener('abort',entry.cancel,{once:true});
+  entry.timer=setTimeout(entry.cancel,Math.max(1,Math.min(limits.wait_ms,window.end-Date.now())));
+  // Storage is shared by reads, writes, and startup probes. A canceled reservation
+  // is never refunded or dispatched later, including after an uncertain commit.
+  void this.change(s=>{if(s.stopped||this.stopped||Date.now()>=s.end||s.requests>=LIMITS.requests)throw failure();s.requests++;}).then(()=>{entry.reserved=true;entry.promote();},entry.cancel);
+  if(request.signal.aborted||this.abort.signal.aborted)entry.cancel();
+  return promise;
+ }
+ drainReads(){
+  const limits=this.readAdmissionLimits;
+  while(this.activeReaders<limits.readers&&this.readQueue.length){const entry=this.readQueue.shift();if(entry.settled)continue;if(this.stopped||this.abort.signal.aborted||entry.request.signal.aborted||Date.now()>=entry.end){entry.cancel();continue;}entry.hold();entry.promote();}
+ }
+}

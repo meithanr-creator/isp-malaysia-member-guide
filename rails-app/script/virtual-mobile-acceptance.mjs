@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 import {connectLinuxWebKit,closeLinuxWebKitConnection} from './linux-webkit-connection.mjs';
-import {OFFLINE_DASHBOARD_URL,classifyRequestFailure,acceptableOfflineNavigationError} from './virtual-mobile-failures.mjs';
+import {OFFLINE_DASHBOARD_URL,classifyRequestFailure,acceptableOfflineNavigationError,privateRequestFailureFact,retainPrivateFailureFact,freezeFailureBeforeCleanup} from './virtual-mobile-failures.mjs';
 import {LEASE2,LEASE3,leaseContext,readPreparedRelease,preparedTuple,assertActiveRelease,assertWatchdogTuple,assertWritableLease,assertLeaseMutationAllowed} from './staging-lease-context.mjs';
 import {ORIGIN,LIMITS,PROFILES,REQUIRED_CASES,CoverageDeferred,ensure,sha256,encode,argumentsFor,profileWindow,admitCase,safeURL,dependencies,submitOnce,totp,verifyFile,uiComplete,databaseMatches,databaseProof,processReceiptMatches,aggregateStatus,runRenderedJourneys} from './virtual-mobile-journeys.mjs';
 import {privateContext,readPrivateAcceptance,assertPrivateAcceptanceAdmission} from './private-acceptance-context.mjs';
@@ -51,7 +51,7 @@ function readNativeMobileInputs(name,{watchdog,now}){
  const seal=readPrivate('sealed-version.json').value;
  return {runtime,fixtures,http,observations,prepared:n.prepared,admissionSnapshot:watchdog?n.snapshot:null,runtimeHash:sha256(r.raw),release:{...n.prepared,worker_version:seal.version_id,deployment_id:seal.deployment_id}};
 }
-function publicReport(j){
+export function publicReport(j){
  return {version:2,scope:'Virtual browser engines and mobile profiles; physical devices/native installation/native PDF viewer are unproved',status:aggregateStatus(j),run_marker:j.run_marker,release:j.release,profiles:Object.values(j.profiles).map(p=>({name:p.name,status:p.status,engine:p.engine,engine_version:p.engine_version,execution_platform:p.execution_platform,started_at:p.started_at,finished_at:p.finished_at,requests:p.requests,checks:p.checks,cases:p.cases,screenshots:p.screenshots,cleanup:p.cleanup,process_cleanup:p.process_cleanup,db_reconciled:p.db_reconciled,errors:p.errors,failure_phase:p.failure_phase,elapsed_ms:p.elapsed_ms})),deferred:['natural aged MFA step-up is a separate window','physical devices, native install, OS PDF viewer, assistive-technology/conformance audit'],production_release_approved:false};
 }
 function save(j){durable(JOURNAL,j);durable(PUBLIC,publicReport(j));}
@@ -71,7 +71,9 @@ export async function executeProfile(name,input){
  process.env.PLAYWRIGHT_BROWSERS_PATH='D:/Projects/isp-rails-tools/virtual-browsers';
  for(const k of Object.keys(process.env))if(['DEBUG','PWDEBUG','NODE_OPTIONS','NODE_PATH','NODE_COMPILE_CACHE'].includes(k.toUpperCase()))delete process.env[k];
  const require=createRequire('D:/Projects/isp-rails-tools/virtual-browser-tools/package.json'),{chromium,webkit,devices}=require('playwright');ensure(require('playwright/package.json').version==='1.64.1');
- let browser,browserServer,page,phase='browser_setup',deadlineHit=false,timer,stopPoll;const contexts=[],offlineState={armed:false,consumed:false};let failedResolve;
+ let browser,browserServer,page,phase='browser_setup',deadlineHit=false,timer,stopPoll;const contexts=[],offlineState={armed:false,consumed:false},requestPhases=new WeakMap();let failedResolve,closing=false;
+ const requestFacts=request=>{let main=false;try{const frame=request.frame();main=frame===frame.page().mainFrame();}catch{}return {url:request.url(),method:request.method(),resourceType:request.resourceType(),isNavigationRequest:request.isNavigationRequest(),isMainFrame:main,phase,requestPhase:requestPhases.get(request),cleanup:closing};};
+ const noteFailure=(category,facts={},fatal=true)=>{retainPrivateFailureFact(result,privateRequestFailureFact({phase,cleanup:closing,...facts},category),{fatal});if(fatal)result.errors.push(category);};
  const remaining=(cap=20000)=>{const ms=Math.min(cap,window.deadline-Date.now());ensure(ms>0&&!deadlineHit,'Profile deadline reached');return ms;};
  const bounded=async(fn,ms=20000)=>{let t;try{return await Promise.race([Promise.resolve().then(fn),new Promise((_,reject)=>{t=setTimeout(()=>reject(Error('Bounded browser operation timed out')),ms);})]);}finally{clearTimeout(t);}};
  const operation=(fn,cap=20000)=>bounded(fn,remaining(cap));
@@ -81,10 +83,11 @@ export async function executeProfile(name,input){
  const admit=()=>{verifyWatchdog();ensure(Date.now()<window.deadline&&!deadlineHit&&result.requests<LIMITS.requests,'Mobile request/time budget reached');};
  async function role(label,gate,{page:withPage=true,cookies}={}){
   admit();const ctx=await operation(()=>browser.newContext({...devices[profile.device],reducedMotion:'reduce'}),15000);contexts.push(ctx);
-  ctx.on('request',()=>{result.requests++;});
-  ctx.on('requestfailed',r=>{let main=false;try{main=r.frame()===page?.mainFrame();}catch{}const kind=classifyRequestFailure({url:r.url(),method:r.method(),isNavigationRequest:r.isNavigationRequest(),isMainFrame:main,errorText:r.failure()?.errorText},offlineState);if(kind==='expected-offline-navigation'){offlineState.consumed=true;result.expected_offline_failures=(result.expected_offline_failures||0)+1;failedResolve?.();}else result.errors.push(kind);});
-  ctx.on('page',p=>{p.setDefaultTimeout(12000);p.setDefaultNavigationTimeout(20000);p.on('pageerror',()=>result.errors.push('Application JavaScript error'));});
-  await ctx.route('**/*',route=>{const u=new URL(route.request().url());try{if(['http:','https:'].includes(u.protocol))verifyWatchdog();return Date.now()>=window.deadline||result.requests>LIMITS.requests||!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==ORIGIN?route.abort():route.continue();}catch{result.errors.push('Active browser admission unavailable');return route.abort();}});
+  ctx.on('request',request=>{result.requests++;requestPhases.set(request,phase);});
+  ctx.on('requestfailed',r=>{const facts=requestFacts(r),kind=classifyRequestFailure({...facts,errorText:r.failure()?.errorText},offlineState);if(kind==='expected-offline-navigation'){noteFailure(kind,facts,false);offlineState.consumed=true;result.expected_offline_failures=(result.expected_offline_failures||0)+1;failedResolve?.();}else noteFailure(kind,facts);});
+  ctx.on('response',response=>{const request=response.request(),facts=requestFacts(request);if(response.status()>=400&&['script','stylesheet','font','image'].includes(facts.resourceType)){try{if(new URL(facts.url).origin===ORIGIN)noteFailure('Asset HTTP failure',{...facts,httpStatus:response.status()});}catch{}}});
+  ctx.on('page',p=>{p.setDefaultTimeout(12000);p.setDefaultNavigationTimeout(20000);p.on('pageerror',()=>noteFailure('Application JavaScript error'));});
+  await ctx.route('**/*',route=>{const u=new URL(route.request().url());try{if(['http:','https:'].includes(u.protocol))verifyWatchdog();return Date.now()>=window.deadline||result.requests>LIMITS.requests||!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==ORIGIN?route.abort():route.continue();}catch{noteFailure('Active browser admission unavailable');return route.abort();}});
   if(cookies)await operation(()=>ctx.addCookies(cookies));else if(gate)await operation(()=>ctx.addCookies([gate]));
   return {context:ctx,page:withPage?await operation(()=>ctx.newPage()):undefined};
  }
@@ -153,14 +156,15 @@ export async function executeProfile(name,input){
    nextOtp:async alias=>{const last=Math.max(http.actors[alias].last_otp_step||0,result.last_otp_step||0),step=Math.max(Math.floor(Date.now()/30000)+1,last+1),wait=step*30000+1000-Date.now();ensure(wait<61000&&remaining(wait+15000)>wait);await bounded(()=>new Promise(resolve=>setTimeout(resolve,wait)),wait+1000);result.last_otp_step=step;save(journal);return totp(http.actors[alias].totp_secret);}
   });
  }catch(error){
-  deadlineHit=true;result.failure_phase=phase;result.failure=error instanceof CoverageDeferred?'DEFERRED':'FAIL';if(!(error instanceof CoverageDeferred))result.errors.push('Browser operation or assertion failed');
+  deadlineHit=true;result.failure_phase=phase;result.failure=error instanceof CoverageDeferred?'DEFERRED':'FAIL';if(!(error instanceof CoverageDeferred))noteFailure('Browser operation or assertion failed');
   try{fs.writeFileSync(PRIVATE+'/'+name+'-failure.txt',String(error?.stack||error),{flag:'wx',mode:0o600});}catch{}
  }finally{
+  freezeFailureBeforeCleanup(result,phase);closing=true;
   clearTimeout(timer);clearInterval(stopPoll);let closed=true;
   for(const ctx of contexts)try{await closeLinuxWebKitConnection(()=>ctx.close(),()=>{});}catch{closed=false;}
   if(browser)try{await closeLinuxWebKitConnection(()=>browser.close(),()=>{});}catch{closed=false;}
   if(browserServer)try{await closeLinuxWebKitConnection(()=>browserServer.close(),()=>{});}catch{closed=false;}
-  result.cleanup=closed?'pass':'fail';if(!closed)result.errors.push('Browser context/server cleanup failed');
+  result.cleanup=closed?'pass':'fail';if(!closed)noteFailure('Browser context/server cleanup failed');
   result.finished_at=new Date().toISOString();result.elapsed_ms=Date.parse(result.finished_at)-Date.parse(result.started_at);save(journal);
  }
  ensure(uiComplete(result),'Virtual profile incomplete; aggregate remains OPEN and mutation intents cannot be replayed');

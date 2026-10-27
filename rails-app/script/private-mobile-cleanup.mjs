@@ -4,6 +4,7 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
+import {QA_DISTRO,verifyQaDistroBasePath} from './run-hosted-mobile-acceptance.mjs';
 export const PRIVATE='D:/Projects/isp-rails-tools/isp-staging-private/private-acceptance';
 const ROOT='D:/Projects/isp-member-rails',TOOLS='D:/Projects/isp-rails-tools',ID='rails-private-acceptance';
 const NODE=TOOLS+'/node24/node.exe',CHROME=TOOLS+'/virtual-browsers/chromium_headless_shell-1248/chrome-headless-shell-win64/chrome-headless-shell.exe';
@@ -52,8 +53,8 @@ const PY=[
 ' except (PermissionError,OSError): complete=False',
 'print(json.dumps({"complete":complete,"present":present,"relevant":relevant}))'
 ].join('\n');
-function linuxCensus(targets,until){return execute('C:/Windows/System32/wsl.exe',['-d','Ubuntu-24.04','--exec','/usr/bin/python3','-I','-B','-c',PY,JSON.stringify(targets.linux),JSON.stringify(targets.ids),LNODE,LSERVER,LBROWSER],until);}
-export async function cleanupPrivateMobile(){need(process.platform==='win32'&&process.versions.node==='24.21.0','Pinned Windows cleanup runtime required');fixed(PRIVATE,true);const until=Date.now()+30000,control=PRIVATE+'/mobile-browser-control',linuxRoot=PRIVATE+'/linux-webkit',ids=[...new Set([...directories(control),...directories(linuxRoot)])],controls={};const lock=optional(PRIVATE+'/mobile-browser-wrapper.lock'),journal=optional(PRIVATE+'/acceptance-mobile.json');if(journal)need(journal.lease_id===undefined||journal.lease_id===ID,'Foreign private journal refused');
+function linuxCensus(targets,until){return execute('C:/Windows/System32/wsl.exe',['-d',QA_DISTRO,'--exec','/usr/bin/python3','-I','-B','-c',PY,JSON.stringify(targets.linux),JSON.stringify(targets.ids),LNODE,LSERVER,LBROWSER],until);}
+export async function cleanupPrivateMobile(){need(process.platform==='win32'&&process.versions.node==='24.21.0','Pinned Windows cleanup runtime required');verifyQaDistroBasePath();fixed(PRIVATE,true);const until=Date.now()+30000,control=PRIVATE+'/mobile-browser-control',linuxRoot=PRIVATE+'/linux-webkit',ids=[...new Set([...directories(control),...directories(linuxRoot)])],controls={};const lock=optional(PRIVATE+'/mobile-browser-wrapper.lock'),journal=optional(PRIVATE+'/acceptance-mobile.json');if(journal)need(journal.lease_id===undefined||journal.lease_id===ID,'Foreign private journal refused');
  const signalIssues=[];for(const id of ids){controls[id]={snapshots:[]};for(const name of ['process-snapshot.json','process-snapshot-current.json']){const s=optional(control+'/'+id+'/'+name);if(s)controls[id].snapshots.push(s);}controls[id].result=optional(control+'/'+id+'/orchestrator-result.json');try{if(fs.existsSync(control+'/'+id))signal(control+'/'+id,'controller-stop',id);if(fs.existsSync(linuxRoot+'/'+id))signal(linuxRoot+'/'+id,'stop',id);}catch{signalIssues.push({id,code:'stop_signal_unconfirmed'});}}
  const targets=cleanupTargets({ids,lock,journal,controls});targets.issues.push(...signalIssues);let result;
  do{let windows,linux;try{windows=windowsCensus(targets,until);}catch{windows={complete:false};}try{linux=linuxCensus(targets,until);}catch{linux={complete:false};}result=cleanupObservation(targets,windows,linux);if(result.status==='PASS'||Date.now()+250>=until)break;await new Promise(r=>setTimeout(r,250));}while(Date.now()<until);

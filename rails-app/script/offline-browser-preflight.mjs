@@ -4,7 +4,7 @@ import {createRequire} from 'node:module';
 import {spawn} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
-import {prepareMobileWorkdirs,cleanEnvironment,PREFIX} from './run-hosted-mobile-acceptance.mjs';
+import {prepareMobileWorkdirs,cleanEnvironment,PREFIX,verifyQaDistroBasePath} from './run-hosted-mobile-acceptance.mjs';
 import {privateExecutionEnvironment} from './private-acceptance.mjs';
 const ROOT='D:/Projects/isp-member-rails',TOOLS='D:/Projects/isp-rails-tools',NODE=TOOLS+'/node24/node.exe';
 const TMP=TOOLS+'/offline-browser-preflight',BROWSERS=TOOLS+'/virtual-browsers',CHROME=BROWSERS+'/chromium_headless_shell-1248/chrome-headless-shell-win64/chrome-headless-shell.exe';
@@ -19,7 +19,7 @@ async function child(exe,args,tmp,timeout=90000){
 }
 async function bound(action,ms=10000){let timer;try{return await Promise.race([Promise.resolve().then(action),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Offline browser deadline')),ms);})]);}finally{clearTimeout(timer);}}
 export async function preflight(){
- guard(process.platform==='win32'&&process.versions.node==='24.21.0');fixed(NODE);guard(fs.realpathSync(process.execPath).replaceAll('\\','/').toLowerCase()===NODE.toLowerCase());fixed(CHROME);fixed(ROOT,true);prepareMobileWorkdirs(TMP);directory(TMP+'/windows');const id=randomUUID(),run=TMP+'/windows/'+id;directory(run);
+ guard(process.platform==='win32'&&process.versions.node==='24.21.0');verifyQaDistroBasePath();fixed(NODE);guard(fs.realpathSync(process.execPath).replaceAll('\\','/').toLowerCase()===NODE.toLowerCase());fixed(CHROME);fixed(ROOT,true);prepareMobileWorkdirs(TMP);directory(TMP+'/windows');const id=randomUUID(),run=TMP+'/windows/'+id;directory(run);
  process.env.ISP_PRIVATE_ACCEPTANCE='true';
  process.env.TEMP=run;process.env.TMP=run;process.env.TMPDIR=run;process.env.PLAYWRIGHT_BROWSERS_PATH=BROWSERS;for(const k of ['DEBUG','PWDEBUG','NODE_OPTIONS','NODE_PATH','NODE_COMPILE_CACHE','PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS'])delete process.env[k];
  const require=createRequire(TOOLS+'/virtual-browser-tools/package.json');guard(require('playwright/package.json').version==='1.64.1');const catalog=JSON.parse(fs.readFileSync(TOOLS+'/virtual-browser-tools/node_modules/playwright-core/browsers.json','utf8'));guard(catalog.browsers.some(b=>b.name==='chromium-headless-shell'&&b.revision==='1248'));const {chromium}=require('playwright');

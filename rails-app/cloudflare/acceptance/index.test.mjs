@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker,{ISPPrivateAcceptance,ISPPrivateAcceptanceContinuation,ISPPrivateAcceptanceFinal,ISPPrivateAcceptanceFinalStable,ISPPrivateAcceptanceMobile,ISPPrivateAcceptanceMobilePrepared,ISPStartup,ISPNeonProof,HOST,IMAGE,SINGLETON,LIMITS,acceptanceWindow,acceptanceRuntime} from './index.js';
+import worker,{ISPPrivateAcceptance,ISPPrivateAcceptanceContinuation,ISPPrivateAcceptanceFinal,ISPPrivateAcceptanceFinalStable,ISPPrivateAcceptanceMobile,ISPPrivateAcceptanceMobilePrepared,ISPPrivateAcceptanceMobileQueued,MOBILE_READ_ADMISSION_LIMITS,ISPStartup,ISPNeonProof,HOST,IMAGE,SINGLETON,LIMITS,acceptanceWindow,acceptanceRuntime} from './index.js';
 import {issueBrowserCookie} from '../staging/browser-access.js';
 import {cleanTrace} from '../staging/diagnostics.js';
 const KEY='a'.repeat(64),ACTOR='c'.repeat(64),STATE='acceptance:v1';
@@ -81,4 +81,35 @@ test('prepared byte accounting preserves invalid-size refusal and the unchanged 
 test('all historical native classes retain their exact256MiB cap and stop latch',async t=>{
  assert.equal(LIMITS.bytes,256*1024*1024);
  for(const runtimeClass of [ISPPrivateAcceptance,ISPPrivateAcceptanceContinuation,ISPPrivateAcceptanceFinal,ISPPrivateAcceptanceFinalStable,ISPPrivateAcceptanceMobile]){const f=fixture(t,{runtimeClass});await f.obj.initialized;seed(f);assert.equal(f.obj.transferLimit,LIMITS.bytes);await f.obj.countBytes(PREPARED_TRANSFER_LIMIT+1);assert.equal(f.records.get(STATE).bytes,PREPARED_TRANSFER_LIMIT+1);await f.obj.countBytes(LIMITS.bytes-PREPARED_TRANSFER_LIMIT-1);assert.equal(f.records.get(STATE).bytes,LIMITS.bytes);assert.equal(f.records.get(STATE).stopped,false);await assert.rejects(()=>f.obj.countBytes(1),/Private acceptance unavailable/);assert.equal(f.records.get(STATE).bytes,LIMITS.bytes);assert.equal(f.records.get(STATE).stopped,true);}
+});
+
+const eventually=async check=>{for(let n=0;n<100;n++){if(check())return;await new Promise(r=>setTimeout(r,1));}assert.ok(check(),'Expected bounded admission state');};
+const hangingBackend=async request=>new URL(request.url).pathname==='/up'?new Response('up'):new Response(new ReadableStream({pull(){}}));
+test('fresh queued class drains a normal43-read burst with four streams and exactly-once request reservations',async t=>{
+ let active=0,peak=0;const f=fixture(t,{runtimeClass:ISPPrivateAcceptanceMobileQueued,http:async request=>{if(new URL(request.url).pathname==='/up')return new Response('up');active++;peak=Math.max(peak,active);await new Promise(r=>setTimeout(r,25));active--;return new Response('asset');}});
+ assert.deepEqual(MOBILE_READ_ADMISSION_LIMITS,{readers:4,queued_reads:64,writers:2,wait_ms:10000});assert.equal(f.obj.transferLimit,64*1024*1024);
+ const results=await Promise.all(Array.from({length:43},(_,i)=>f.obj.fetch(req('/assets/file-'+i+'.js')).then(text)));assert.ok(results.every(r=>r.status===200&&r.value==='asset'));assert.ok(peak<=4);assert.equal(f.records.get(STATE).requests,44);assert.equal(f.records.get(STATE).bytes,43*5);assert.equal(f.obj.active,0);assert.equal(f.obj.readQueue.length,0);
+});
+test('read streams hold slots until body completion or cancellation and dequeue in order',async t=>{
+ const dispatched=[];const f=fixture(t,{runtimeClass:ISPPrivateAcceptanceMobileQueued,http:async request=>{const p=new URL(request.url).pathname;if(p==='/up')return new Response('up');dispatched.push(p);return new Response(new ReadableStream({pull(){}}));}});
+ const active=await Promise.all(Array.from({length:4},(_,i)=>f.obj.fetch(req('/active-'+i))));assert.equal(f.obj.activeReaders,4);
+ const first=f.obj.fetch(req('/queued-first')),second=f.obj.fetch(req('/queued-second'));await eventually(()=>f.obj.readQueue.length===2);assert.deepEqual(dispatched.slice(-4),['/active-0','/active-1','/active-2','/active-3']);await active[0].body.cancel();const promoted=await first;assert.equal(dispatched.at(-1),'/queued-first');assert.equal(f.obj.activeReaders,4);assert.equal(f.obj.readQueue.length,1);await promoted.body.cancel();const next=await second;assert.equal(dispatched.at(-1),'/queued-second');await Promise.all([...active.slice(1),next].map(r=>r.body.cancel()));assert.equal(f.obj.active,0);
+});
+test('finite read overflow refuses without dispatch and cannot starve either write slot',async t=>{
+ const f=fixture(t,{runtimeClass:ISPPrivateAcceptanceMobileQueued,http:hangingBackend}),active=await Promise.all(Array.from({length:4},(_,i)=>f.obj.fetch(req('/read-'+i))));
+ const queued=Array.from({length:64},(_,i)=>f.obj.fetch(req('/queued-'+i)));await eventually(()=>f.obj.readQueue.length===64);assert.equal((await f.obj.fetch(req('/overflow'))).status,429);assert.equal(f.obj.readQueue.length,64);
+ const writes=await Promise.all([f.obj.fetch(req('/form-one',{method:'POST',body:'one'})),f.obj.fetch(req('/form-two',{method:'POST',body:'two'}))]);assert.equal(f.obj.activeWriters,2);assert.equal(f.obj.activeReaders,4);assert.equal((await f.obj.fetch(req('/third-write',{method:'POST',body:'three'}))).status,429);assert.equal(f.obj.activeWriters,2);
+ await f.obj.stop();assert.ok((await Promise.all(queued)).every(r=>r.status===503));await Promise.all([...active,...writes].map(r=>r.body.cancel().catch(()=>{})));assert.equal(f.obj.active,0);assert.equal(f.obj.readQueue.length,0);assert.equal(f.records.get(STATE).requests,71);
+});
+test('queued caller abort removes its reservation without a backend attempt or replay',async t=>{
+ const f=fixture(t,{runtimeClass:ISPPrivateAcceptanceMobileQueued,http:hangingBackend}),active=await Promise.all(Array.from({length:4},(_,i)=>f.obj.fetch(req('/read-'+i)))),controller=new AbortController(),before=f.calls.filter(c=>c.type==='http').length;
+ const pending=f.obj.fetch(req('/aborted',{signal:controller.signal}));await eventually(()=>f.obj.readQueue.length===1);controller.abort();assert.equal((await pending).status,503);assert.equal(f.obj.readQueue.length,0);await active[0].body.cancel();await new Promise(r=>setTimeout(r,5));assert.equal(f.calls.filter(c=>c.type==='http').length,before);await f.obj.stop();await Promise.all(active.slice(1).map(r=>r.body.cancel().catch(()=>{})));
+});
+test('finite queue wait and absolute expiry prevent late dispatch',async t=>{
+ class ShortWait extends ISPPrivateAcceptanceMobileQueued {get readAdmissionLimits(){return {...MOBILE_READ_ADMISSION_LIMITS,wait_ms:25};}}
+ const f=fixture(t,{runtimeClass:ShortWait,http:hangingBackend}),active=await Promise.all(Array.from({length:4},(_,i)=>f.obj.fetch(req('/read-'+i))));const before=f.calls.filter(c=>c.type==='http').length;assert.equal((await f.obj.fetch(req('/wait-expired'))).status,503);assert.equal(f.obj.readQueue.length,0);assert.equal(f.calls.filter(c=>c.type==='http').length,before);await Promise.all(active.map(r=>r.body.cancel()));
+ const g=fixture(t,{runtimeClass:ISPPrivateAcceptanceMobileQueued,http:hangingBackend});g.env.ISP_STAGING_EXPIRES_AT=new Date(Date.now()+150).toISOString();const open=await Promise.all(Array.from({length:4},(_,i)=>g.obj.fetch(req('/expiry-read-'+i))));const pending=g.obj.fetch(req('/deadline-queued'));await eventually(()=>g.obj.readQueue.length===1);const sent=g.calls.filter(c=>c.type==='http').length;assert.equal((await pending).status,503);assert.equal(g.calls.filter(c=>c.type==='http').length,sent);await g.obj.alarm();assert.equal(g.records.get(STATE).stopped,true);assert.equal((await g.obj.fetch(req('/after-expiry'))).status,503);await Promise.all(open.map(r=>r.body.cancel().catch(()=>{})));
+});
+test('queued reservations obey the same1500 cap, preserve broken asset responses and permanent stop',async t=>{
+ const f=fixture(t,{runtimeClass:ISPPrivateAcceptanceMobileQueued,http:async r=>new URL(r.url).pathname==='/up'?new Response('up'):new Response('missing asset',{status:404})});assert.equal((await text(await f.obj.fetch(req('/missing.js')))).status,404);const state=f.records.get(STATE);state.requests=1499;f.records.set(STATE,state);assert.equal((await text(await f.obj.fetch(req('/last.js')))).status,404);assert.equal(f.records.get(STATE).requests,1500);const before=f.calls.filter(c=>c.type==='http').length;assert.equal((await f.obj.fetch(req('/over-cap.js'))).status,503);assert.equal(f.calls.filter(c=>c.type==='http').length,before);assert.equal(f.records.get(STATE).requests,1500);await f.obj.stop();const restarted=new ISPPrivateAcceptanceMobileQueued(f.ctx,f.env);await restarted.initialized;assert.equal((await restarted.fetch(req('/replay.js'))).status,503);
 });
