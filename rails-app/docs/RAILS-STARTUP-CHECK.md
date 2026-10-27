@@ -25,3 +25,9 @@ Neon documentation was checked: the supplied Pages/Workers examples use JavaScri
 ## Observed result
 
 Source8fbb8bc2942679de434773f8b808bee3e7ef274e / CI40523081050 succeeded. On27October2026 at22:43:54 Malaysia time, actual Rails /up returned200. The separate /app-ready URL returned403, so Neon readiness remains unproved and its cause unconfirmed. The Worker stopped its container; parent and independent watch confirmed application absence and closed ingress by22:44:02. Astra accepted only the Rails startup milestone. Public receipt: audit/staging-3/rails-startup-proof.json.
+
+## Hostname forwarding fix for Neon proof
+
+The owner requested correction and proof of hosted Neon access, with Astra review before live execution. Both health requests now use the configured public hostname in the URL, Host and X-Forwarded-Host, plus trusted HTTPS/443 forwarding. Rails host authorization remains enabled. Local actual middleware checks reproduce403 for an internal/incorrect forwarded host and permit the configured host; this is a source-level reproduction, not proof of the earlier live cause.
+
+A fresh ISPNeonProof class/namespace preserves the stopped prior controller. The same pinned Rails image and Neon connection remain. The single test has a fixed six-minute cutoff,180-second Rails bound,15-second Neon check and90-second cleanup reserve; at least285seconds must remain after routing readiness. Run admission requires current token expiry to cover the six-minute window plus90seconds. Budget carriesUS$3.50 and reservesUS$1 more, totalingUS$4.50 withinUS$5; these are conservative reservations, not actual billing. Both Rails and Neon must pass.

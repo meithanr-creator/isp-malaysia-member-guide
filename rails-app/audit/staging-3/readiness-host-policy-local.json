@@ -1,0 +1,33 @@
+{
+  "scope": "Actual Rails host middleware reproduction; no hosted request or database connection",
+  "results": [
+    {
+      "path": "/up",
+      "host": "container",
+      "forwarded_host": null,
+      "status": 200,
+      "controller_reached": true
+    },
+    {
+      "path": "/app-ready",
+      "host": "container",
+      "forwarded_host": null,
+      "status": 403,
+      "controller_reached": false
+    },
+    {
+      "path": "/app-ready",
+      "host": "isp-rails-startup.meithan-r.workers.dev",
+      "forwarded_host": "container",
+      "status": 403,
+      "controller_reached": false
+    },
+    {
+      "path": "/app-ready",
+      "host": "isp-rails-startup.meithan-r.workers.dev",
+      "forwarded_host": "isp-rails-startup.meithan-r.workers.dev",
+      "status": 200,
+      "controller_reached": true
+    }
+  ]
+}

@@ -10,7 +10,7 @@
   },
   "containers": [
     {
-      "class_name": "ISPStartup",
+      "class_name": "ISPNeonProof",
       "scheduling_policy": "durable_object",
       "images": {
         "rails": {
@@ -24,7 +24,7 @@
     "bindings": [
       {
         "name": "STARTUP",
-        "class_name": "ISPStartup"
+        "class_name": "ISPNeonProof"
       }
     ]
   },
@@ -33,6 +33,12 @@
       "tag": "startup-v1",
       "new_sqlite_classes": [
         "ISPStartup"
+      ]
+    },
+    {
+      "tag": "startup-neon-v1",
+      "new_sqlite_classes": [
+        "ISPNeonProof"
       ]
     }
   ],
