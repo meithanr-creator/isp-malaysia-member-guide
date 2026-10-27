@@ -170,7 +170,6 @@ jobs:
           ISP_STAGING_LEASE=rails-staging-2 node script/hosted-acceptance.mjs --plan
           ISP_STAGING_LEASE=rails-staging-3 node script/hosted-acceptance.mjs --selftest
           ISP_STAGING_LEASE=rails-staging-3 node script/hosted-acceptance.mjs --plan
-          ISP_STAGING_LEASE=rails-staging-3 node script/run-hosted-acceptance.mjs --plan
           node --test script/hosted-diagnostics.test.mjs
       - name: Prove the exact staging Worker bundle and operator source
         run: ISP_STAGING_LEASE=rails-staging-3 node script/lease2-provision.mjs --bundle-proof

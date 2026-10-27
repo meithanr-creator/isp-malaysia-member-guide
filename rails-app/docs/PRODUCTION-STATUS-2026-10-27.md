@@ -1,3 +1,8 @@
+## Exact-commit CI correction
+
+Source4ec70fd6b7f18e65a19bd75a09245f53acd44f96 published the complete lease3 integration after Astra source/config approval. GitHub push40466092854 and PR40466097242 stopped in one new validation command: the Ubuntu job invoked the Windows-only drive-D orchestration launcher. The pure274-test release suite and explicit standalone lease3 planning/selftest completed successfully before that failure. The failed attempt is retained in audit/staging-2/ci-4ec70fd-first-attempt.json.
+
+The correction removes only that Windows-only invocation from Linux CI. The launcher keeps its fixed D execution path. Parent syntax, pure phase tests, standalone lease3 plan/selftest, all274 regressions and exact SDK/source bundle proof remain required; the actual launcher's read-only plan already passed on D. Corrected exact-commit CI remains pending. No application/module image change, provider operation, runtime or hosted PASS results from this correction.
 # Current production position — 27 October 2026
 
 This checkpoint supersedes earlier status paragraphs below. The last published source is `5d5fa2644b3fab9aa357d87a355ce799c8bee752`: all seven required push checks passed in run40459389698, and applicable PR checks passed in40459397288. See audit/staging-2/ci-5d5fa26-summary.json. The application image remains the scanner-tested image from Rails source80d32fddf88251a6608ba047a577ce16efe8c834; hosting-control changes do not rebuild it.
