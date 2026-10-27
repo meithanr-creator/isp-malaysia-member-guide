@@ -21,6 +21,7 @@
   "script/private-acceptance-carry.mjs",
   "script/private-acceptance-context.mjs",
   "script/private-acceptance-health.mjs",
+  "script/private-acceptance-mobile.mjs",
   "script/private-acceptance-tail.mjs",
   "script/private-acceptance.mjs",
   "script/private-mobile-cleanup.mjs",

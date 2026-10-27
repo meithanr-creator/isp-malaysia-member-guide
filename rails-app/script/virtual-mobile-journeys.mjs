@@ -1,6 +1,6 @@
 // Full rendered virtual-mobile coverage. Importing performs no I/O or network.
 import {createHash,createHmac} from 'node:crypto';
-import {FINAL_TAIL_BATCHES,finalTailMobileSelectionMatches,CONTINUATION_BATCHES,continuationMobileSelectionMatches} from './hosted-execution-phase.mjs';
+import {MOBILE_ONLY_BATCHES,mobileOnlySelectionMatches,FINAL_TAIL_BATCHES,finalTailMobileSelectionMatches,CONTINUATION_BATCHES,continuationMobileSelectionMatches} from './hosted-execution-phase.mjs';
 export const ORIGIN=process.env.ISP_PRIVATE_ACCEPTANCE==='true'&&process.env.ISP_STAGING_LEASE==='rails-private-acceptance'?'https://isp-rails-startup.meithan-r.workers.dev':'https://isp-member-production.meithan-r.workers.dev';
 export const LIMITS=Object.freeze({requests:180,profile_ms:420000,reconcile_reserve_ms:120000,ordinary_ms:20000,upload_ms:45000,pdf_bytes:1048576});
 export const PROFILES=Object.freeze({'iphone-webkit':{device:'iPhone 13',engine:'webkit',admin:'admin_a'},'android-chromium':{device:'Pixel 7',engine:'chromium',admin:'admin_b'}});
@@ -29,9 +29,10 @@ export function safeURL(value){
 export function dependencies({profile,runtime,fixtures,http,phase,preparedHash,observations,prepared,carry,now=Date.now()}){
  ensure(Object.hasOwn(PROFILES,profile)&&fixtures?.phase==='active'&&/^qa-\d{8}-[a-f0-9]{12}$/.test(fixtures.run_marker));
  ensure(phase?.status==='selected_phase_complete'&&phase.mobile_eligible===true&&phase.phase==='functional'&&phase.run_marker===fixtures.run_marker&&phase.release?.prepared_release_sha256===preparedHash);
- const continuation=runtime?.ISP_ACCEPTANCE_CONTINUATION==='true',finalTail=prepared?.final_tail===true;
- ensure(JSON.stringify(phase.completed_batches)===JSON.stringify(finalTail?FINAL_TAIL_BATCHES:continuation?CONTINUATION_BATCHES:BATCHES)&&phase.selected_case_ids?.length===(finalTail?2:continuation?33:42)&&new Set(phase.selected_case_ids).size===(finalTail?2:continuation?33:42));
- if(finalTail)ensure(continuation&&finalTailMobileSelectionMatches({phase,state:http,fixtures,prepared,carry}),'Forty sealed carried PASS, two current PASS and reconciled fresh tail setup required');
+ const continuation=runtime?.ISP_ACCEPTANCE_CONTINUATION==='true',finalTail=prepared?.final_tail===true,mobileOnly=prepared?.mobile_only===true;
+ ensure(JSON.stringify(phase.completed_batches)===JSON.stringify(mobileOnly?MOBILE_ONLY_BATCHES:finalTail?FINAL_TAIL_BATCHES:continuation?CONTINUATION_BATCHES:BATCHES)&&phase.selected_case_ids?.length===(mobileOnly?0:finalTail?2:continuation?33:42)&&new Set(phase.selected_case_ids).size===(mobileOnly?0:finalTail?2:continuation?33:42));
+ if(mobileOnly)ensure(continuation&&mobileOnlySelectionMatches({phase,state:http,fixtures,prepared,carry}),'Forty-two sealed carried PASS with fresh reconciled bootstrap and browser prerequisites required');
+ else if(finalTail)ensure(continuation&&finalTailMobileSelectionMatches({phase,state:http,fixtures,prepared,carry}),'Forty sealed carried PASS, two current PASS and reconciled fresh tail setup required');
  else if(continuation)ensure(continuationMobileSelectionMatches({phase,state:http,fixtures,prepared,carry}),'Nine sealed historical PASS and thirty-three current PASS with a fresh reconciled bootstrap are required');
  else ensure(http?.continuation!==true&&!http?.historical_carry,'Continuation evidence cannot enter a different execution mode');
  const leaseId=runtime?.ISP_STAGING_LEASE;
@@ -41,11 +42,11 @@ export function dependencies({profile,runtime,fixtures,http,phase,preparedHash,o
  const admin=PROFILES[profile].admin,member=fixtures.actors?.member_b,a=fixtures.actors?.[admin];
  ensure(Number.isSafeInteger(member?.id)&&member.id>0&&member.role==='member'&&typeof member.email==='string'&&typeof member.password==='string'&&Number.isSafeInteger(a?.id)&&a.id>0&&a.role==='admin'&&typeof a.password==='string');
  ensure(/^[A-Z2-7]{16,64}$/.test(http.actors?.[admin]?.totp_secret||''),'Actual protected HTTP enrollment state required');
- ensure((finalTail||/^[a-f0-9]{16}$/.test(http.event?.slug||''))&&/^[a-f0-9]{16}$/.test(http.publication?.slug||'')&&Number.isSafeInteger(http.discover?.id)&&http.discover.id>0);
+ ensure((mobileOnly||finalTail||/^[a-f0-9]{16}$/.test(http.event?.slug||''))&&/^[a-f0-9]{16}$/.test(http.publication?.slug||'')&&Number.isSafeInteger(http.discover?.id)&&http.discover.id>0);
  ensure(observations?.version===1&&observations.lease_id===leaseId&&observations.phase==='active'&&observations.run_marker===fixtures.run_marker&&JSON.stringify(observations.target)===JSON.stringify(fixtures.target));
  const captured=Date.parse(observations.captured_at);ensure(Number.isFinite(captured)&&captured>=Date.parse(fixtures.captured_at||phase.started_at||phase.finished_at)&&captured<=now+5000,'Fresh pre-browser observations required');
  ensure(observations.actors?.member_b?.id===member.id&&observations.actors.member_b.email===member.email&&observations.actors.member_b.role==='member'&&observations.actors[admin]?.id===a.id&&observations.actors[admin].mfa_enabled===true);
- ensure((finalTail||observations.events?.some(x=>x.slug===http.event.slug&&x.published_title))&&observations.publications?.some(x=>x.slug===http.publication.slug&&/^[a-f0-9]{64}$/.test(x.pdf_sha256))&&observations.discover?.some(x=>x.id===http.discover.id&&x.position===1));
+ ensure((mobileOnly||finalTail||observations.events?.some(x=>x.slug===http.event.slug&&x.published_title))&&observations.publications?.some(x=>x.slug===http.publication.slug&&/^[a-f0-9]{64}$/.test(x.pdf_sha256))&&observations.discover?.some(x=>x.id===http.discover.id&&x.position===1));
  return {admin,memberId:member.id,adminId:a.id};
 }
 const MUTATIONS={review_access:['/__isp_review','post'],member_login:['/session','post'],administrator_login:['/session','post'],administrator_factor:['/two-factor','post'],member_profile:['/member/profile','patch'],consultation:['/member/consultation_requests','post'],event_draft:[/^\/admin\/events$/,'post'],event_preview:[/^\/admin\/events\/[a-f0-9]{16}$/,'patch'],event_publish:[/^\/admin\/events\/[a-f0-9]{16}\/publish$/,'post'],publication_draft:['/admin/publications','post'],publication_preview:[/^\/admin\/publications\/[a-f0-9]{16}$/,'patch'],publication_publish:[/^\/admin\/publications\/[a-f0-9]{16}\/publish$/,'post'],discover_save:[/^\/admin\/discover\/[1-9][0-9]*$/,'patch'],interest_first:[/^\/events\/[a-f0-9]{16}\/interest$/,'post'],interest_repeat:[/^\/events\/[a-f0-9]{16}\/interest$/,'post'],member_logout:['/session','delete'],administrator_logout:['/session','delete']};

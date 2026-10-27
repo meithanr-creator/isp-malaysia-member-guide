@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {CARRIED_CASE_IDS} from './private-acceptance-carry.mjs';
-import {FINAL_TAIL_BATCHES,FINAL_TAIL_CASE_IDS,FINAL_TAIL_PRIOR_CASE_IDS,FINAL_TAIL_CARRIED_CASE_IDS,finalTailCarryMatches,finalTailSetupReady,finalTailMobileSelectionMatches,functionalExecutionPlan,mobileDependenciesReady,CONTINUATION_BATCHES,CONTINUATION_CURRENT_CASE_IDS,bootstrapActorBinding,continuationBootstrapReady,historicalIdentityCarryMatches,continuationMobileSelectionMatches} from './hosted-execution-phase.mjs';
+import {MOBILE_ONLY_BATCHES,MOBILE_ONLY_CARRIED_CASE_IDS,mobileOnlyCarryMatches,mobileOnlySelectionMatches,FINAL_TAIL_BATCHES,FINAL_TAIL_CASE_IDS,FINAL_TAIL_PRIOR_CASE_IDS,FINAL_TAIL_CARRIED_CASE_IDS,finalTailCarryMatches,finalTailSetupReady,finalTailMobileSelectionMatches,functionalExecutionPlan,mobileDependenciesReady,CONTINUATION_BATCHES,CONTINUATION_CURRENT_CASE_IDS,bootstrapActorBinding,continuationBootstrapReady,historicalIdentityCarryMatches,continuationMobileSelectionMatches} from './hosted-execution-phase.mjs';
 import {bootstrapFreshSessions,reconcileBootstrapSessions,reconcileTailSetup,publicReport} from './hosted-acceptance.mjs';
 import {dependencies} from './virtual-mobile-journeys.mjs';
 import {immutableObservationProof} from './immutable-acceptance-evidence.mjs';
@@ -126,4 +126,26 @@ test('tail prerequisite state seals fresh matching independent DB bytes without 
 test('tail setup rejects wrong DB hash, old capture, changed target and changed retained bytes',async()=>{
  for(const alter of [x=>x.observations.publications[0].pdf_sha256='bad',x=>x.observations.captured_at=iso(2000),x=>x.observations.target.database='wrong']){const input=await finalTailMobile();input.state.tail_setup.status='BLOCKED';alter(input);const changed=reconcileTailSetup({state:input.state,raw:Buffer.from(JSON.stringify(input.observations)),seal:(_i,_b,raw)=>({...immutableObservationProof(raw),file:'synthetic.json'}),now:start+7000});assert.equal(finalTailSetupReady(input.state),false);assert.ok(changed===0||input.state.halted===true);}
  const input=await finalTailMobile();input.state.tail_setup.status='BLOCKED';assert.throws(()=>reconcileTailSetup({state:input.state,raw:Buffer.from(JSON.stringify(input.observations)),seal:()=>({sha256:'0'.repeat(64),length:1,file:'changed.json'}),now:start+7000}));assert.equal(input.state.tail_setup.status,'BLOCKED');
+});
+
+async function mobileOnlyInput(){
+ const input=await finalTailMobile(),{state,carry,prepared,phase}=input;
+ carry.mobile={sha256:'9'.repeat(64),cases:FINAL_TAIL_CASE_IDS.map(id=>({id,status:'PASS_CARRIED',http:'PASS',original_run_marker:'qa-20261028-35370abcdef0',finished_at:iso(-10000),original_case_sha256:'1'.repeat(64),observation_sha256:'2'.repeat(64)}))};
+ delete prepared.final_tail;delete state.final_tail;delete phase.final_tail;
+ Object.assign(prepared,{mobile_only:true,mobile_carry_sha256:carry.mobile.sha256});Object.assign(state,{mobile_only:true,historical_carry:clone(carry),cases:{},completed_batches:[...MOBILE_ONLY_BATCHES]});
+ Object.assign(phase,{mobile_only:true,selected_case_ids:[],carried_case_ids:[...MOBILE_ONLY_CARRIED_CASE_IDS],carried_pass_count:42,current_pass_count:0,mobile_carry_sha256:carry.mobile.sha256,completed_batches:[...MOBILE_ONLY_BATCHES]});return input;
+}
+test('mobile-only plan runs only fresh prerequisites and selects zero of the forty-two carried cases',()=>{
+ const sourcePlan={...source(),mobile_only:true,batches:[...MOBILE_ONLY_BATCHES],carried_case_ids:[...MOBILE_ONLY_CARRIED_CASE_IDS]};
+ const plan=functionalExecutionPlan(['--execute','--phase','functional'],sourcePlan);assert.equal(plan.mobile_only,true);assert.equal(plan.current_case_count,0);assert.deepEqual(plan.case_ids,[]);assert.deepEqual(plan.batches,MOBILE_ONLY_BATCHES);assert.equal(plan.carried_case_ids.length,42);
+ for(const alter of [x=>x.batches.push('logout'),x=>x.carried_case_ids.pop(),x=>x.final_tail=true,x=>x.continuation=false,x=>x.inventory.login_throttle=['tail-setup','identity']]){const changed=clone(sourcePlan);alter(changed);assert.throws(()=>functionalExecutionPlan([],changed));}
+});
+test('mobile-only browser gate admits forty-two sealed carry with fresh independent setup and zero invented current PASS',async()=>{
+ const input=await mobileOnlyInput();assert.equal(mobileOnlyCarryMatches(input),true);assert.equal(mobileOnlySelectionMatches(input),true);assert.deepEqual(dependencies(input),{admin:'admin_a',memberId:101,adminId:102});
+ const report=publicReport(input.state);assert.equal(report.mobile_only,true);assert.equal(report.carried_pass_count,42);assert.equal(report.current_pass_count,0);assert.equal(report.cases.filter(c=>c.status==='PASS_CARRIED').length,42);assert.equal(report.cases.filter(c=>c.status==='PASS').length,0);assert.deepEqual(Object.keys(input.state.cases),[]);
+ const phase=functionalExecutionPlan([],{...source(),mobile_only:true,batches:[...MOBILE_ONLY_BATCHES],carried_case_ids:[...MOBILE_ONLY_CARRIED_CASE_IDS]});assert.equal(mobileDependenciesReady({...input,phase,completed:[...MOBILE_ONLY_BATCHES],leaseId:lease}),true);
+});
+test('mobile-only rejects altered carry bindings, absent original DB proof, fake current PASS and stale fresh prerequisites',async()=>{
+ for(const alter of [x=>x.prepared.mobile_carry_sha256='0'.repeat(64),x=>x.carry.mobile.cases.pop(),x=>x.state.historical_carry.mobile.sha256='0'.repeat(64),x=>delete x.carry.mobile.cases[0].observation_sha256,x=>x.carry.mobile.cases[0].finished_at=iso(10000),x=>x.carry.mobile.cases[0].original_run_marker=mark,x=>x.state.cases.logout_revocation={status:'PASS',http:'PASS'},x=>x.state.final_tail=true,x=>x.phase.current_pass_count=2,x=>x.phase.carried_pass_count=40,x=>x.phase.selected_case_ids=['logout_revocation'],x=>x.phase.mobile_carry_sha256='0'.repeat(64),x=>x.phase.completed_batches=[...FINAL_TAIL_BATCHES],x=>x.state.bootstrap.status='BLOCKED',x=>x.state.tail_setup.status='BLOCKED',x=>x.state.publication.preview_links=[]]){const input=await mobileOnlyInput();alter(input);assert.throws(()=>dependencies(input));}
+ const input=await mobileOnlyInput();input.state.cases.logout_revocation={status:'PASS',http:'PASS'};assert.equal(mobileOnlySelectionMatches(input),false);assert.throws(()=>publicReport(input.state));
 });

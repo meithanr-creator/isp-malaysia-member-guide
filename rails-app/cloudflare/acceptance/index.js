@@ -115,3 +115,5 @@ export class ISPPrivateAcceptanceContinuation extends ISPPrivateAcceptance {}
 export class ISPPrivateAcceptanceFinal extends ISPPrivateAcceptance {}
 
 export class ISPPrivateAcceptanceFinalStable extends ISPPrivateAcceptance {}
+
+export class ISPPrivateAcceptanceMobile extends ISPPrivateAcceptance {}
