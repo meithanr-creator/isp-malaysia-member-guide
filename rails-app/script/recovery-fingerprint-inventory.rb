@@ -194,6 +194,15 @@ module RecoveryFingerprintInventory
     end
   end
 
+  # Catalog SQL consistency does not establish that restored sequences are safe to write.
+  def compare_catalog!(baseline, observed)
+    demand(baseline["version"] == 2 && observed["version"] == 2, "inventory_version")
+    COMPARABLE.each { |field| demand(baseline.fetch(field) == observed.fetch(field), "inventory_mismatch_#{field}") }
+    demand(baseline.fetch("sequences") == observed.fetch("sequences"), "catalog_sequence_state_mismatch")
+    {"matched"=>true,"read_only"=>true,"tables"=>observed.fetch("tables").length,
+     "sequences"=>observed.fetch("sequences").length,"recovery_suitability"=>"NOT ASSESSED",
+     "scope"=>"CI catalog SQL and exact repeated read only","restore_rollback"=>"NOT RUN"}
+  end
   def compare!(baseline, observed)
     demand(baseline["version"] == 2 && observed["version"] == 2, "inventory_version")
     COMPARABLE.each { |field| demand(baseline.fetch(field) == observed.fetch(field), "inventory_mismatch_#{field}") }

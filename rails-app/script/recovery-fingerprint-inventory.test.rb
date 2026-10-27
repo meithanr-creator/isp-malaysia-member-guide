@@ -39,38 +39,48 @@ class RecoveryFingerprintInventoryTest < Minitest::Test
     assert_equal "true", value["sequences"][0]["state"]["is_called"]
     assert_equal "11", I.sequence_write_requirements(value)[0]["high_water"]
     assert conn.statements.all? { |sql| sql.start_with?("SELECT", "SHOW") }
-    assert_equal "NOT RUN", I.compare!(value, Marshal.load(Marshal.dump(value)))["restore_rollback"]
+    assert_equal "NOT RUN", I.compare!(value, JSON.parse(JSON.generate(value)))["restore_rollback"]
+  end
+  def test_catalog_equality_is_separate_from_recovery_sequence_suitability
+    base=inventory
+    base["sequences"][0]["state"]={"last_value"=>"11","is_called"=>"false"}
+    copy=JSON.parse(JSON.generate(base))
+    assert_equal "NOT ASSESSED", I.compare_catalog!(base,copy)["recovery_suitability"]
+    error=assert_raises(I::Refused) { I.compare!(base,copy) }
+    assert_equal "sequence_next_candidate_collision", error.message
+    copy["sequences"][0]["state"]["last_value"]="12"
+    assert_raises(I::Refused) { I.compare_catalog!(base,copy) }
   end
   def test_every_schema_constraint_index_sequence_state_and_highwater_mismatch_refused
     base=inventory
     %w[tables schema columns constraints indexes types migrations sequences mfa_digests binding].each do |field|
-      changed=Marshal.load(Marshal.dump(base))
+      changed=JSON.parse(JSON.generate(base))
       changed[field] = {"changed"=>true}
       assert_raises(I::Refused, field) { I.compare!(base, changed) }
     end
     %w[last_value is_called].each do |field|
-      changed=Marshal.load(Marshal.dump(base)); changed["sequences"][0]["state"][field]="changed"
+      changed=JSON.parse(JSON.generate(base)); changed["sequences"][0]["state"][field]="changed"
       assert_raises(I::Refused) { I.compare!(base,changed) }
     end
     %w[seqincrement seqcache seqcycle column_default dependency_type owned_column].each do |field|
-      changed=Marshal.load(Marshal.dump(base));changed["sequences"][0]["options_and_ownership"][field]="changed"
+      changed=JSON.parse(JSON.generate(base));changed["sequences"][0]["options_and_ownership"][field]="changed"
       assert_raises(I::Refused) { I.compare!(base,changed) }
     end
   end
   def test_forward_gap_allowed_but_backward_called_regression_and_cycle_refused
     base=inventory
-    forward=Marshal.load(Marshal.dump(base))
+    forward=JSON.parse(JSON.generate(base))
     forward["sequences"][0]["state"]["last_value"]="43"
     result=I.compare!(base,forward)
     assert_equal "11",result["sequence_state_compatibility"][0]["baseline_state"]["last_value"]
     assert_equal "43",result["sequence_state_compatibility"][0]["restored_state"]["last_value"]
     assert_equal false,result["sequence_state_compatibility"][0]["actual_generated_ids_verified"]
     assert_equal "NOT RUN",result["restore_rollback"]
-    backward=Marshal.load(Marshal.dump(base));backward["sequences"][0]["state"]["last_value"]="10"
+    backward=JSON.parse(JSON.generate(base));backward["sequences"][0]["state"]["last_value"]="10"
     assert_raises(I::Refused) { I.compare!(base,backward) }
-    called=Marshal.load(Marshal.dump(base));called["sequences"][0]["state"]["is_called"]="false"
+    called=JSON.parse(JSON.generate(base));called["sequences"][0]["state"]["is_called"]="false"
     assert_raises(I::Refused) { I.compare!(base,called) }
-    cyclic=Marshal.load(Marshal.dump(base));cyclic["sequences"][0]["options_and_ownership"]["seqcycle"]="true"
+    cyclic=JSON.parse(JSON.generate(base));cyclic["sequences"][0]["options_and_ownership"]["seqcycle"]="true"
     assert_raises(I::Refused) { I.compare!(cyclic,cyclic) }
   end
   def test_descending_and_large_integer_sequence_state_uses_exact_arithmetic
@@ -80,11 +90,11 @@ class RecoveryFingerprintInventoryTest < Minitest::Test
     seq["state"]={"last_value"=>"-9007199254740993","is_called"=>"true"}
     seq["highwater"]={"minimum"=>"-9007199254740993","maximum"=>"-1","populated_count"=>"2"}
     seq["options_sha256"]=I.digest(seq["options_and_ownership"])
-    forward=Marshal.load(Marshal.dump(base));forward["sequences"][0]["state"]["last_value"]="-9007199254741025"
+    forward=JSON.parse(JSON.generate(base));forward["sequences"][0]["state"]["last_value"]="-9007199254741025"
     assert I.compare!(base,forward)["matched"]
-    backward=Marshal.load(Marshal.dump(base));backward["sequences"][0]["state"]["last_value"]="-9007199254740991"
+    backward=JSON.parse(JSON.generate(base));backward["sequences"][0]["state"]["last_value"]="-9007199254740991"
     assert_raises(I::Refused) { I.compare!(base,backward) }
-    unsafe=Marshal.load(Marshal.dump(base));unsafe["sequences"][0]["highwater"]["minimum"]="-9223372036854775807"
+    unsafe=JSON.parse(JSON.generate(base));unsafe["sequences"][0]["highwater"]["minimum"]="-9223372036854775807"
     assert_raises(I::Refused) { I.compare!(unsafe,unsafe) }
   end
 

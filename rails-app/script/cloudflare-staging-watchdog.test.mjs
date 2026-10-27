@@ -283,3 +283,11 @@ test('API-token verification body stall is bounded by the same cleanup deadline'
  assert.equal(signal.aborted,true);assert.equal(result.status,'FAIL');assert.equal(result.budget_exhausted,true);
  assert.equal(result.container_application_absent,false);
 });
+
+test('fractional monotonic deadline validates its exact construction without cancellation error',async()=>{
+ const p=plan(),started=2.0123442099999997,budgetMs=30,timing={...cleanupTiming(p,{monotonicNow:started}),deadline:started+budgetMs,budgetMs};
+ assert.notEqual(timing.deadline-started,budgetMs);
+ let calls=0;const result=await stopStaging(p,async()=>{calls++;throw Error('Expired budget must not send');},undefined,{timing,clock:()=>timing.deadline+1});
+ assert.equal(result.status,'FAIL');assert.equal(result.budget_exhausted,true);assert.equal(calls,0);
+ await assert.rejects(stopStaging(p,async()=>{},undefined,{timing:{...timing,deadline:timing.deadline+1},clock:()=>timing.deadline+2}),/deadline invalid/);
+});

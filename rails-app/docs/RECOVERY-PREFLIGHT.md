@@ -74,3 +74,7 @@ Journal entries are chained, bound to the operation/plan and cannot start the sa
 
 Fresh `--execute-fresh` and current capture/verify/parent execution are explicitly blocked pending a reviewed operation-owned runtime/target adapter and independent admission/watchdog. The ordinary fixed-parent fixture operator is unchanged. Complete recovery still requires provider observations, a populated consistent checkpoint and verified files/historical keys, actual pinned-image startup, member login/admin MFA/authorization/files, scanned upload/create/update/read/delete and interest/enquiry writes, all-sequence generated-ID proof, fresh-process reads after restart, measured RTO/RPO, rollback/parent-unchanged fingerprints and exact resource/process absence. No source test, CI SQL result or supplied receipt consistency result closes `restore_rollback`.
 
+
+## CI consistency and recovery suitability are separate
+
+The CI collector compares both complete catalog inventories and exact sequence state in the same read-only transaction. It reports recovery_suitability separately; a catalog PASS never closes restore_rollback. The original strict recovery comparator is unchanged. Source review reproduced a singleton membership-registry sequence collision caused by explicitly inserting initial ID1 without consuming its sequence. It is an open P2 suitability issue, with actual CI diagnostic confirmation pending. Do not reset a parent sequence or weaken collision checks to obtain a passing result.

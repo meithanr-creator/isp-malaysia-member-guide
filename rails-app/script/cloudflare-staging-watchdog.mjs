@@ -48,7 +48,7 @@ export async function stopStaging(plan,api,pause=sleep,{
  if((plan.lease_id!==undefined&&plan.lease_id!==LEASE2)||context.fresh!==(plan.lease_id===LEASE2))throw Error('ISP watchdog lease mismatch');
  assertPreparedTuple(context,plan,prepared);
  if(!Number.isFinite(timing.started)||!Number.isFinite(timing.deadline)||!Number.isFinite(timing.budgetMs)||
-    timing.budgetMs<0||timing.budgetMs>CLEANUP_BUDGET_MS||timing.deadline-timing.started!==timing.budgetMs||
+    timing.budgetMs<0||timing.budgetMs>CLEANUP_BUDGET_MS||timing.deadline!==timing.started+timing.budgetMs||
     timing.started>clock())throw Error('ISP cleanup deadline invalid');
  const appPath=`/containers/applications/${plan.application_id}`,ingressPath=`/workers/scripts/${WORKER}/subdomain`;
  let applicationAbsent=false,ingressClosed=false,requestFailures=0;

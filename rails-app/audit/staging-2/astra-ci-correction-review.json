@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "reviewer": "Astra high",
+  "agent": "/root/astra_release_review",
+  "source_base": "32e98032f4a09c59b7b8be0f59195bb17bc7e467",
+  "disposition": "GO_FOR_PUBLICATION_ONLY",
+  "exact_file_sha256": {
+    "script/cloudflare-staging-watchdog.mjs": "03f4ce1c9d03c92c50b6cebeebc4d65b0feedf3d458650f415362f862bbc9c80",
+    "script/cloudflare-staging-watchdog.test.mjs": "7faf4e5b329ba89ecd512e5ccbf3cd7132ec2ee02fcc8f0bb9785ce08b1dab77",
+    "script/recovery-fingerprint-inventory.rb": "b2ce8d134c6a74bb091aa7d7328a8f2e7b12b27c4133bbee26c7b13b3e11a7fd",
+    "script/recovery-fingerprint-inventory.test.rb": "340038e07a45f33bca724aa7317b35cafaec00b4c7a04fd9deba3f09039fc4c5",
+    "script/recovery-inventory-ci.rb": "acac0abcb69d44ff6b1d03357059f5f7f2771a14b315d0542a3f9cecb943451e"
+  },
+  "actual_local_evidence": {
+    "node_passed": 164,
+    "node_failures": 0,
+    "node_skips": 0,
+    "ruby_runs": 8,
+    "ruby_assertions": 43,
+    "ruby_failures": 0,
+    "ruby_errors": 0,
+    "ruby_skips": 0,
+    "brakeman_warnings": 0,
+    "brakeman_errors": 0
+  },
+  "catalog_consistency_scope": "Exact repeated read-only inventory, not recovery suitability",
+  "recovery_sequence_checks": "Strict collision rejection retained",
+  "singleton_sequence_suitability": "Unresolved P2 risk; next CI diagnostic confirmation pending",
+  "exact_new_commit_ci_required": true,
+  "hosted_cases_passed": 0,
+  "production_approved": false
+}
