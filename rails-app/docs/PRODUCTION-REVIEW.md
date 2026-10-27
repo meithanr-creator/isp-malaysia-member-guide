@@ -1,3 +1,4 @@
+> Current authority (27 October): docs/PRODUCTION-STATUS-2026-10-27.md and audit/staging-2/acceptance-closure-ledger.json supersede the historical review below. Published5d5fa26 CI is green; fresh lease3 integration still needs final review/new exact CI and actual provider execution. Revised hosted closures remain0/63. Production NO-GO. Demo areas excluded; virtual mobile scope accepted.
 # Production director review and release evidence
 
 > Current authority: [26 October closure ledger](PRODUCTION-CLOSURE-2026-10-26.md). The first hosted rehearsal ran and is stopped; production is NO-GO. Nine initial identity cases and a bounded database restore passed. Event upload and both hosted mobile attempts failed. Offline whole-area fixes are being verified. Statements below that say the runtime has not started are historical. The owner accepted virtual mobile scope; physical-device/native-install evidence is unclaimed and is not a new owner-action gate.

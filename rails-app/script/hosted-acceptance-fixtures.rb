@@ -12,7 +12,8 @@ class HostedAcceptanceFixtures
   class Refused < StandardError; end
   ROOT = {
     nil => "D:/Projects/isp-rails-tools/isp-staging-private",
-    "rails-staging-2" => "D:/Projects/isp-rails-tools/isp-staging-private/leases/rails-staging-2"
+    "rails-staging-2" => "D:/Projects/isp-rails-tools/isp-staging-private/leases/rails-staging-2",
+    "rails-staging-3" => "D:/Projects/isp-rails-tools/isp-staging-private/leases/rails-staging-3"
   }.fetch(ENV["ISP_STAGING_LEASE"]) { raise Refused, "Fixture lease refused." }.freeze
   MANIFEST = "#{ROOT}/acceptance-fixtures.json".freeze
   OBSERVATIONS = "#{ROOT}/acceptance-db-observations.json".freeze
@@ -26,9 +27,7 @@ class HostedAcceptanceFixtures
     "registry" => MembershipRegistryEntry }.freeze
   def refuse! = raise(Refused, "Fixture operation refused; review the private staging prerequisites.")
   def guard!
-    if ENV["ISP_STAGING_LEASE"].nil? && ARGV.first != "status"
-      refuse! if File.exist?("D:/Projects/isp-rails-tools/isp-staging-private/leases/rails-staging-2/prepared-release.json")
-    end
+    refuse! if ARGV.first != "status" && ENV["ISP_STAGING_LEASE"] != "rails-staging-3"
     refuse! unless Rails.env.production? && ENV["ISP_ACCEPTANCE_FIXTURES"] == "true"
     refuse! unless ENV["ISP_ACCEPTANCE_NEON_PROJECT"] == PROJECT
     refuse! unless ENV["ISP_DEMO_MODE"] == "false"
@@ -75,6 +74,8 @@ class HostedAcceptanceFixtures
     private_path!(MANIFEST)
     @m = JSON.parse(File.read(MANIFEST))
     refuse! unless @m["version"] == 1 && MARKER.match?(@m["run_marker"].to_s) && @m["target"] == @target
+    refuse! if @m.key?("lease_id") && @m["lease_id"] != ENV["ISP_STAGING_LEASE"]
+    refuse! if ENV["ISP_STAGING_LEASE"] == "rails-staging-3" && @m["lease_id"] != "rails-staging-3"
     refuse! unless @m["actors"].is_a?(Hash) && @m["records"].is_a?(Hash)
   end
   def ids(kind) = Array(@m.fetch("records").fetch(kind, [])).map { |r| Integer(r.fetch("id")) }
@@ -96,7 +97,7 @@ class HostedAcceptanceFixtures
   def setup!
     private_path!(MANIFEST)
     refuse! if File.exist?(MANIFEST) || File.symlink?(MANIFEST)
-    @m = { "version" => 1, "phase" => "prepared", "run_marker" => "qa-#{Time.now.utc.strftime('%Y%m%d')}-#{SecureRandom.hex(6)}",
+    @m = { "version" => 1, "lease_id" => ENV.fetch("ISP_STAGING_LEASE"), "phase" => "prepared", "run_marker" => "qa-#{Time.now.utc.strftime('%Y%m%d')}-#{SecureRandom.hex(6)}",
       "created_at" => stamp, "target" => @target, "actors" => {}, "records" => {},
       "note" => "Synthetic verification timestamps are constructed fixture state; no mailbox verification or delivery is claimed." }
     (CONTENT.keys + %w[blobs interests]).each { |key| @m["records"][key] = [] }
@@ -221,7 +222,7 @@ class HostedAcceptanceFixtures
         "draft_title" => p.draft_data&.fetch("title", nil), "published_title" => p.published_data&.fetch("title", nil),
         "pdf" => pdf, "cover" => cover, "pdf_sha256" => pdf&.fetch(:sha256), "cover_sha256" => cover&.fetch(:sha256))
     end
-    save!(OBSERVATIONS, { version: 1, run_marker: @m["run_marker"], captured_at: stamp,
+    save!(OBSERVATIONS, { version: 1, lease_id: ENV["ISP_STAGING_LEASE"], run_marker: @m["run_marker"], captured_at: stamp,
       actors: actors, events: events, publications: publications,
       discover: DiscoverSlide.ordered.map { |s| slide_snapshot(s) },
       consultations: ConsultationRequest.where(id: ids("consultations")).order(:id).map { |r| r.attributes.slice("id", "user_id", "request_key", "category", "subject", "message") },
@@ -267,9 +268,7 @@ class HostedAcceptanceFixtures
   end
 
   def guard!
-    if ENV["ISP_STAGING_LEASE"].nil? && ARGV.first != "status"
-      refuse! if File.exist?("D:/Projects/isp-rails-tools/isp-staging-private/leases/rails-staging-2/prepared-release.json")
-    end
+    refuse! if ARGV.first != "status" && ENV["ISP_STAGING_LEASE"] != "rails-staging-3"
     original_guard!
     raw = @db.raw_connection
     refuse! unless ENV["NEON_VERIFY_HOST"] == APPROVED_HOST
@@ -471,7 +470,7 @@ class HostedAcceptanceFixtures
   def observations!
     if %w[cleaned rolled_back].include?(@m["phase"])
       refuse! unless empty_baseline?
-      save!(OBSERVATIONS, { version: 1, run_marker: @m["run_marker"], target: @target,
+      save!(OBSERVATIONS, { version: 1, lease_id: ENV["ISP_STAGING_LEASE"], run_marker: @m["run_marker"], target: @target,
         phase: @m["phase"], captured_at: stamp, actors: {}, events: [], publications: [],
         consultations: [], imports: [], registry: [], discover: DiscoverSlide.ordered.map { |s| slide_snapshot(s) },
         remaining_throttle_bucket_count: LoginAttemptBucket.count })
@@ -514,7 +513,7 @@ class HostedAcceptanceFixtures
         "published_data" => publication.published_data,
         "pdf" => pdf, "cover" => cover, "pdf_sha256" => pdf&.fetch(:sha256), "cover_sha256" => cover&.fetch(:sha256))
     end
-    save!(OBSERVATIONS, { version: 1, run_marker: @m["run_marker"], target: @target, phase: @m["phase"],
+    save!(OBSERVATIONS, { version: 1, lease_id: ENV["ISP_STAGING_LEASE"], run_marker: @m["run_marker"], target: @target, phase: @m["phase"],
       captured_at: stamp, actors: actors, events: events, publications: publications,
       discover: DiscoverSlide.ordered.map { |s| slide_snapshot(s) },
       consultations: ConsultationRequest.where(id: ids("consultations")).order(:id).map { |r| r.attributes.slice("id", "user_id", "request_key", "category", "subject", "message") },

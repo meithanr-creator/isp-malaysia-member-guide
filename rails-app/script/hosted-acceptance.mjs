@@ -7,7 +7,9 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import {cleanTrace} from '../cloudflare/staging/diagnostics.js';
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-import {selectLease,leaseContext,readPreparedRelease,assertActiveRelease,assertWatchdogTuple,assertWritableLease} from './staging-lease-context.mjs';
+import {selectLease,leaseContext,readPreparedRelease,assertActiveRelease,assertWatchdogTuple,assertWritableLease,assertLeaseMutationAllowed} from './staging-lease-context.mjs';
+import {readActiveStagingAdmission,assertHostedRuntimeMode,assertAdmissionSnapshotDigest} from './active-staging-admission.mjs';
+import {immutableObservationProof,reconcileObservationCases} from './immutable-acceptance-evidence.mjs';
 const CONTEXT=leaseContext(selectLease()),PRIVATE=CONTEXT.privateRoot;
 const ORIGIN='https://isp-member-production.meithan-r.workers.dev';
 const HTTP_FILE=path.join(PRIVATE,'acceptance-http.json');
@@ -19,12 +21,8 @@ class Blocked extends Error {}
 function check(ok,message){if(!ok)throw new Error(message);}
 function safePath(file){const target=path.resolve(file);check(/^[dD]:[\\/]/.test(target),'Artifacts must stay on D');let cursor=target;while(!fs.existsSync(cursor))cursor=path.dirname(cursor);for(;;){check(!fs.lstatSync(cursor).isSymbolicLink(),'Reparse/symbolic paths refused');const parent=path.dirname(cursor);if(parent===cursor)break;cursor=parent;}check(/^[dD]:[\\/]/.test(fs.realpathSync(path.dirname(target))),'Resolved destination must stay on D');return target;}
 function json(file){return JSON.parse(fs.readFileSync(safePath(file),'utf8'));}
-function verifyLeaseWatchdog(runtime,prepared){
- const plan=json(path.join(PRIVATE,'watchdog-plan.json')),state=json(path.join(PRIVATE,'watchdog-state.json')),now=Date.now();
- assertWatchdogTuple(CONTEXT,runtime,plan,state,prepared);
- const updated=Date.parse(state.updated_at),stop=Date.parse(state.stop_at);
- check(state.armed===true&&Number.isFinite(updated)&&updated<=now+5000&&now-updated<=45000&&stop===Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-5*60000&&Number.isSafeInteger(state.pid)&&state.pid>0,'Live matching watchdog required');
- try{process.kill(state.pid,0);}catch{check(false,'Live matching watchdog required');}
+function verifyLeaseWatchdog(runtime,prepared,expectedSnapshot,minimumRemainingMs=0){
+ return readActiveStagingAdmission(CONTEXT,{expectedRuntime:runtime,prepared,expectedSnapshot,minimumRemainingMs});
 }
 function atomic(file,value){safePath(file);const tmp=file+'.tmp-'+crypto.randomBytes(5).toString('hex');fs.writeFileSync(tmp,JSON.stringify(value,null,2),{mode:0o600,flag:'wx'});fs.renameSync(tmp,file);}
 function attrs(tag){const out={};for(const m of tag.matchAll(/([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g))out[m[1].toLowerCase()]=decode(m[2]??m[3]??m[4]??'');return out;}
@@ -41,8 +39,8 @@ export function safeDiagnostic(value,id,deadline){
   const clean=cleanTrace(value,deadline);
   return clean&&value.id===id&&value.deadline===deadline&&Object.keys(value).length===Object.keys(clean).length&&Object.entries(clean).every(([key,item])=>value[key]===item)?clean:null;
 }
-class Transport{
-  constructor(runtime,state){this.runtime=runtime;this.state=state;this.calls=state.request_count??0;this.active=0;this.waiters=[];this.traces=[];this.jars=new Map();this.stopAt=Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-600000;check(Number.isFinite(this.stopAt)&&this.stopAt>Date.now(),'Unexpired fixed cleanup reserve required');check(Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-Date.parse(state.execution_started)<=55*60000,'Rehearsal may last at most 55 minutes');check(/^[a-f0-9]{64}$/.test(runtime.ISP_STAGING_KEY),'Private rehearsal key required');}
+export class Transport{
+  constructor(runtime,state,{prepared,admissionSnapshot,admit,requestImpl=https.request,persistState=value=>atomic(HTTP_FILE,value)}={}){this.admit=admit??(limit=>verifyLeaseWatchdog(runtime,prepared,admissionSnapshot,limit));this.requestImpl=requestImpl;this.persistState=persistState;this.runtime=runtime;this.state=state;this.calls=state.request_count??0;this.active=0;this.waiters=[];this.traces=[];this.jars=new Map();this.stopAt=Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-600000;check(Number.isFinite(this.stopAt)&&this.stopAt>Date.now(),'Unexpired fixed cleanup reserve required');check(Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-Date.parse(state.execution_started)<=55*60000,'Rehearsal may last at most 55 minutes');check(/^[a-f0-9]{64}$/.test(runtime.ISP_STAGING_KEY),'Private rehearsal key required');}
   jar(alias){if(!this.jars.has(alias))this.jars.set(alias,new CookieJar(this.state.jars?.[alias]));return this.jars.get(alias);}
   async request(alias,target,{method='GET',body,upload=false,startup=false,key=this.runtime.ISP_STAGING_KEY,omitCookie=false,accept="text/html,application/json;q=0.9"}={}){
     const url=sameOrigin(target),limit=startup?120000:upload?45000:20000;
@@ -50,10 +48,11 @@ class Transport{
     if(this.calls>=350||Date.now()+limit>=this.stopAt)throw new Blocked('Request budget or cleanup reserve reached');
     while(this.active>=2)await new Promise(resolve=>this.waiters.push(resolve));
     if(this.calls>=350||Date.now()+limit>=this.stopAt)throw new Blocked('Request budget or cleanup reserve reached');
+    this.admit(limit); // After concurrency waiting, immediately before intent and dispatch.
     this.active++;this.calls++;this.state.request_count=this.calls;
     const started=Date.now(),jar=this.jar(alias),trace={id:crypto.randomUUID(),alias,method,path:url.pathname.replace(/\/(?:files\/[^/]+|event-files\/[^/]+|discover-images\/[^/]+)\/[^/]+/,'/protected-file/:key'),status:null,duration_ms:null};
     this.traces.push(trace);this.state.request_journal??=[];this.state.request_journal.push(trace);
-    atomic(HTTP_FILE,this.state); // UUID is durable BEFORE any request bytes are sent.
+    this.persistState(this.state); // UUID is durable BEFORE any request bytes are sent.
     let result,failure;
     try{
       result=await new Promise((resolve,reject)=>{
@@ -61,7 +60,7 @@ class Transport{
         if(key!==null)headers['x-isp-staging-key']=key;
         if(!omitCookie&&jar.header(url))headers.Cookie=jar.header(url);
         if(body){headers['Content-Type']=body.type;headers['Content-Length']=body.bytes.length;}
-        const req=https.request(url,{method,headers,rejectUnauthorized:true,signal:AbortSignal.timeout(limit)},res=>{
+        const req=this.requestImpl(url,{method,headers,rejectUnauthorized:true,signal:AbortSignal.timeout(limit)},res=>{
           jar.accept(res.headers['set-cookie'],url);const chunks=[],digest=crypto.createHash('sha256');let size=0;
           res.on('data',chunk=>{size+=chunk.length;if(size>30*1024*1024){res.destroy(Error('Response size limit'));return;}digest.update(chunk);chunks.push(chunk);});
           res.on('error',()=>reject(new Blocked('Response failed; inspect state before continuing')));
@@ -74,7 +73,7 @@ class Transport{
         if(body)req.write(body.bytes);req.end();
       });
     }catch(error){failure=error;}
-    finally{trace.duration_ms=Date.now()-started;atomic(HTTP_FILE,this.state);this.active--;this.waiters.shift()?.();}
+    finally{trace.duration_ms=Date.now()-started;this.persistState(this.state);this.active--;this.waiters.shift()?.();}
     if(key===this.runtime.ISP_STAGING_KEY&&!url.pathname.startsWith('/__isp_diagnostics/')&&
        (failure||result?.status>=500||(method!=='GET'&&url.pathname.startsWith('/admin/')&&result?.status>=400))){
       await this.captureDiagnostic(trace);
@@ -91,7 +90,7 @@ class Transport{
         if(clean){trace.diagnostic=clean;trace.diagnostic_status='observed';}
       }
     }catch{} // Unknown or missing evidence NEVER authorizes replay.
-    atomic(HTTP_FILE,this.state);
+    this.persistState(this.state);
   }  async page(alias,target){let r=await this.request(alias,target);for(let i=0;i<4&&[301,302,303,307,308].includes(r.status);i++){check(r.headers.location,'Redirect location absent');r=await this.request(alias,sameOrigin(r.headers.location));}return r;}
   save(){this.state.jars={...this.state.jars,...Object.fromEntries([...this.jars].map(([alias,jar])=>[alias,jar.save()]))};}
 }
@@ -159,16 +158,27 @@ function observationRulesMatch(obs, rules) {
     return true;
   });
 }
-function reconcile(state){let obs;try{obs=json(OBS_FILE);}catch{return;}const captured=Date.parse(obs.captured_at);if(obs.version!==1||obs.run_marker!==state.run_marker||JSON.stringify(obs.target)!==JSON.stringify(state.target)||!Number.isFinite(captured)||captured>Date.now()+5000)return;for(const c of Object.values(state.cases)){if(c.http!=='PASS'||c.status!=='BLOCKED'||!c.db?.length)continue;const cutoff=Date.parse(c.observed_after);if(!Number.isFinite(cutoff)||captured<cutoff)continue;const valid=observationRulesMatch(obs,c.db);c.status=valid?'PASS':'FAIL';c.db_observed_at=obs.captured_at;c.observation_sha256=hash(Buffer.from(JSON.stringify(obs)));const evidence=path.join(PRIVATE,'acceptance-db-'+INVENTORY[c.id][0]+'.json');atomic(evidence,obs);c.observation_file=evidence;c.reason=valid?undefined:'Independent persisted-state assertion failed';c.assertions.push(valid?'Fresh independent persisted-state assertions matched':'Fresh independent persisted-state assertions failed');}}
-function publicReport(state){const cases=Object.entries(INVENTORY).map(([id,[batch,area]])=>{const c=state.cases[id]??{id,area,status:'NOT RUN',http:'NOT RUN',assertions:[]};return{id,area,batch,status:c.status,http:c.http,started_at:c.started_at,finished_at:c.finished_at,assertions:c.assertions,requests:c.requests,db_observed_at:c.db_observed_at,observation_sha256:c.observation_sha256,reason:c.reason};});return{version:1,run_marker:state.run_marker,candidate:state.candidate,deployment_id:state.deployment_id,origin:ORIGIN,generated_at:new Date().toISOString(),requests:state.request_count??0,areas:Object.fromEntries([...new Set(cases.map(c=>c.area))].map(area=>{const rows=cases.filter(c=>c.area===area);return[area,rows.some(c=>c.status==='FAIL')?'FAIL':rows.every(c=>c.status==='PASS')?'PASS':'BLOCKED'];})),cases};}
+function retainObservation(id,batch,raw){
+ const file=safePath(path.join(PRIVATE,'acceptance-db-'+batch+'-'+id+'.json'));immutableObservationProof(raw);
+ let fd;try{fd=fs.openSync(file,'wx',0o600);fs.writeFileSync(fd,raw);fs.fsyncSync(fd);}catch(error){if(error.code!=='EEXIST')throw error;}finally{if(fd!==undefined)fs.closeSync(fd);}
+ const retained=fs.readFileSync(file);return {...immutableObservationProof(raw,retained),file};
+}
+function reconcile(state){
+ let raw;try{const file=safePath(OBS_FILE);check(fs.statSync(file).size<=16777216,'Observation byte bound');raw=fs.readFileSync(file);}catch(error){if(error.code==='ENOENT')return;throw error;}
+ reconcileObservationCases({state,raw,inventory:INVENTORY,seal:retainObservation,rulesMatch:observationRulesMatch,leaseId:CONTEXT.leaseId});
+}
+function publicReport(state){const cases=Object.entries(INVENTORY).map(([id,[batch,area]])=>{const c=state.cases[id]??{id,area,status:'NOT RUN',http:'NOT RUN',assertions:[]};return{id,area,batch,status:c.status,http:c.http,started_at:c.started_at,finished_at:c.finished_at,assertions:c.assertions,requests:c.requests,db_observed_at:c.db_observed_at,observation_sha256:c.observation_sha256,reason:c.reason};});return{version:1,lease_id:state.lease_id,prepared_release_sha256:state.prepared_release_sha256,rails_source:state.rails_source,image_digest:state.image_digest,application_id:state.application_id,namespace_id:state.namespace_id,run_marker:state.run_marker,candidate:state.candidate,deployment_id:state.deployment_id,origin:ORIGIN,generated_at:new Date().toISOString(),requests:state.request_count??0,areas:Object.fromEntries([...new Set(cases.map(c=>c.area))].map(area=>{const rows=cases.filter(c=>c.area===area);return[area,rows.some(c=>c.status==='FAIL')?'FAIL':rows.every(c=>c.status==='PASS')?'PASS':'BLOCKED'];})),cases};}
 async function execute(batch){
+  assertLeaseMutationAllowed(CONTEXT);
   assertWritableLease(CONTEXT);
   check(!process.env.NODE_TLS_REJECT_UNAUTHORIZED||process.env.NODE_TLS_REJECT_UNAUTHORIZED==='1','Insecure ambient TLS setting refused');
   const runtime=json(path.join(PRIVATE,'runtime.json')),fixtures=json(path.join(PRIVATE,'acceptance-fixtures.json'));
   const prepared=readPreparedRelease(CONTEXT);
-  if(CONTEXT.fresh){assertActiveRelease(CONTEXT,runtime,json(path.join(PRIVATE,'acceptance-release.json')),prepared);verifyLeaseWatchdog(runtime,prepared);}
+  let initialAdmission;if(CONTEXT.fresh){assertActiveRelease(CONTEXT,runtime,json(path.join(PRIVATE,'acceptance-release.json')),prepared);initialAdmission=verifyLeaseWatchdog(runtime,prepared);}
+  if(process.env.ISP_HTTP_ADMISSION_SHA256!==undefined)assertAdmissionSnapshotDigest(initialAdmission?.snapshot,process.env.ISP_HTTP_ADMISSION_SHA256);
+  check(fixtures.lease_id===CONTEXT.leaseId,'Fixture lease identity mismatch');
   check(fixtures.version===1&&fixtures.phase==='active'&&/^qa-\d{8}-[a-f0-9]{12}$/.test(fixtures.run_marker),'Active reviewed fixture manifest required');
-  check(runtime.APP_HOST===new URL(ORIGIN).hostname&&runtime.RAILS_ENV==='production'&&runtime.ISP_DEMO_MODE==='false','Exact hosted production mode required');
+  assertHostedRuntimeMode(runtime);
   check(runtime.ISP_ACCOUNT_EMAILS_ENABLED==='false'&&runtime.ISP_ACCOUNT_EMAIL_DISPATCHER_ENABLED==='false','Disabled identity mail flags required');
   check(/^[a-f0-9]{40}$/.test(runtime.CANDIDATE_COMMIT??'')&&/^[a-zA-Z0-9_-]{6,128}$/.test(runtime.CLOUDFLARE_DEPLOYMENT_ID??''),'Pinned candidate commit and deployment ID required');
   check(BATCHES.includes(batch),'Choose one listed batch');
@@ -177,10 +187,10 @@ async function execute(batch){
   if(savedState&&CONTEXT.fresh)check(state.lease_id===CONTEXT.leaseId&&state.prepared_release_sha256===prepared.prepared_release_sha256,'Checkpoint lease identity mismatch');
   if(state){check(state.run_marker===fixtures.run_marker&&state.candidate===runtime.CANDIDATE_COMMIT&&state.deployment_id===runtime.CLOUDFLARE_DEPLOYMENT_ID&&JSON.stringify(state.target)===JSON.stringify(fixtures.target),'Checkpoint candidate/deployment/target mismatch');check(!state.halted&&!state.running_batch,'Prior interrupted/failed execution requires inspection; automatic retry refused');check(!state.completed_batches?.includes(batch),'Completed batch cannot be replayed');reconcile(state);check(!Object.values(state.cases).some(c=>c.http==='PASS'&&c.db?.length&&c.status!=='PASS'),'Capture fresh independent observations and reconcile before another batch');}
   else {check(batch==='identity','Identity must be the first batch');state={version:1,run_marker:fixtures.run_marker,target:fixtures.target,candidate:runtime.CANDIDATE_COMMIT,deployment_id:runtime.CLOUDFLARE_DEPLOYMENT_ID,execution_started:new Date().toISOString(),cases:{},actors:{},completed_batches:[],created:{events:[],publications:[],consultations:[],imports:[],discover:[]}};}
-  if(CONTEXT.fresh&&!savedState)Object.assign(state,{lease_id:CONTEXT.leaseId,prepared_release_sha256:prepared.prepared_release_sha256});
+  if(CONTEXT.fresh&&!savedState)Object.assign(state,{lease_id:CONTEXT.leaseId,prepared_release_sha256:prepared.prepared_release_sha256,rails_source:prepared.rails_source,image_digest:prepared.image_digest,application_id:prepared.application_id,namespace_id:prepared.namespace_id});
   check(BATCHES.slice(0,BATCHES.indexOf(batch)).every(b=>state.completed_batches.includes(b)),'Prior batches must finish with independent evidence');
   state.running_batch=batch;
-  const t=new Transport(runtime,state),mark=fixtures.run_marker;atomic(HTTP_FILE,state);
+  const t=new Transport(runtime,state,{prepared,admissionSnapshot:initialAdmission?.snapshot}),mark=fixtures.run_marker;atomic(HTTP_FILE,state);
   function save(){t.save();state.request_count=t.calls;atomic(HTTP_FILE,state);reconcile(state);atomic(HTTP_FILE,state);atomic(RESULT_FILE,publicReport(state));}
   async function run(id,fn){const [,area]=INVENTORY[id]??[];check(area&&INVENTORY[id][0]===batch,'Case inventory/batch mismatch');const c={id,area,status:'NOT RUN',http:'NOT RUN',started_at:new Date().toISOString(),assertions:[],db:[]},start=t.traces.length;state.cases[id]=c;try{if(state.halted)throw new Blocked('Earlier failure halted the run; inspect before any further requests');await fn(c);c.http='PASS';c.status=c.db.length?'BLOCKED':'PASS';if(c.db.length)c.reason='Awaiting fresh independent DB observation';}catch(error){c.http=error instanceof Blocked?'BLOCKED':'FAIL';c.status=c.http;c.reason=error instanceof Blocked?error.message:'HTTP assertion failed; inspect private checkpoint';c.private_failure=error.message;state.halted=true;}c.requests=t.traces.slice(start);c.observed_after=new Date().toISOString();c.finished_at=c.observed_after;save();}
   async function otp(alias){const actor=state.actors[alias];check(actor?.totp_secret,'Protected authenticator setup key required');let step=Math.floor(Date.now()/30000);if(step<=(actor.last_otp_step??-1)){const wait=(step+1)*30000-Date.now()+50;if(Date.now()+wait+45000>=t.stopAt)throw new Blocked('Cleanup reserve prevents waiting for a fresh TOTP');await new Promise(resolve=>setTimeout(resolve,wait));step=Math.floor(Date.now()/30000);}actor.last_otp_step=step;return totp(actor.totp_secret);}
@@ -294,7 +304,7 @@ if(batch==='aged-stepup'){
   if(Date.now()+wait+150000>=t.stopAt)throw new Blocked('Insufficient fixed window for natural verification aging');
   state.natural_aging={started_at:new Date().toISOString(),duration_ms:wait};atomic(HTTP_FILE,state);
   await new Promise(resolve=>setTimeout(resolve,wait));
-  verifyLeaseWatchdog(runtime,prepared);
+  verifyLeaseWatchdog(runtime,prepared,initialAdmission?.snapshot);
   expectStatus(await t.request('visitor','/ready',{startup:true}),200);
   const rejected=await submit(t,'admin_a',editor,{...fields('event',{title:mark+' rejected aged editor'}),intent:'draft'});
   expectStatus(rejected,422);expectText(rejected,'Nothing was saved.');

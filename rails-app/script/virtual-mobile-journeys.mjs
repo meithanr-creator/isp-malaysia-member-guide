@@ -29,13 +29,15 @@ export function dependencies({profile,runtime,fixtures,http,phase,preparedHash,o
  ensure(Object.hasOwn(PROFILES,profile)&&fixtures?.phase==='active'&&/^qa-\d{8}-[a-f0-9]{12}$/.test(fixtures.run_marker));
  ensure(phase?.status==='selected_phase_complete'&&phase.mobile_eligible===true&&phase.phase==='functional'&&phase.run_marker===fixtures.run_marker&&phase.release?.prepared_release_sha256===preparedHash);
  ensure(JSON.stringify(phase.completed_batches)===JSON.stringify(BATCHES)&&phase.selected_case_ids?.length===42&&new Set(phase.selected_case_ids).size===42);
- ensure(http?.lease_id==='rails-staging-2'&&http.prepared_release_sha256===preparedHash&&http.run_marker===fixtures.run_marker&&http.candidate===runtime.CANDIDATE_COMMIT&&http.deployment_id===runtime.CLOUDFLARE_DEPLOYMENT_ID&&JSON.stringify(http.target)===JSON.stringify(fixtures.target)&&!http.halted&&!http.running_batch);
+ const leaseId=runtime?.ISP_STAGING_LEASE;
+ ensure(['rails-staging-2','rails-staging-3'].includes(leaseId)&&fixtures.lease_id===leaseId&&phase.lease_id===leaseId&&phase.release?.lease_id===leaseId,'Exact selected mobile lease required');
+ ensure(http?.lease_id===leaseId&&http.prepared_release_sha256===preparedHash&&http.run_marker===fixtures.run_marker&&http.candidate===runtime.CANDIDATE_COMMIT&&http.deployment_id===runtime.CLOUDFLARE_DEPLOYMENT_ID&&JSON.stringify(http.target)===JSON.stringify(fixtures.target)&&!http.halted&&!http.running_batch);
  ensure(phase.selected_case_ids.every(id=>http.cases?.[id]?.status==='PASS'&&http.cases[id].http==='PASS'),'All selected HTTP cases need independent reconciliation');
  const admin=PROFILES[profile].admin,member=fixtures.actors?.member_b,a=fixtures.actors?.[admin];
  ensure(Number.isSafeInteger(member?.id)&&member.id>0&&member.role==='member'&&typeof member.email==='string'&&typeof member.password==='string'&&Number.isSafeInteger(a?.id)&&a.id>0&&a.role==='admin'&&typeof a.password==='string');
  ensure(/^[A-Z2-7]{16,64}$/.test(http.actors?.[admin]?.totp_secret||''),'Actual protected HTTP enrollment state required');
  ensure(/^[a-f0-9]{16}$/.test(http.event?.slug||'')&&/^[a-f0-9]{16}$/.test(http.publication?.slug||'')&&Number.isSafeInteger(http.discover?.id)&&http.discover.id>0);
- ensure(observations?.version===1&&observations.phase==='active'&&observations.run_marker===fixtures.run_marker&&JSON.stringify(observations.target)===JSON.stringify(fixtures.target));
+ ensure(observations?.version===1&&observations.lease_id===leaseId&&observations.phase==='active'&&observations.run_marker===fixtures.run_marker&&JSON.stringify(observations.target)===JSON.stringify(fixtures.target));
  const captured=Date.parse(observations.captured_at);ensure(Number.isFinite(captured)&&captured>=Date.parse(fixtures.captured_at||phase.started_at||phase.finished_at)&&captured<=now+5000,'Fresh pre-browser observations required');
  ensure(observations.actors?.member_b?.id===member.id&&observations.actors.member_b.email===member.email&&observations.actors.member_b.role==='member'&&observations.actors[admin]?.id===a.id&&observations.actors[admin].mfa_enabled===true);
  ensure(observations.events?.some(x=>x.slug===http.event.slug&&x.published_title)&&observations.publications?.some(x=>x.slug===http.publication.slug&&/^[a-f0-9]{64}$/.test(x.pdf_sha256))&&observations.discover?.some(x=>x.id===http.discover.id&&x.position===1));
@@ -67,7 +69,7 @@ export function verifyFile(meta,body,expectedHash,type){
 export const REQUIRED_MUTATIONS=Object.freeze(Object.keys(MUTATIONS));
 export function uiComplete(profile){return REQUIRED_MUTATIONS.every(id=>profile.actions?.[id]?.status==='observed')&&REQUIRED_CASES.every(id=>profile.cases?.[id]?.status==='PASS')&&profile.cleanup==='pass'&&profile.errors?.length===0&&Object.values(profile.actions||{}).every(a=>a.status==='observed');}
 export function databaseMatches(profile,obs,fixtures){
- if(!uiComplete(profile)||obs?.version!==1||obs.phase!=='active'||obs.run_marker!==fixtures.run_marker||JSON.stringify(obs.target)!==JSON.stringify(fixtures.target)||!Number.isFinite(Date.parse(obs.captured_at))||!Number.isFinite(Date.parse(profile.finished_at))||Date.parse(obs.captured_at)<Date.parse(profile.finished_at))return false;
+ if(!['rails-staging-2','rails-staging-3'].includes(fixtures?.lease_id)||profile?.lease_id!==fixtures.lease_id||obs?.lease_id!==fixtures.lease_id||!uiComplete(profile)||obs?.version!==1||obs.phase!=='active'||obs.run_marker!==fixtures.run_marker||JSON.stringify(obs.target)!==JSON.stringify(fixtures.target)||!Number.isFinite(Date.parse(obs.captured_at))||!Number.isFinite(Date.parse(profile.finished_at))||Date.parse(obs.captured_at)<Date.parse(profile.finished_at))return false;
  const e=profile.expected,m=obs.actors?.member_b,a=obs.actors?.[profile.admin];
  if(!e||!m||!a||m.id!==fixtures.actors.member_b.id||m.email!==fixtures.actors.member_b.email||m.role!=='member'||m.account_status!=='active'||Object.entries(e.profile).some(([k,v])=>m[k]!==v)||a.id!==fixtures.actors[profile.admin].id||a.mfa_enabled!==true||a.usable_challenge_count!==0)return false;
  for(const alias of ['member_b',profile.admin]){const baseline=new Set(profile.baseline_sessions?.[alias]||[]);if(!Array.isArray(obs.actors[alias].sessions)||obs.actors[alias].sessions.some(x=>!baseline.has(x.id)))return false;}
@@ -86,12 +88,12 @@ export function databaseProof(profile,observations,fixtures,{retainedRaw,now=Dat
  return {raw,sha256:sha256(raw)};
 }
 export function processReceiptMatches(profile,receipt,journal){
- if(receipt?.version!==1||receipt.status!=='UI_COMPLETE_AWAITING_RECONCILIATION'||receipt.profile!==profile.name||receipt.run_marker!==journal.run_marker||receipt.controller_pid!==profile.controller_pid||receipt.controller_exit_code!==0||receipt.controller_exited!==true||receipt.browser_absent!==true||!Number.isFinite(Date.parse(receipt.observed_at))||!Number.isFinite(Date.parse(profile.finished_at))||Date.parse(receipt.observed_at)<Date.parse(profile.finished_at))return false;
+ if(!['rails-staging-2','rails-staging-3'].includes(journal?.lease_id)||profile?.lease_id!==journal.lease_id||receipt?.lease_id!==journal.lease_id||receipt?.version!==1||receipt.status!=='UI_COMPLETE_AWAITING_RECONCILIATION'||receipt.profile!==profile.name||receipt.run_marker!==journal.run_marker||receipt.controller_pid!==profile.controller_pid||receipt.controller_exit_code!==0||receipt.controller_exited!==true||receipt.browser_absent!==true||!Number.isFinite(Date.parse(receipt.observed_at))||!Number.isFinite(Date.parse(profile.finished_at))||Date.parse(receipt.observed_at)<Date.parse(profile.finished_at))return false;
  if(profile.name==='iphone-webkit')return receipt.server_id===profile.server_id&&receipt.server_pid_linux===profile.server_pid_linux&&receipt.server_pid_linux>0&&receipt.browser_pid_linux>0&&receipt.server_pid_linux!==receipt.browser_pid_linux&&receipt.server_absent===true&&receipt.wsl_child_exited===true&&receipt.wsl_child_exit_code===0;
  return Number.isSafeInteger(receipt.browser_pid_windows)&&receipt.browser_pid_windows===profile.browser_pid_windows&&receipt.browser_pid_windows>0;
 }
 export function aggregateStatus(journal){
- return Object.keys(PROFILES).every(name=>journal.profiles?.[name]?.status==='PASS'&&journal.profiles[name].db_reconciled===true&&journal.profiles[name].process_cleanup==='pass'&&uiComplete(journal.profiles[name]))?'PASS':'OPEN';
+ return ['rails-staging-2','rails-staging-3'].includes(journal?.lease_id)&&Object.keys(PROFILES).every(name=>journal.profiles?.[name]?.lease_id===journal.lease_id&&journal.profiles[name]?.status==='PASS'&&journal.profiles[name].db_reconciled===true&&journal.profiles[name].process_cleanup==='pass'&&uiComplete(journal.profiles[name]))?'PASS':'OPEN';
 }
 async function fields(form,prefix,values){
  for(const [name,value] of Object.entries(values)){const input=form.locator('[name="'+prefix+'['+name+']"]');const tag=await input.evaluate(el=>el.tagName);if(tag==='SELECT')await input.selectOption(value);else await input.fill(value);}

@@ -142,3 +142,6 @@ export default {async fetch(request,env) {
 }};
 // A distinct exported class creates a fresh namespace; the expired v1 state stays intact.
 export {RailsContainer as RailsStaging2};
+
+// Lease3 retains both retired exports while receiving its own fresh SQLite namespace.
+export {RailsContainer as RailsStaging3};

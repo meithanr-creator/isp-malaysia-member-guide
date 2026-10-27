@@ -213,6 +213,7 @@ export async function main(args = process.argv.slice(2)) {
   const flags = parseFlags(rest);
   let output;
   if (command === 'prepare-runtime-secret-json') {
+    fail('Legacy runtime preparation is retired; use the reviewed fresh release operator.');
     if (flags['--application-id']) fail('Application ID is not a runtime preparation argument.');
     output = prepareRuntimeSecretJson({ host: flags['--host'], startAt: flags['--start-at'], expiresAt: flags['--expires-at'] });
   } else if (['inspect', 'inspect-instances', 'stop-plan'].includes(command)) {

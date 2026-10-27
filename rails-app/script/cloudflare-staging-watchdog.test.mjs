@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {validatePlan,cleanupTiming,validateWatchdogHandoff,stopStaging,makeApi,makeCredentialApi,CLEANUP_BUDGET_MS} from './cloudflare-staging-watchdog.mjs';
-import {LEASE2,leaseContext,validatePreparedRelease,preparedTuple} from './staging-lease-context.mjs';
+import {LEASE2,LEASE3,leaseContext,validatePreparedRelease,preparedTuple} from './staging-lease-context.mjs';
+import {LEASE3_POLICY as P3} from './lease3-release-policy.mjs';
 const plan=()=>{const now=Date.now();return {account:'a9720867333b64a4f8ee70cdfd673eb9',worker:'isp-member-production',application_name:'isp-member-production',application_id:'11111111-2222-3333-4444-555555555555',start_at:new Date(now-60000).toISOString(),expires_at:new Date(now+54*60000).toISOString()};};
 const app={name:'isp-member-production'};
 function fakeTime(p=plan(),budgetMs=300000){
@@ -10,11 +11,11 @@ function fakeTime(p=plan(),budgetMs=300000){
  const timing={...cleanupTiming(p,{monotonicNow:0}),budgetMs,deadline:budgetMs};
  return {timing,clock:()=>now,pause:async ms=>{now+=ms;},advance:ms=>{now+=ms;},get now(){return now;}};
 }
-function freshFixture(){
- const prepared={...validatePreparedRelease({version:1,lease_id:LEASE2,account:'a9720867333b64a4f8ee70cdfd673eb9',worker:'isp-member-production',application_name:'isp-member-production',application_id:'11111111-2222-4333-8444-555555555555',namespace_id:'1'.repeat(32),class_name:'RailsStaging2',worker_source:'2'.repeat(40),rails_source:'3'.repeat(40),image_digest:'sha256:'+'4'.repeat(64),rollback_worker_version:'22222222-3333-4444-8555-666666666666',rollback_deployment_id:'33333333-4444-4555-8666-777777777777',activation:false}),prepared_release_sha256:'5'.repeat(64)};
- return {prepared,context:leaseContext(LEASE2),freshPlan:{...plan(),...preparedTuple(prepared)},app:{id:prepared.application_id,name:prepared.application_name,account_id:prepared.account,durable_objects:{namespace_id:prepared.namespace_id}}};
+function freshFixture(leaseId=LEASE2){
+ const fresh=leaseId===LEASE3;
+ const prepared={...validatePreparedRelease({version:1,lease_id:leaseId,account:'a9720867333b64a4f8ee70cdfd673eb9',worker:'isp-member-production',application_name:'isp-member-production',application_id:'11111111-2222-4333-8444-555555555555',namespace_id:'1'.repeat(32),class_name:fresh?'RailsStaging3':'RailsStaging2',worker_source:'2'.repeat(40),rails_source:fresh?P3.rails_source:'3'.repeat(40),image_digest:fresh?P3.image_digest:'sha256:'+'4'.repeat(64),rollback_worker_version:'22222222-3333-4444-8555-666666666666',rollback_deployment_id:'33333333-4444-4555-8666-777777777777',activation:false},leaseId),prepared_release_sha256:'5'.repeat(64)};
+ return {prepared,context:leaseContext(leaseId),freshPlan:{...plan(),...preparedTuple(prepared)},app:{id:prepared.application_id,name:prepared.application_name,account_id:prepared.account,durable_objects:{namespace_id:prepared.namespace_id}}};
 }
-
 test('identity and duration refuse unrelated resources and excess time',()=>{
  const p=plan();assert.equal(validatePlan(p).stopAt,Date.parse(p.expires_at)-300000);
  assert.throws(()=>validatePlan({...p,worker:'other'}));
@@ -298,4 +299,18 @@ test('an early timer wakeup cannot prematurely exhaust the same absolute cleanup
  time.advance(29);scheduled.shift().fn();assert.equal(signal.aborted,false);assert.equal(scheduled.length,1);assert.equal(scheduled[0].ms,1);
  time.advance(1);scheduled.shift().fn();const result=await run;
  assert.equal(signal.aborted,true);assert.equal(result.status,'FAIL');assert.equal(result.budget_exhausted,true);assert.equal(result.cleanup_budget_ms,30);assert.equal(calls,1);assert.equal(scheduled.length,0);
+});
+test('lease3 emergency shutdown requires its exact sealed application and namespace',async()=>{
+ const f=freshFixture(LEASE3),time=fakeTime(f.freshPlan);let deleted=false;const mutations=[];
+ const result=await stopStaging(f.freshPlan,async(path,method)=>{
+  if(method==='DELETE'){mutations.push(path);deleted=true;return {};}
+  if(path.endsWith('/subdomain'))return {enabled:false,previews_enabled:false};
+  return deleted?null:f.app;
+ },time.pause,{context:f.context,prepared:f.prepared,timing:time.timing,clock:time.clock});
+ assert.equal(result.status,'PASS');assert.deepEqual(mutations,['/containers/applications/'+f.prepared.application_id]);
+ let calls=0;
+ await assert.rejects(stopStaging(f.freshPlan,async()=>{calls++;return f.app;},time.pause,{context:leaseContext(LEASE2),prepared:f.prepared,timing:time.timing,clock:time.clock}));
+ assert.equal(calls,0);
+ const foreign={...f.app,durable_objects:{namespace_id:P3.predecessor.namespace_id}};
+ await assert.rejects(stopStaging(f.freshPlan,async()=>foreign,time.pause,{context:f.context,prepared:f.prepared,timing:time.timing,clock:time.clock}),/refused/i);
 });

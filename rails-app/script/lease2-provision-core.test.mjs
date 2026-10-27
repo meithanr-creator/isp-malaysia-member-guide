@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ProviderRequestError} from './provider-request-outcome.mjs';
-import {C,SECRET_NAMES,canonical,hash,instant,validateCI,validateGrant,workerMetadata,applicationRequest,verifyWorker,selectOwnedApplication,verifyInactiveApplication,preparedRecord,oneShot,runtimeObjects,bootstrapFence,finishHandoffRecords,completeEnvelope,staleLockRecovery,activationAdmission,activationMetadata,admitProviderRequest,failureShutdown} from './lease2-provision-core.mjs';
+import {C,SECRET_NAMES,canonical,hash,instant,validateCI,validateGrant,workerMetadata,applicationRequest,verifyWorker,selectOwnedApplication,verifyInactiveApplication,preparedRecord,oneShot,runtimeObjects,bootstrapFence,finishHandoffRecords,completeEnvelope,staleLockRecovery,activationAdmission,assertActiveIngressReadback,activationMetadata,admitProviderRequest,failureShutdown} from './lease2-provision-core.mjs';
 const NOW=Date.parse('2026-10-27T04:00:00Z'),SOURCE='6'.repeat(40),BUNDLE='7'.repeat(64),NS='8'.repeat(32);
 const NONCE='11111111-2222-4333-8444-555555555555',VER='22222222-3333-4444-8555-666666666666',DEP='33333333-4444-4555-8666-777777777777',APP='44444444-5555-4666-8777-888888888888';
 const config={compatibility_date:'2026-10-26',vars:{ISP_CONTAINER_ENABLED:'false',APP_HOST:C.host,ISP_STAGING_START_AT:'',ISP_STAGING_EXPIRES_AT:'',ISP_DEMO_MODE:'false',ISP_ACCOUNT_EMAILS_ENABLED:'false',ISP_ACCOUNT_EMAIL_DISPATCHER_ENABLED:'false',DB_SSLMODE:'verify-full'}};
@@ -145,4 +145,56 @@ test('emergency stop still runs while incomplete request evidence prevents a cle
 
 test('diagnostic work preserves the complete reviewed default-policy zero-instance payload',()=>{
  assert.deepEqual(applicationRequest(NS),{name:C.worker,scheduling_policy:'default',configuration:{image:'registry.cloudflare.com/'+C.account+'/isp-member-rails@'+C.digest,instance_type:'standard-2'},instances:0,max_instances:1,durable_objects:{namespace_id:NS},observability:{logs:{enabled:false}}});
+});
+
+import fs from 'node:fs';
+import {releaseProtocol} from './lease2-provision-core.mjs';
+import {LEASE3_POLICY,buildLease3InactiveConfig} from './lease3-release-policy.mjs';
+const third=releaseProtocol('rails-staging-3');
+function fixture3(){
+ const f=fixtures(),v2=JSON.parse(fs.readFileSync(new URL('../cloudflare/staging/wrangler.jsonc',import.meta.url),'utf8'));v2.$schema='D:/Projects/isp-member-rails/cloudflare/node_modules/wrangler/config-schema.json';v2.main='D:/Projects/isp-member-rails/cloudflare/staging/index.js';v2.containers[0].class_name='RailsStaging2';v2.containers[0].image=third.imageRef();v2.durable_objects.bindings[0].class_name='RailsStaging2';v2.migrations.push({tag:'rails-staging-v2',new_sqlite_classes:['RailsStaging2']});
+ const cfg=buildLease3InactiveConfig(v2),metadata=third.workerMetadata(cfg,f.secrets,{source:SOURCE,nonce:NONCE,bundleHash:BUNDLE});
+ const intent={...f.intent,baseline:{deployment:{id:LEASE3_POLICY.predecessor.deployment_id},version:{id:LEASE3_POLICY.predecessor.worker_version},namespace_ids:LEASE3_POLICY.retired.map(row=>row.namespace_id),application_ids:[]}};
+ const observed={...f.observed,version:{...f.observed.version,annotations:metadata.annotations,resources:{bindings:metadata.bindings.map(b=>b.type==='secret_text'?{name:b.name,type:b.type}:b.type==='durable_object_namespace'?{...b,namespace_id:NS}:b),script_runtime:{compatibility_date:cfg.compatibility_date,containers:metadata.containers}}},namespaces:[...LEASE3_POLICY.retired.map(row=>({id:row.namespace_id,class:row.class_name,script:C.worker})),{id:NS,class:third.C.className,script:C.worker}]};
+ const app={id:APP,account_id:C.account,...third.applicationRequest(NS)},worker=third.verifyWorker(observed,intent,cfg),prepared=third.preparedRecord({source:SOURCE,worker,app});return {...f,cfg,metadata,intent,observed,app,worker,prepared};
+}
+test('two fixed protocols preserve old constants and select exact actual v2 predecessor for lease3',()=>{
+ assert.equal(C.oldNamespace,'a0e936fb9d634f59b1caaa1896b07a1f');assert.equal(C.oldVersion,'d6978392-76ac-4208-aaf9-e907be1939c0');assert.equal(releaseProtocol().C,C);assert.equal(third.C.oldNamespace,LEASE3_POLICY.predecessor.namespace_id);assert.equal(third.C.configHash,'dc4a3ff927acbf677a6cba86f77155396ccef02b9d36e8f2d8d79b303d901783');assert.throws(()=>releaseProtocol('legacy-1'));
+ for(const old of LEASE3_POLICY.retired)assert.throws(()=>third.applicationRequest(old.namespace_id));
+});
+test('lease3 metadata/config use one new class migration, exact new config and unchanged image',()=>{
+ const f=fixture3();assert.deepEqual(f.metadata.migrations,{old_tag:'rails-staging-v2',new_tag:'rails-staging-v3',steps:[{new_sqlite_classes:['RailsStaging3']}]});assert.equal(f.metadata.annotations['workers/tag'],'isp-v3-'+NONCE);assert.equal(third.imageRef(),imageRefForTest());assert.doesNotThrow(()=>third.validateConfig(f.cfg,canonical(f.cfg)));assert.throws(()=>third.validateConfig(f.cfg,canonical({...f.cfg,preview_urls:true})));assert.equal(f.prepared.lease_id,'rails-staging-3');assert.equal(f.prepared.class_name,'RailsStaging3');
+});
+function imageRefForTest(){return 'registry.cloudflare.com/'+C.account+'/isp-member-rails@'+C.digest;}
+test('lease3 refuses both retired app namespaces during observation and cleanup selection',()=>{
+ const f=fixture3();for(const old of LEASE3_POLICY.retired){const late={...f.app,id:NONCE,name:'renamed',durable_objects:{namespace_id:old.namespace_id}};assert.throws(()=>third.selectOwnedApplication([f.app,late],NS));const bad=structuredClone(f.observed);bad.version.resources.bindings.find(b=>b.name==='RAILS_CONTAINER').namespace_id=old.namespace_id;assert.throws(()=>third.verifyWorker(bad,f.intent,f.cfg));}const missing=structuredClone(f.observed);missing.namespaces.splice(0,1);assert.throws(()=>third.verifyWorker(missing,f.intent,f.cfg));
+});
+test('documented mixed export response supports same namespace/module identity and rejects conflict',()=>{
+ const f=fixture3(),runtime=f.observed.version.resources.script_runtime;delete runtime.containers;runtime.exports={default:{type:'entrypoint'},RailsStaging3:{type:'durable-object',storage:'sqlite',container:'documented'}};assert.doesNotThrow(()=>third.verifyWorker(f.observed,f.intent,f.cfg));runtime.containers=[{class_name:'RailsStaging2'}];assert.throws(()=>third.verifyWorker(f.observed,f.intent,f.cfg));
+});
+test('lease3 sole runtime writer satisfies actual hosted-mode prerequisite and immutable grant handoff',()=>{
+ const f=fixture3(),preparedHash=hash(canonical(f.prepared)),scope={owner_authorized:true,lease_id:'rails-staging-3',account:C.account,worker:C.worker};
+ const authority={...scope,purpose:'credential-access',reference:'Synthetic separate access authority',credential_kind:'oauth',starts_at:'2026-10-27T03:59:00Z',expires_at:'2026-10-27T04:59:00Z'};
+ const accessGrant={...scope,version:1,purpose:'credential-access',human_grant_reference:authority.reference,authority_sha256:hash(canonical(authority)),credential_kind:'oauth',starts_at:authority.starts_at,expires_at:authority.expires_at,runtime_authorized:false,cumulative_test_ceiling_usd:5};
+ const runtimeAuthority={...scope,purpose:'runtime-window',reference:'Synthetic separate runtime authority',runtime_start_at:'2026-10-27T04:00:00Z',runtime_expires_at:'2026-10-27T04:55:00Z',prepared_release_sha256:preparedHash,reserved_test_usd:0.5,cumulative_test_ceiling_usd:5};
+ const grant={...f.grant,...scope,purpose:'runtime-window',runtime_authorized:true,authority_sha256:hash(canonical(runtimeAuthority)),human_grant_reference:runtimeAuthority.reference,prepared_release_sha256:preparedHash,credential_access_sha256:hash(canonical(accessGrant)),runtime_start_at:runtimeAuthority.runtime_start_at,runtime_expires_at:runtimeAuthority.runtime_expires_at,cleanup_reserve_minutes:10,reserved_test_usd:0.5,cumulative_budget_ledger_sha256:'c'.repeat(64)};
+ const input={prepared:f.prepared,preparedHash,seed:f.seed,secrets:f.secrets,grant,packageHash:f.context.packageHash,helperHash:f.context.helperHash,ciRun:123,now:NOW,grantOptions:{authority,accessGrant,runtimeAuthority,remainingTestUsd:1,budgetLedgerHash:'c'.repeat(64)}};const out=third.runtimeObjects(input);assert.equal(out.runtime.ISP_STAGING_LEASE,'rails-staging-3');assert.equal(out.runtime.RAILS_ENV,'production');assert.equal(assertHostedRuntimeMode(out.runtime),out.runtime);for(const value of [undefined,'development','test'])assert.throws(()=>assertHostedRuntimeMode({...out.runtime,RAILS_ENV:value}));assert.equal(out.plan.class_name,'RailsStaging3');assert.equal(out.activation,false);assert.throws(()=>third.runtimeObjects({...input,grantOptions:{...input.grantOptions,remainingTestUsd:0}}));assert.throws(()=>third.runtimeObjects({...input,grant:{...grant,purpose:'inactive-provision',runtime_authorized:false,config_sha256:third.C.configHash},grantOptions:{...input.grantOptions,purpose:'inactive-provision'}}));assert.ok(Object.isFrozen(third.C.retiredNamespaces));
+ const active=third.activationMetadata(f.metadata,f.prepared,out.runtime,VER);assert.equal(Object.hasOwn(active,'migrations'),false);assert.equal(active.annotations['workers/tag'],'isp-v3-'+VER);
+});
+
+test('late retired application blocks progress while exact own pre-seal emergency deletion remains selectable',()=>{
+ const f=fixture3(),late={...f.app,id:NONCE,durable_objects:{namespace_id:LEASE3_POLICY.predecessor.namespace_id}};assert.throws(()=>third.selectOwnedApplication([late,f.app],NS));assert.equal(third.selectOwnedApplication([late,f.app],NS,[],{cleanup:true}).id,APP);assert.equal(third.selectOwnedApplication([late],NS,[],{cleanup:true}),null);assert.throws(()=>third.selectOwnedApplication([late],LEASE3_POLICY.predecessor.namespace_id,[],{cleanup:true}));assert.throws(()=>third.selectOwnedApplication([{...f.app,account_id:'foreign'}],NS,[],{cleanup:true}));
+});
+
+import {assertHostedRuntimeMode} from './active-staging-admission.mjs';
+
+test('active ingress readback stays bound to reconciled PUT version, deployment, namespace and module',()=>{
+ const f=fixture3(),runtime={...f.cfg.vars,ISP_CONTAINER_ENABLED:'true',ISP_STAGING_START_AT:'2026-10-27T04:00:00Z',ISP_STAGING_EXPIRES_AT:'2026-10-27T04:55:00Z'},metadata=third.activationMetadata(f.metadata,f.prepared,runtime,NONCE),activeConfig={...f.cfg,vars:runtime};
+ const intent={nonce:NONCE,source:SOURCE,bundle_sha256:BUNDLE,baseline:{deployment:{id:f.prepared.rollback_deployment_id},version:{id:f.prepared.rollback_worker_version},namespace_ids:[]}};
+ const observed=structuredClone(f.observed);observed.deployment={id:APP,versions:[{version_id:NONCE,percentage:100}]};observed.version.id=NONCE;observed.version.annotations=metadata.annotations;observed.version.resources.bindings=metadata.bindings.map(b=>b.type==='secret_text'?{name:b.name,type:b.type}:b.type==='durable_object_namespace'?{...b,namespace_id:NS}:b);
+ const initial={...third.verifyWorker(observed,intent,activeConfig,false),module_sha256:observed.content.modules[0].sha256};assert.equal(third.assertActiveIngressReadback(initial,{...initial}).worker_version,NONCE);
+ for(const change of [{worker_version:VER},{deployment_id:DEP},{namespace_id:'9'.repeat(32)},{module_sha256:'f'.repeat(64)},{module_sha256:undefined}])assert.throws(()=>third.assertActiveIngressReadback(initial,{...initial,...change}));
+ const foreign=structuredClone(observed);foreign.deployment.id='55555555-6666-4777-8888-999999999999';const separatelyVerified={...third.verifyWorker(foreign,intent,activeConfig,false),module_sha256:BUNDLE};assert.throws(()=>third.assertActiveIngressReadback(initial,separatelyVerified));
+ for(const change of [x=>x.content.modules[0].sha256='f'.repeat(64),x=>x.ingress.enabled=true,x=>x.ingress.previews_enabled=true]){const bad=structuredClone(observed);change(bad);assert.throws(()=>third.verifyWorker(bad,intent,activeConfig,false));}
+ assert.throws(()=>assertActiveIngressReadback({...initial,module_sha256:undefined},initial));
 });

@@ -3,7 +3,7 @@ import {dirname} from 'node:path';
 import {createRequire} from 'node:module';
 import {randomBytes} from 'node:crypto';
 import {validServerId,validateLinuxWebKitConnection} from './linux-webkit-connection.mjs';
-const PRIVATE='/mnt/d/Projects/isp-rails-tools/isp-staging-private/leases/rails-staging-2';
+import {LEASE2,LEASE3,leaseContext,assertLeaseMutationAllowed} from './staging-lease-context.mjs';
 const TOOLS='/mnt/d/Projects/isp-rails-tools/virtual-browser-tools';
 const NODE='/mnt/d/Projects/isp-rails-tools/node24-linux/node';
 const BROWSERS='/mnt/d/Projects/isp-rails-tools/virtual-browsers-linux';
@@ -15,7 +15,8 @@ function directory(p,fresh=false){existingDirectory(dirname(p));try{fs.mkdirSync
 function durable(p,v){const fd=fs.openSync(p,'wx',0o600);try{fs.writeFileSync(fd,JSON.stringify(v,null,2)+'\n');fs.fsyncSync(fd);}finally{fs.closeSync(fd);}}
 let server,phase='prerequisites';
 async function main(){
- const args=process.argv.slice(2);guard(args.length===2&&args[0]==='--id'&&validServerId(args[1]));const id=args[1];
+ const args=process.argv.slice(2);guard(args.length===4&&args[0]==='--lease'&&[LEASE2,LEASE3].includes(args[1])&&args[2]==='--id'&&validServerId(args[3]));const leaseId=args[1],id=args[3],context=leaseContext(leaseId);
+ assertLeaseMutationAllowed(context);const PRIVATE=context.privateRoot.replace(/^D:/,'/mnt/d');
  guard(process.platform==='linux'&&process.arch==='x64'&&process.versions.node==='24.21.0'&&fs.realpathSync(process.execPath)===NODE);
  const release=fs.readFileSync('/etc/os-release','utf8');guard(/^ID=ubuntu$/m.test(release)&&/^VERSION_ID="24\.04"$/m.test(release));
  existingDirectory(PRIVATE);directory(PRIVATE+'/linux-webkit');const run=`${PRIVATE}/linux-webkit/${id}`;directory(run,true);
@@ -30,9 +31,9 @@ async function main(){
  const {webkit}=require('playwright');guard(webkit.executablePath().startsWith(BROWSERS+'/webkit-2370/'));
  const born=Date.now(),expires=born+55*60000;phase='launch';
  server=await webkit.launchServer({executablePath:executable,headless:true,host:'127.0.0.1',port:0,wsPath:randomBytes(32).toString('hex'),timeout:60000,env,artifactsDir:`${run}/artifacts`,downloadsPath:`${run}/downloads`,tracesDir:`${run}/traces`});
- const connection={version:1,server_id:id,engine:'webkit',platform:process.platform,arch:process.arch,node_version:process.versions.node,playwright_version:'1.64.1',browser_revision:'2370',ws_endpoint:server.wsEndpoint(),created_at:new Date(born).toISOString(),expires_at:new Date(expires).toISOString(),server_pid_linux:process.pid};
- validateLinuxWebKitConnection(connection,{serverId:id,deadline:expires});phase='private_connection';durable(`${run}/connection.json`,connection);
- console.log(JSON.stringify({status:'ready',server_id:id,expires_at:connection.expires_at,platform:'linux',playwright_version:'1.64.1'}));phase='serving';
+ const connection={version:2,lease_id:leaseId,private_root:context.privateRoot,audit_root:context.auditRoot,server_id:id,engine:'webkit',platform:process.platform,arch:process.arch,node_version:process.versions.node,playwright_version:'1.64.1',browser_revision:'2370',ws_endpoint:server.wsEndpoint(),created_at:new Date(born).toISOString(),expires_at:new Date(expires).toISOString(),server_pid_linux:process.pid};
+ validateLinuxWebKitConnection(connection,{serverId:id,leaseId,deadline:expires});phase='private_connection';durable(`${run}/connection.json`,connection);
+ console.log(JSON.stringify({status:'ready',lease_id:leaseId,server_id:id,expires_at:connection.expires_at,platform:'linux',playwright_version:'1.64.1'}));phase='serving';
  await new Promise(resolve=>{
   let stopping=false,poll,expiry;
   const cleanup=()=>{clearInterval(poll);clearTimeout(expiry);process.off('SIGINT',stop);process.off('SIGTERM',stop);process.off('SIGHUP',stop);};

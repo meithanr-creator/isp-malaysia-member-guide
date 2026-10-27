@@ -3,10 +3,11 @@ import fs from 'node:fs';
 import {resolve} from 'node:path';
 import {randomBytes,createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
-import {LEASE2,leaseContext,selectLease,buildLease2Seed} from './staging-lease-context.mjs';
+import {LEASE2,LEASE3,leaseContext,selectLease,buildLease2Seed,assertLeaseMutationAllowed} from './staging-lease-context.mjs';
+import {LEASE3_POLICY,buildLease3InactiveConfig} from './lease3-release-policy.mjs';
 
 const ROOT='D:/Projects/isp-member-rails',ACCOUNT='a9720867333b64a4f8ee70cdfd673eb9',WORKER='isp-member-production',CANDIDATE='80d32fddf88251a6608ba047a577ce16efe8c834';
-const context=leaseContext(LEASE2),SEED=context.privateRoot+'/runtime-seed.json',CONFIG=context.privateRoot+'/wrangler-v2.jsonc';
+const context=leaseContext(selectLease()),SEED=context.privateRoot+'/runtime-seed.json',CONFIG=context.privateRoot+'/'+context.configName;
 let stage='plan';
 function guard(value){if(!value)throw Error('Unarmed preparation refused');}
 const normalized=path=>resolve(path).replaceAll('\\','/').toLowerCase();
@@ -28,14 +29,20 @@ export function buildInactiveConfig(v1,image){
  const config=structuredClone(v1);config.$schema=ROOT+'/cloudflare/node_modules/wrangler/config-schema.json';config.main=ROOT+'/cloudflare/staging/index.js';
  config.containers[0].class_name='RailsStaging2';config.containers[0].image=image.image;config.durable_objects.bindings[0].class_name='RailsStaging2';config.migrations.push({tag:'rails-staging-v2',new_sqlite_classes:['RailsStaging2']});return config;
 }
+export function buildLease3Preparation(v1,image,v2Text,previous,random){
+ guard(typeof v2Text==='string'&&createHash('sha256').update(v2Text).digest('hex')==='a18c41e5f95949823ddab603215f6f681547409c453f24cef827df97a8229232');
+ const rebuiltV2=buildInactiveConfig(v1,image);guard(JSON.stringify(rebuiltV2,null,2)+'\n'===v2Text&&image.image_digest===LEASE3_POLICY.image_digest);
+ const config=buildLease3InactiveConfig(JSON.parse(v2Text)),text=JSON.stringify(config,null,2)+'\n',configHash=createHash('sha256').update(text).digest('hex');guard(configHash==='dc4a3ff927acbf677a6cba86f77155396ccef02b9d36e8f2d8d79b303d901783');
+ return {config,text,configHash,seed:buildLease2Seed(previous,random)};
+}
 export function prepare(){
- guard(selectLease()===LEASE2);stage='paths';
+ assertLeaseMutationAllowed(context);guard(selectLease()===LEASE3);stage='paths';
  for(const path of [context.credentialRoot,context.credentialRoot+'/leases',context.privateRoot,context.auditRoot])fixed(path,true);
  for(const path of [SEED,CONFIG,context.privateRoot+'/runtime.json'])absent(path);
- stage='image_and_config';const image=json(context.auditRoot+'/image-build.json'),config=buildInactiveConfig(json(ROOT+'/cloudflare/staging/wrangler.jsonc'),image),text=JSON.stringify(config,null,2)+'\n';
- stage='seed';const seed=buildLease2Seed(json(context.credentialRoot+'/runtime.json'),randomBytes);
+ stage='image_and_config';const previous=leaseContext(LEASE2),image=json(previous.auditRoot+'/image-build.json'),v2Path=previous.privateRoot+'/wrangler-v2.jsonc';
+ const v2Text=fs.readFileSync(fixed(v2Path),'utf8'),prepared=buildLease3Preparation(json(ROOT+'/cloudflare/staging/wrangler.jsonc'),image,v2Text,json(previous.privateRoot+'/runtime-seed.json'),randomBytes),{text,seed}=prepared;
  stage='exclusive_outputs';exclusive(SEED,JSON.stringify(seed,null,2)+'\n');exclusive(CONFIG,text);
- return {prepared:true,lease_id:LEASE2,seed_key_count:5,candidate:CANDIDATE,image_digest:image.image_digest,config_sha256:createHash('sha256').update(text).digest('hex'),runtime_created:false,timestamps_armed:false,activation:false,network_requests:0};
+ return {prepared:true,lease_id:LEASE3,seed_key_count:5,candidate:CANDIDATE,image_digest:image.image_digest,config_sha256:createHash('sha256').update(text).digest('hex'),runtime_created:false,timestamps_armed:false,activation:false,network_requests:0};
 }
-function main(){const mode=process.argv[2]||'--plan';if(mode==='--plan')return console.log(JSON.stringify({lease_id:LEASE2,outputs:['runtime-seed.json','wrangler-v2.jsonc'],runtime_created:false,activation:false,network_requests:0}));guard(mode==='--prepare'&&process.argv.length===3);console.log(JSON.stringify(prepare()));}
+function main(){const mode=process.argv[2]||'--plan';if(mode==='--plan')return console.log(JSON.stringify({lease_id:context.leaseId,outputs:['runtime-seed.json',context.configName],runtime_created:false,activation:false,network_requests:0}));guard(mode==='--prepare'&&process.argv.length===3);console.log(JSON.stringify(prepare()));}
 if(process.argv[1]&&fileURLToPath(import.meta.url)===resolve(process.argv[1]))try{main();}catch{console.error(JSON.stringify({error:'Unarmed lease2 preparation refused; inspect fixed private files.',stage}));process.exitCode=1;}

@@ -2,6 +2,7 @@
 import {lstatSync,realpathSync,readFileSync} from 'node:fs';
 import {dirname,resolve} from 'node:path';
 import {OAUTH_PATH,PRIVATE_ROOT,parseOAuthToml} from './cloudflare-staging-ops.mjs';
+import {LEASE2,LEASE3,leaseContext} from './staging-lease-context.mjs';
 export const STAGING_PROVIDER_PATH='D:/Projects/isp-rails-tools/isp-staging-private/leases/rails-staging-2/provision-credential-provider.json';
 export const STAGING_API_TOKEN_PATH=`${PRIVATE_ROOT}/deployment-token.json`;
 export const STAGING_OAUTH_PATH=OAUTH_PATH;
@@ -58,9 +59,10 @@ function readFixed(path,io,maximum) {
   return io.readFileSync(path,'utf8');
  }catch{return fail();}
 }
-export function readStagingCredential({now=Date.now(),requiredUntil=now,io=defaultIO}={}) {
+export function credentialProviderPath(leaseId=LEASE2){if(leaseId!==LEASE2&&leaseId!==LEASE3)return fail();return leaseContext(leaseId).credentialSelector;}
+export function readStagingCredential({now=Date.now(),requiredUntil=now,io=defaultIO,leaseId=LEASE2}={}) {
  try {
-  const selected=validateCredentialProvider(JSON.parse(readFixed(STAGING_PROVIDER_PATH,io,4096).replace(/^\uFEFF/,'')));
+  const selected=validateCredentialProvider(JSON.parse(readFixed(credentialProviderPath(leaseId),io,4096).replace(/^\uFEFF/,'')));
   if(selected.kind==='oauth')return parseOAuthCredential(readFixed(STAGING_OAUTH_PATH,io,65536),{now,requiredUntil});
   return parseApiCredential(JSON.parse(readFixed(STAGING_API_TOKEN_PATH,io,16384).replace(/^\uFEFF/,'')));
  }catch{return fail();}

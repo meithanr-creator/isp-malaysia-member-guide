@@ -5,7 +5,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {performance} from 'node:perf_hooks';
 import {createHash} from 'node:crypto';
 import {readStagingCredential,validateVerifiedApiCredential} from './staging-credential-provider.mjs';
-import {LEGACY_LEASE,LEASE2,selectLease,leaseContext,readPreparedRelease,assertRuntimeRelease,assertPreparedTuple,assertApplication,preparedTuple} from './staging-lease-context.mjs';
+import {LEGACY_LEASE,LEASE2,LEASE3,selectLease,leaseContext,readPreparedRelease,assertRuntimeRelease,assertPreparedTuple,assertApplication,preparedTuple,assertLeaseMutationAllowed} from './staging-lease-context.mjs';
 const ACCOUNT='a9720867333b64a4f8ee70cdfd673eb9',WORKER='isp-member-production';
 export const CLEANUP_BUDGET_MS=300000;
 const REQUEST_LIMIT_MS=15000,POLL_MS=5000;
@@ -41,11 +41,11 @@ export function validateWatchdogHandoff(marker,runtimeBytes,planBytes,prepared) 
  return true;
 }
 export async function stopStaging(plan,api,pause=sleep,{
- context=leaseContext(plan.lease_id===LEASE2?LEASE2:LEGACY_LEASE),prepared=null,
+ context=leaseContext(plan.lease_id===LEASE3?LEASE3:plan.lease_id===LEASE2?LEASE2:LEGACY_LEASE),prepared=null,
  clock=monotonic,timing=cleanupTiming(plan,{monotonicNow:clock()}),onProgress=()=>{},setTimer=setTimeout,clearTimer=clearTimeout
 }={}) {
  validatePlan(plan);
- if((plan.lease_id!==undefined&&plan.lease_id!==LEASE2)||context.fresh!==(plan.lease_id===LEASE2))throw Error('ISP watchdog lease mismatch');
+ if((plan.lease_id!==undefined&&![LEASE2,LEASE3].includes(plan.lease_id))||context.fresh!==[LEASE2,LEASE3].includes(plan.lease_id))throw Error('ISP watchdog lease mismatch');
  assertPreparedTuple(context,plan,prepared);
  if(!Number.isFinite(timing.started)||!Number.isFinite(timing.deadline)||!Number.isFinite(timing.budgetMs)||
     timing.budgetMs<0||timing.budgetMs>CLEANUP_BUDGET_MS||timing.deadline!==timing.started+timing.budgetMs||
@@ -167,12 +167,12 @@ async function main() {
  const enteredAt=monotonic(),enteredWall=Date.now(),mode=process.argv[2];
  if(!['--arm','--stop-now','--check'].includes(mode))throw new Error('Use --check, --arm or --stop-now');
  const selected=leaseContext(selectLease()),PRIVATE=selected.privateRoot;
- if(!selected.fresh&&mode!=='--check'&&existsSync(leaseContext(LEASE2).privateRoot+'/prepared-release.json'))throw Error('Legacy watchdog cannot control the new lease');
+ if(mode==='--arm')assertLeaseMutationAllowed(selected);
  const prepared=readPreparedRelease(selected);
  const planBytes=readFileSync(`${PRIVATE}/watchdog-plan.json`);
  const plan=JSON.parse(planBytes.toString('utf8'));
  const {stopAt}=validatePlan(plan);
- if((plan.lease_id!==undefined&&plan.lease_id!==LEASE2)||selected.fresh!==(plan.lease_id===LEASE2))throw Error('ISP watchdog lease mismatch');
+ if((plan.lease_id!==undefined&&![LEASE2,LEASE3].includes(plan.lease_id))||selected.fresh!==[LEASE2,LEASE3].includes(plan.lease_id))throw Error('ISP watchdog lease mismatch');
  assertPreparedTuple(selected,plan,prepared);
  if(selected.fresh&&mode==='--arm'){
   const runtimeBytes=readFileSync(`${PRIVATE}/runtime.json`);
@@ -184,7 +184,7 @@ async function main() {
  const statePath=`${PRIVATE}/watchdog-state.json`;
  const save=state=>writeFileSync(statePath,JSON.stringify({...state,...(selected.fresh?preparedTuple(prepared):{}),application_id:plan.application_id,stop_at:new Date(stopAt).toISOString(),updated_at:new Date().toISOString()},null,2));
  const loadApi=requiredUntil=>selected.fresh
-  ?makeCredentialApi(readStagingCredential({requiredUntil}),{requiredUntil})
+  ?makeCredentialApi(readStagingCredential({requiredUntil,leaseId:selected.leaseId}),{requiredUntil})
   :makeApi(JSON.parse(readFileSync(`${selected.credentialRoot}/deployment-token.json`,'utf8')).CLOUDFLARE_API_TOKEN);
  let api;
  if(mode!=='--stop-now') {

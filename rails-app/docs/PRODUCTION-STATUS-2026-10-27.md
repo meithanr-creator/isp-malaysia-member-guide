@@ -1,3 +1,26 @@
+# Current production position — 27 October 2026
+
+This checkpoint supersedes earlier status paragraphs below. The last published source is `5d5fa2644b3fab9aa357d87a355ce799c8bee752`: all seven required push checks passed in run40459389698, and applicable PR checks passed in40459397288. See audit/staging-2/ci-5d5fa26-summary.json. The application image remains the scanner-tested image from Rails source80d32fddf88251a6608ba047a577ce16efe8c834; hosting-control changes do not rebuild it.
+
+**Hosting remains incomplete and production is NO-GO.** The registry image exists. Lease2 stopped after an unconfirmed application POST; its latest independent observation was no app, closed ingress and disabled/blank runtime flags. That observation neither diagnoses the original POST nor authorizes replay. No lease2 runtime or sealed prepared release exists. The expired deployment token does not permit the next provider operation. No provider call or new paid runtime has occurred during the current lease3 source preparation.
+
+The fresh lease3 integration reuses the existing deployment operator, with a new class/namespace and separate private leaf. It preserves old namespaces, abort fences, uncertain outcomes and cleanup access. It retires new mutations against old leases, pins exact source/image/module/CI, separates temporary account access from one immutable runtime window, retains the cumulative US$5 ceiling, and checks actual Neon and private R2 access before deployment boundaries. Runtime configuration now explicitly sets RAILS_ENV=production. Ingress opening requires a fresh exact Worker/version/deployment/module readback. HTTP and mobile requests retain the original completed handoff and matching live watchdog admission; raw observation bytes are sealed before case closure.
+
+Astra approved the corrected integration and collector for source publication after inspecting the saved files and regressions. Actual final combined integration checks pass274 release tests and56 adapter tests, with zero failures/skips/cancellations. See audit/staging-2/lease3-source-review.json and lease3-final-release-tests.txt. Exact new-commit CI is still required. The separate dependency-access collector remains source-only until actual --capture, and R2 public-route metadata needs a current authorized read credential. Preparation and fixture tests never substitute for actual hosted evidence.
+
+Remaining hosting gates:
+
+1. Finish final source review, publish the complete deployment integration and pass all seven exact-commit CI jobs.
+2. Prepare the isolated unarmed lease3 config/package on D; then obtain fresh time-limited deployment access, including explicit R2 metadata read if needed. Check storage credential validity. Do not start the runtime clock during source preparation.
+3. Capture fresh read-only Neon/private-R2 observations and current account/retired-resource state. Perform a single journaled inactive Worker/application creation, reconcile its actual outcome, seal the exact resource identities and review the inactive packet. Unknown outcomes halt and are never blindly replayed.
+4. Admit the separately fixed runtime period (at most55minutes), external watchdog and cumulative budget reservation. Activate once, prove secure private ingress, Rails readiness, database/storage wiring and exact cleanup. Admission stops ten minutes before expiry; watchdog stop is five minutes before expiry. Observe compute removal by expiry.
+
+The revised full acceptance ledger remains **0 of63 cases closed**. The first functional phase selects42 HTTP cases; admission/cleanup bounds can defer later batches and mobile rather than imply they all fit one window. Full virtual iPhone/Android workflows, independent persistence/file/scanner verification, recovery/fault/operational cases and final Astra review remain required. Existing historical evidence carries only with unchanged verified dependencies and original provenance. The continuation planner grants no execution authority and is not an additional bootstrap prerequisite.
+
+Production scope is member login/profile/reviewed roster imports, events, Discover editing, member publications and consultation queries. Shop/Plantation Jobs stay frozen DEMO; Academy/Forum remain excluded. No real member import/account activation, identity email dispatch, paid upgrade, domain cutover or public launch is authorized by a test result. P4 still needs verified official identity-mail delivery, first administrator/member/content decisions, support/retention/ongoing-cost ownership and planterapp.co DNS/TLS readiness. Virtual environments satisfy the agreed mobile review scope; physical/native installation evidence is unclaimed and is not a new owner-action gate.
+
+---
+
 # Production milestone status — 27 October 2026 MYT
 
 Production remains NO-GO. The reviewed application image is now verified in Cloudflare's registry; the application remains off. All project, tooling, private configuration and evidence are on drive D. Shop and Plantation Jobs remain frozen DEMO references, excluded from production acceptance. Academy and Forum remain removed.

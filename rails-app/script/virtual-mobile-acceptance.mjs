@@ -4,9 +4,14 @@ import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 import {connectLinuxWebKit,closeLinuxWebKitConnection} from './linux-webkit-connection.mjs';
 import {OFFLINE_DASHBOARD_URL,classifyRequestFailure,acceptableOfflineNavigationError} from './virtual-mobile-failures.mjs';
-import {leaseContext,readPreparedRelease,preparedTuple,assertActiveRelease,assertWatchdogTuple,assertWritableLease} from './staging-lease-context.mjs';
+import {LEASE2,LEASE3,leaseContext,readPreparedRelease,preparedTuple,assertActiveRelease,assertWatchdogTuple,assertWritableLease,assertLeaseMutationAllowed} from './staging-lease-context.mjs';
 import {ORIGIN,LIMITS,PROFILES,REQUIRED_CASES,CoverageDeferred,ensure,sha256,encode,argumentsFor,profileWindow,admitCase,safeURL,dependencies,submitOnce,totp,verifyFile,uiComplete,databaseMatches,databaseProof,processReceiptMatches,aggregateStatus,runRenderedJourneys} from './virtual-mobile-journeys.mjs';
-export const ROOT='D:/Projects/isp-member-rails',CONTEXT=leaseContext('rails-staging-2'),PRIVATE=CONTEXT.privateRoot;
+export function selectedMobileContext(leaseId=process.env.ISP_STAGING_LEASE??LEASE3){
+ ensure([LEASE2,LEASE3].includes(leaseId),'Explicit allowlisted mobile lease required');
+ return leaseContext(leaseId);
+}
+import {readActiveStagingAdmission} from './active-staging-admission.mjs';
+export const ROOT='D:/Projects/isp-member-rails',CONTEXT=selectedMobileContext(),PRIVATE=CONTEXT.privateRoot;
 const JOURNAL=PRIVATE+'/acceptance-mobile.json',PUBLIC=CONTEXT.auditRoot+'/virtual-mobile-acceptance.json';
 function fixed(path,directory=false){const st=fs.lstatSync(path);ensure(!st.isSymbolicLink()&&fs.realpathSync(path).replaceAll('\\','/').toLowerCase()===path.toLowerCase()&&(directory?st.isDirectory():st.isFile()),'Fixed D browser path required');return st;}
 export function readPrivate(name,max=16777216){const p=PRIVATE+'/'+name;ensure(fixed(p).size<=max);const raw=fs.readFileSync(p,'utf8');return {value:JSON.parse(raw.replace(/^\uFEFF/,'')),raw};}
@@ -18,7 +23,8 @@ export function durable(path,value,exclusive=false){
  fs.renameSync(tmp,path);
 }
 export function readMobileInputs(name,{watchdog=true,now=Date.now()}={}){
- ensure(process.platform==='win32'&&process.versions.node==='24.21.0'&&process.env.ISP_STAGING_LEASE==='rails-staging-2','Pinned Windows controller and explicit lease2 required');
+ ensure(process.platform==='win32'&&process.versions.node==='24.21.0'&&process.env.ISP_STAGING_LEASE===CONTEXT.leaseId,'Pinned Windows controller and explicit matching lease required');
+ if(watchdog)assertLeaseMutationAllowed(CONTEXT);
  fixed(PRIVATE,true);assertWritableLease(CONTEXT);const prepared=readPreparedRelease(CONTEXT),r=readPrivate('runtime.json'),runtime=r.value,release=readPrivate('acceptance-release.json').value;
  assertActiveRelease(CONTEXT,runtime,release,prepared);
  ensure(runtime.APP_HOST===new URL(ORIGIN).host&&/^[a-f0-9]{64}$/.test(runtime.ISP_STAGING_KEY));
@@ -26,24 +32,26 @@ export function readMobileInputs(name,{watchdog=true,now=Date.now()}={}){
  ensure(fixtures.target?.project==='royal-glitter-45740959'&&fixtures.target?.host==='ep-delicate-frost-a1o15wrb.ap-southeast-1.aws.neon.tech'&&fixtures.target?.database==='neondb','Fixed synthetic target required');
  const phasePath=CONTEXT.auditRoot+'/functional-phase-summary.json';ensure(fixed(phasePath).size<=1048576);const phase=JSON.parse(fs.readFileSync(phasePath,'utf8'));
  dependencies({profile:name,runtime,fixtures,http,observations,phase,preparedHash:prepared.prepared_release_sha256,now});
- if(watchdog){const plan=readPrivate('watchdog-plan.json').value,state=readPrivate('watchdog-state.json').value,updated=Date.parse(state.updated_at);
-  assertWatchdogTuple(CONTEXT,runtime,plan,state,prepared);
-  ensure(state.armed===true&&Number.isFinite(updated)&&updated<=now+5000&&now-updated<=45000&&Date.parse(state.stop_at)===Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-300000&&Number.isSafeInteger(state.pid)&&state.pid>0,'Live matching watchdog required');process.kill(state.pid,0);
- }
- return {runtime,fixtures,http,observations,prepared,runtimeHash:sha256(r.raw),release:{...preparedTuple(prepared),worker_version:release.worker_version,deployment_id:release.deployment_id}};
+ const admissionSnapshot=watchdog?readActiveStagingAdmission(CONTEXT,{expectedRuntime:runtime,prepared,now}).snapshot:null;
+ if(watchdog&&process.env.ISP_MOBILE_RUNTIME_SHA256!==undefined)ensure(process.env.ISP_MOBILE_RUNTIME_SHA256===sha256(r.raw),'Wrapper runtime changed before browser launch');
+ if(watchdog&&process.env.ISP_MOBILE_ADMISSION_SHA256!==undefined)ensure(process.env.ISP_MOBILE_ADMISSION_SHA256===sha256(encode(admissionSnapshot)),'Wrapper admission changed before browser launch');
+ return {runtime,fixtures,http,observations,prepared,admissionSnapshot,runtimeHash:sha256(r.raw),release:{...preparedTuple(prepared),worker_version:release.worker_version,deployment_id:release.deployment_id}};
 }
 function publicReport(j){
  return {version:2,scope:'Virtual browser engines and mobile profiles; physical devices/native installation/native PDF viewer are unproved',status:aggregateStatus(j),run_marker:j.run_marker,release:j.release,profiles:Object.values(j.profiles).map(p=>({name:p.name,status:p.status,engine:p.engine,engine_version:p.engine_version,execution_platform:p.execution_platform,started_at:p.started_at,finished_at:p.finished_at,requests:p.requests,checks:p.checks,cases:p.cases,screenshots:p.screenshots,cleanup:p.cleanup,process_cleanup:p.process_cleanup,db_reconciled:p.db_reconciled,errors:p.errors,failure_phase:p.failure_phase,elapsed_ms:p.elapsed_ms})),deferred:['natural aged MFA step-up is a separate window','physical devices, native install, OS PDF viewer, assistive-technology/conformance audit'],production_release_approved:false};
 }
 function save(j){durable(JOURNAL,j);durable(PUBLIC,publicReport(j));}
-function matchingJournal(j,input){ensure(j?.version===2&&j.lease_id==='rails-staging-2'&&j.run_marker===input.fixtures.run_marker&&j.runtime_sha256===input.runtimeHash&&JSON.stringify(j.release)===JSON.stringify(input.release),'Mobile journal release/run differs');}
+function matchingJournal(j,input){ensure(j?.version===2&&j.lease_id===CONTEXT.leaseId&&j.run_marker===input.fixtures.run_marker&&j.runtime_sha256===input.runtimeHash&&JSON.stringify(j.release)===JSON.stringify(input.release),'Mobile journal release/run differs');}
 export async function executeProfile(name,input){
+ ensure(input.admissionSnapshot&&process.env.ISP_MOBILE_RUNTIME_SHA256===input.runtimeHash&&process.env.ISP_MOBILE_ADMISSION_SHA256===sha256(encode(input.admissionSnapshot)),'Original wrapper admission binding required');
+ assertLeaseMutationAllowed(CONTEXT);
+ ensure(input?.runtime?.ISP_STAGING_LEASE===CONTEXT.leaseId&&input.fixtures?.lease_id===CONTEXT.leaseId&&input.release?.lease_id===CONTEXT.leaseId,'Matching selected mobile execution tuple required');
  const {runtime,fixtures,http,observations}=input,profile=PROFILES[name],window=profileWindow(runtime);
  let journal;
- if(fs.existsSync(JOURNAL)){journal=readPrivate('acceptance-mobile.json').value;matchingJournal(journal,input);}else journal={version:2,lease_id:'rails-staging-2',run_marker:fixtures.run_marker,runtime_sha256:input.runtimeHash,release:input.release,profiles:{}};
+ if(fs.existsSync(JOURNAL)){journal=readPrivate('acceptance-mobile.json').value;matchingJournal(journal,input);}else journal={version:2,lease_id:CONTEXT.leaseId,run_marker:fixtures.run_marker,runtime_sha256:input.runtimeHash,release:input.release,profiles:{}};
  ensure(!Object.hasOwn(journal.profiles,name),'A started profile is never replayed; reconcile unknown outcomes before a new reviewed run');
  if(name==='android-chromium')ensure(journal.profiles['iphone-webkit']?.status==='PASS'&&journal.profiles['iphone-webkit'].db_reconciled===true&&journal.profiles['iphone-webkit'].process_cleanup==='pass','Capture/status and reconcile iPhone before Android');
- const result={name,admin:profile.admin,controller_pid:process.pid,server_id:name==='iphone-webkit'?process.env.ISP_LINUX_WEBKIT_SERVER_ID:null,status:'OPEN',started_at:new Date().toISOString(),checks:[],screenshots:[],errors:[],requests:0,cleanup:'pending',db_reconciled:false,process_cleanup:'pending',cases:Object.fromEntries(REQUIRED_CASES.map(id=>[id,{status:'NOT_RUN'}])),actions:{},expected:{},baseline_sessions:Object.fromEntries(['member_b',profile.admin].map(alias=>[alias,observations.actors[alias].sessions.map(s=>s.id)]))};
+ const result={name,lease_id:CONTEXT.leaseId,admin:profile.admin,controller_pid:process.pid,server_id:name==='iphone-webkit'?process.env.ISP_LINUX_WEBKIT_SERVER_ID:null,status:'OPEN',started_at:new Date().toISOString(),checks:[],screenshots:[],errors:[],requests:0,cleanup:'pending',db_reconciled:false,process_cleanup:'pending',cases:Object.fromEntries(REQUIRED_CASES.map(id=>[id,{status:'NOT_RUN'}])),actions:{},expected:{},baseline_sessions:Object.fromEntries(['member_b',profile.admin].map(alias=>[alias,observations.actors[alias].sessions.map(s=>s.id)]))};
  journal.profiles[name]=result;save(journal);
  const tmp=PRIVATE+'/virtual-browser-tmp';try{fs.mkdirSync(tmp,{mode:0o700});}catch(e){ensure(e.code==='EEXIST');}fixed(tmp,true);process.env.TMP=tmp;process.env.TEMP=tmp;process.env.TMPDIR=tmp;
  process.env.PLAYWRIGHT_BROWSERS_PATH='D:/Projects/isp-rails-tools/virtual-browsers';
@@ -55,14 +63,14 @@ export async function executeProfile(name,input){
  const operation=(fn,cap=20000)=>bounded(fn,remaining(cap));
  const check=(ok,label)=>{ensure(ok,label);result.checks.push(label);};
  const evaluate=(p,fn,arg)=>operation(()=>p.evaluate(fn,arg));
- const verifyWatchdog=()=>{const state=readPrivate('watchdog-state.json').value,plan=readPrivate('watchdog-plan.json').value,now=Date.now(),updated=Date.parse(state.updated_at);assertWatchdogTuple(CONTEXT,runtime,plan,state,input.prepared);ensure(state.armed===true&&Number.isFinite(updated)&&updated<=now+5000&&now-updated<=45000&&Date.parse(state.stop_at)===window.end-300000&&Number.isSafeInteger(state.pid)&&state.pid>0,'Live matching watchdog required');process.kill(state.pid,0);};
- const admit=()=>ensure(Date.now()<window.deadline&&!deadlineHit&&result.requests<LIMITS.requests,'Mobile request/time budget reached');
+ const verifyWatchdog=()=>readActiveStagingAdmission(CONTEXT,{expectedRuntime:runtime,prepared:input.prepared,expectedSnapshot:input.admissionSnapshot});
+ const admit=()=>{verifyWatchdog();ensure(Date.now()<window.deadline&&!deadlineHit&&result.requests<LIMITS.requests,'Mobile request/time budget reached');};
  async function role(label,gate,{page:withPage=true,cookies}={}){
   admit();const ctx=await operation(()=>browser.newContext({...devices[profile.device],reducedMotion:'reduce'}),15000);contexts.push(ctx);
   ctx.on('request',()=>{result.requests++;});
   ctx.on('requestfailed',r=>{let main=false;try{main=r.frame()===page?.mainFrame();}catch{}const kind=classifyRequestFailure({url:r.url(),method:r.method(),isNavigationRequest:r.isNavigationRequest(),isMainFrame:main,errorText:r.failure()?.errorText},offlineState);if(kind==='expected-offline-navigation'){offlineState.consumed=true;result.expected_offline_failures=(result.expected_offline_failures||0)+1;failedResolve?.();}else result.errors.push(kind);});
   ctx.on('page',p=>{p.setDefaultTimeout(12000);p.setDefaultNavigationTimeout(20000);p.on('pageerror',()=>result.errors.push('Application JavaScript error'));});
-  await ctx.route('**/*',route=>{const u=new URL(route.request().url());return Date.now()>=window.deadline||result.requests>LIMITS.requests||!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==ORIGIN?route.abort():route.continue();});
+  await ctx.route('**/*',route=>{const u=new URL(route.request().url());try{if(['http:','https:'].includes(u.protocol))verifyWatchdog();return Date.now()>=window.deadline||result.requests>LIMITS.requests||!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==ORIGIN?route.abort():route.continue();}catch{result.errors.push('Active browser admission unavailable');return route.abort();}});
   if(cookies)await operation(()=>ctx.addCookies(cookies));else if(gate)await operation(()=>ctx.addCookies([gate]));
   return {context:ctx,page:withPage?await operation(()=>ctx.newPage()):undefined};
  }
@@ -112,7 +120,7 @@ export async function executeProfile(name,input){
   ensure(/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(controlId||''),'Fresh outer controller UUID required');
   const stopPath=PRIVATE+'/mobile-browser-control/'+controlId+'/controller-stop';
   stopPoll=setInterval(()=>{try{if(!fs.existsSync(stopPath))return;ensure(fixed(stopPath).size<=64&&fs.readFileSync(stopPath,'utf8')===controlId+'\n');deadlineHit=true;clearInterval(stopPoll);for(const c of contexts)void c.close().catch(()=>{});if(browserServer)void browserServer.close().catch(()=>{});}catch{deadlineHit=true;clearInterval(stopPoll);for(const c of contexts)void c.close().catch(()=>{});}},250);
-  browser=name==='iphone-webkit'?await connectLinuxWebKit(webkit,{privateRoot:PRIVATE,deadline:window.deadline}):null;
+  browser=name==='iphone-webkit'?await connectLinuxWebKit(webkit,{leaseId:CONTEXT.leaseId,privateRoot:PRIVATE,deadline:window.deadline}):null;
   if(!browser){browserServer=await operation(()=>chromium.launchServer({headless:true,downloadsPath:tmp,timeout:remaining(30000)}),30000);result.browser_pid_windows=browserServer.process().pid;save(journal);browser=await operation(()=>chromium.connect(browserServer.wsEndpoint(),{timeout:remaining(15000)}),15000);}
   if(name==='iphone-webkit')result.server_pid_linux=readPrivate('linux-webkit/'+result.server_id+'/connection.json',8192).value.server_pid_linux;
   result.engine=profile.engine;result.engine_version=browser.version();result.execution_platform=name==='iphone-webkit'?'linux':'win32';const member=await role('member',null);page=member.page;result.viewport=devices[profile.device].viewport;

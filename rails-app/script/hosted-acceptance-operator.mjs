@@ -6,7 +6,7 @@ import { parseEnv } from 'node:util';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = 'D:/Projects/isp-member-rails';
-import {LEGACY_LEASE,selectLease,leaseContext,assertWritableLease} from './staging-lease-context.mjs';
+import {LEGACY_LEASE,selectLease,leaseContext,assertWritableLease,assertLeaseMutationAllowed} from './staging-lease-context.mjs';
 const TEMP = 'D:/Projects/isp-rails-tools/tmp';
 const CA = 'D:/Projects/isp-rails-tools/ruby34-devkit/lib/ruby/3.4.0/etc/ssl/cert.pem';
 const HOST = 'ep-delicate-frost-a1o15wrb.ap-southeast-1.aws.neon.tech';
@@ -135,7 +135,7 @@ export function main(args = process.argv.slice(2)) {
   }
   const action = args[0];
   const selected=leaseContext(selectLease());
-  if(action!=='status')assertWritableLease(selected);
+  if(action!=='status'){assertLeaseMutationAllowed(selected);assertWritableLease(selected);}
   const env = buildEnvironment({leaseId:selected.leaseId});
   const result = spawnSync('powershell.exe', [
     '-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',

@@ -1,0 +1,29 @@
+✔ actual admission accepts strict lease3 tuple and exact raw handoff with a live watchdog (6.1746ms)
+✔ hosted mode requires exact host, production and all disabled mail/demo flags (0.6037ms)
+✔ admission refuses retired context and sealed runtime/application/namespace mismatches (2.2242ms)
+✔ runtime and raw handoff replacement fail before PID admission (1.0742ms)
+✔ active receipt must pin current distinct version/deployment and enabled ingress (2.075ms)
+✔ dead stale future disarmed or mismatched watchdog cannot admit work (2.4573ms)
+✔ fixed runtime reserve and required remaining duration are strict (0.9516ms)
+✔ accepted snapshot pins byte identity of runtime plan active receipt and watchdog PID (1.4115ms)
+✔ parent snapshot digest rejects coordinated valid record replacement and invalid digest (0.9091ms)
+✔ immutable proof hashes formatted original bytes including BOM and Unicode (0.6917ms)
+✔ reconciliation seals exact raw bytes before a case can become PASS (0.5822ms)
+✔ reconciliation parses raw independently and cannot accept a separate forged observation (0.29ms)
+✔ existing different immutable capture and storage failure preserve BLOCKED disposition (0.4663ms)
+✔ incorrect seal hash length or file identity cannot promote a case (1.1146ms)
+✔ FAIL or PASS cases retain their original evidence and cannot be rebound to a later capture (0.3651ms)
+✔ malformed stale foreign or future raw observations cannot close cases (0.7689ms)
+✔ admission rejects malformed oversized or nonobject raw records before PID probing (0.6196ms)
+✔ HTTP performs no dispatch persistence journal or counters when actual admission fails (0.8488ms)
+✔ admitted HTTP persists its UUID intent before dispatch and uses the exact request duration (1.5945ms)
+✔ queued HTTP loses admission without any new dispatch persistence or intent after waiting (1.1846ms)
+✔ failed durable HTTP intent prevents request bytes from being dispatched (0.4092ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 140.8114

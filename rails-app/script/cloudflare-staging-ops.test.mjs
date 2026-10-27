@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { ACCOUNT_ID, APPLICATION_NAME, MAX_WINDOW_MS, SafeError, buildRuntimeSecrets, createReadonlyClient,
   inspectApplication, inspectApplications, parseOAuthToml, prepareRuntimeSecretJson, stopPlan,
-  summarizeApplication, summarizeInstance, validateApplicationId, validateHost, validateWindow, verifiedNeonUrl } from './cloudflare-staging-ops.mjs';
+  main, summarizeApplication, summarizeInstance, validateApplicationId, validateHost, validateWindow, verifiedNeonUrl } from './cloudflare-staging-ops.mjs';
 
 const now = Date.parse('2026-10-26T12:00:00Z');
 const startAt = '2026-10-26T12:00:00Z';
@@ -188,4 +188,7 @@ test('stop plan documents the concrete validated public API without executing a 
   assert.match(plan.completion, /expired request gate alone does not stop compute/);
   assert.throws(() => stopPlan({ ...app, name: 'unrelated' }), SafeError);
   for (const bad of ['', undefined, '../../delete', 'wrong', 'a'.repeat(33)]) assert.throws(() => validateApplicationId(bad), SafeError);
+});
+test('retired legacy CLI cannot prepare or rearm an expired runtime',async()=>{
+ await assert.rejects(main(['prepare-runtime-secret-json']),/Legacy runtime preparation is retired/);
 });

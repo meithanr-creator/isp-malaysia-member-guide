@@ -21,9 +21,9 @@ export function functionalExecutionWindow(runtime,now=Date.now()){
 export function admitFunctionalBatch(window,now=Date.now()){guard(Number.isSafeInteger(now)&&now>=window.start);return now<window.admitUntil;}
 
 export const FUNCTIONAL_STAGE_LIMITS=Object.freeze({http:180000,capture:45000,status:45000,reconcile:10000,margin:20000});
-export function mobileDependenciesReady({phase,completed,state,fixtures,preparedHash}){
+export function mobileDependenciesReady({phase,completed,state,fixtures,preparedHash,leaseId}){
  if(!phase||!Array.isArray(completed)||completed.length!==phase.batches.length||!phase.batches.every((b,i)=>completed[i]===b))return false;
- if(!state||state.halted||state.running_batch||state.lease_id!=='rails-staging-2'||state.prepared_release_sha256!==preparedHash||state.run_marker!==fixtures?.run_marker||fixtures?.phase!=='active'||!Number.isSafeInteger(fixtures.actors?.member_b?.id)||fixtures.actors.member_b.id<=0)return false;
+ if(!['rails-staging-2','rails-staging-3'].includes(leaseId)||fixtures?.lease_id!==leaseId||!state||state.halted||state.running_batch||state.lease_id!==leaseId||state.prepared_release_sha256!==preparedHash||state.run_marker!==fixtures?.run_marker||fixtures?.phase!=='active'||!Number.isSafeInteger(fixtures.actors?.member_b?.id)||fixtures.actors.member_b.id<=0)return false;
  if(!state.event?.slug||!state.publication?.slug||!state.discover)return false;
  return phase.case_ids.every(id=>state.cases?.[id]?.status==='PASS'&&state.cases[id].http==='PASS');
 }

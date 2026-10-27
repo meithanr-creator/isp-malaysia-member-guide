@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {dirname} from 'node:path';
-import {STAGING_PROVIDER_PATH,STAGING_API_TOKEN_PATH,STAGING_OAUTH_PATH,validateCredentialProvider,parseOAuthCredential,parseApiCredential,validateVerifiedApiCredential,readStagingCredential} from './staging-credential-provider.mjs';
+import {credentialProviderPath,STAGING_PROVIDER_PATH,STAGING_API_TOKEN_PATH,STAGING_OAUTH_PATH,validateCredentialProvider,parseOAuthCredential,parseApiCredential,validateVerifiedApiCredential,readStagingCredential} from './staging-credential-provider.mjs';
 const NOW=Date.parse('2026-10-27T00:00:00Z'),EXPIRY='2026-10-27T01:00:00.000Z',TOKEN='synthetic_unit_token_never_a_real_credential_1234567890';
 const options={now:NOW,requiredUntil:NOW+30*60000};
 const oauth=(expiry=EXPIRY)=>`oauth_token = "${TOKEN}"\nexpiration_time = "${expiry}"\nrefresh_token = "ignored-never-returned"\n[unrelated]\noauth_token = "nested-ignored"\n`;
-function fixture(kind='oauth'){
- const reads=[],files=new Map([[STAGING_PROVIDER_PATH,JSON.stringify({version:1,kind})],[STAGING_OAUTH_PATH,oauth()],[STAGING_API_TOKEN_PATH,JSON.stringify({CLOUDFLARE_API_TOKEN:TOKEN,saved_at:'untrusted-local-metadata'})]]);
+function fixture(kind='oauth',leaseId='rails-staging-2'){
+ const reads=[],files=new Map([[credentialProviderPath(leaseId),JSON.stringify({version:1,kind})],[STAGING_OAUTH_PATH,oauth()],[STAGING_API_TOKEN_PATH,JSON.stringify({CLOUDFLARE_API_TOKEN:TOKEN,saved_at:'untrusted-local-metadata'})]]);
  const parents=new Set([...files.keys()].map(dirname));
  const io={lstatSync:path=>{
   if(!parents.has(path)&&!files.has(path))throw Error('Synthetic missing file');
@@ -94,4 +94,11 @@ test('selected credential symlinks redirected parents or oversized files are ref
   assert.throws(()=>readStagingCredential({...options,io:f.io}));
   assert.deepEqual(f.reads,[STAGING_PROVIDER_PATH]);
  }
+});
+
+test('explicit lease3 uses only its fixed selector and never falls back to lease2',()=>{
+ const selector=credentialProviderPath('rails-staging-3');assert.equal(credentialProviderPath(),STAGING_PROVIDER_PATH);assert.match(selector,/rails-staging-3\/provision-credential-provider.json$/);
+ const f=fixture('api-token','rails-staging-3');assert.equal(readStagingCredential({...options,io:f.io,leaseId:'rails-staging-3'}).kind,'api-token');assert.deepEqual(f.reads,[selector,STAGING_API_TOKEN_PATH]);
+ const missing=fixture('oauth','rails-staging-3');missing.files.delete(selector);missing.files.set(STAGING_PROVIDER_PATH,JSON.stringify({version:1,kind:'oauth'}));assert.throws(()=>readStagingCredential({...options,io:missing.io,leaseId:'rails-staging-3'}));assert.deepEqual(missing.reads,[]);
+ for(const leaseId of ['legacy-1','../rails-staging-3','rails-staging-4']){const bad=fixture();assert.throws(()=>readStagingCredential({...options,io:bad.io,leaseId}));assert.deepEqual(bad.reads,[]);}
 });

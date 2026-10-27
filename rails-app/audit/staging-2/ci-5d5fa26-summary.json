@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "commit": "5d5fa2644b3fab9aa357d87a355ce799c8bee752",
+  "tree": "c372d92601b8ff565ee004407e1e6567ea9722df",
+  "push_run_id": 40459389698,
+  "push_run_url": "https://github.com/meithanr-creator/isp-malaysia-member-guide/actions/runs/40459389698",
+  "pr_run_id": 40459397288,
+  "pr_run_url": "https://github.com/meithanr-creator/isp-malaysia-member-guide/actions/runs/40459397288",
+  "required_push_jobs": [
+    {
+      "id": 122040143260,
+      "name": "neon_build_tools",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122040143462,
+      "name": "container_build",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122040143480,
+      "name": "cloudflare_scanner_runtime",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122040143499,
+      "name": "rails_checks (postgresql)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122040143524,
+      "name": "cloudflare_adapter",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122040143564,
+      "name": "virtual_browser_gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122040143675,
+      "name": "rails_checks (sqlite)",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "required_push_count": 7,
+  "required_push_successes": 7,
+  "pr_applicable_checks": "PASS",
+  "large_image_artifact": "SKIPPED_INTENTIONALLY",
+  "actual_bundle_proof": {
+    "bundle_sha256": "8aa140362efef24fa0125e0127d0a5d08e8edf5bd211edfa56e84e7cfa481a2f",
+    "files": {
+      "cloudflare/src/diagnostics.js": "8321e530ac1702b25c4b350301aa45485edf5068",
+      "cloudflare/src/lifetime.js": "ec8f0b27097e3532b665f64eff082c7a19e9715b",
+      "cloudflare/src/runtime.js": "7b5835ded8c80ee28a280026ec8e9df45c146a3a",
+      "cloudflare/src/index.js": "5e235fbddba44bb91ba972e248a3fbbb5ec5dede",
+      "cloudflare/staging/diagnostics.js": "4bff3f3d0bbb078d0d932bcdaaaa626bc63331c8",
+      "cloudflare/staging/browser-access.js": "867c6b0721fdc44dd30af948c199fb99e054c1b2",
+      "cloudflare/staging/index.js": "c3567b82b2703b447bddb5d542dd31f607f4a8a1",
+      "cloudflare/package.json": "b6847307b3a3e11ee5fd66d51484b5ba16f8982c",
+      "cloudflare/package-lock.json": "73b2531b9299b5893bfe2f3bc6210d11ecfe71ed",
+      "script/lease2-provision-core.mjs": "99f15e296118a7aa60469f480bb490384b70e59b",
+      "script/lease2-provision.mjs": "06cec377ee0d3a923b08874291c07d1e1b6dd9fd",
+      "script/staging-lease-context.mjs": "56f109f2f87c3fc679029ca7d3e3b4a5437e72b2",
+      "script/cloudflare-staging-ops.mjs": "a82a22357baec6fd4bf2950fe98a464d2b60a163",
+      "script/cloudflare-staging-watchdog.mjs": "bbdaafbd3b52f0cd09c22c7c2b469f2acf3cfb01",
+      "script/staging-credential-provider.mjs": "15d617f45eda4d7d1481b0112667d076ac8b9e85",
+      "script/provider-request-outcome.mjs": "bacebcaf89c03dab7e8891fe47b91e56accb8887"
+    },
+    "helper_sha256": "f43b41694a655fee3e8d09862d92327ed31f13cf8c1c24cafe9ad271b91a363b"
+  },
+  "hosted_acceptance_passed": 0,
+  "production_approved": false,
+  "notes": [
+    "Exact source CI passed; source-preparation gate only.",
+    "No provider resource, runtime, real account, identity mail or DNS mutation occurred.",
+    "Separate fresh lease3 integration is still unpublished and requires review/CI/package before access."
+  ]
+}

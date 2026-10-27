@@ -12,10 +12,21 @@ test('invalid, future, expired or overlong windows fail rather than extend',()=>
 
 test('four command caps plus overhead fit the entire five-minute batch reserve',()=>{assert.equal(FUNCTIONAL_STAGE_LIMITS.http,180000);assert.equal(Object.values(FUNCTIONAL_STAGE_LIMITS).reduce((a,b)=>a+b,0),5*60000);});
 test('mobile is gated by complete reconciled phase, required content and the current fixture/release',()=>{
- const phase=functionalExecutionPlan([],source()),fixtures={phase:'active',run_marker:'controlled',actors:{member_b:{id:2}}},preparedHash='a'.repeat(64);
+ const phase=functionalExecutionPlan([],source()),fixtures={lease_id:'rails-staging-2',phase:'active',run_marker:'controlled',actors:{member_b:{id:2}}},preparedHash='a'.repeat(64);
  const state={lease_id:'rails-staging-2',prepared_release_sha256:preparedHash,run_marker:fixtures.run_marker,cases:Object.fromEntries(phase.case_ids.map(id=>[id,{status:'PASS',http:'PASS'}])),event:{slug:'event'},publication:{slug:'publication'},discover:{slot:1}};
- const args={phase,completed:[...phase.batches],state,fixtures,preparedHash};assert.equal(mobileDependenciesReady(args),true);
+ const args={phase,completed:[...phase.batches],state,fixtures,preparedHash,leaseId:'rails-staging-2'};assert.equal(mobileDependenciesReady(args),true);
  assert.equal(mobileDependenciesReady({...args,completed:phase.batches.slice(0,6)}),false);
  for(const mutate of [s=>s.halted=true,s=>s.running_batch='throttle',s=>s.prepared_release_sha256='b'.repeat(64),s=>s.run_marker='other',s=>delete s.event,s=>delete s.publication,s=>delete s.discover,s=>s.cases.case_0.status='BLOCKED']){const copy=structuredClone(state);mutate(copy);assert.equal(mobileDependenciesReady({...args,state:copy}),false);}
  assert.equal(mobileDependenciesReady({...args,fixtures:{...fixtures,phase:'cleaned'}}),false);
+});
+
+test('mobile handoff admits only an explicitly matching fixed lease and never cross-binds fixtures',()=>{
+ const phase=functionalExecutionPlan([],source()),preparedHash='a'.repeat(64);
+ for(const leaseId of ['rails-staging-2','rails-staging-3']){
+  const fixtures={lease_id:leaseId,phase:'active',run_marker:'controlled',actors:{member_b:{id:2}}};
+  const state={lease_id:leaseId,prepared_release_sha256:preparedHash,run_marker:fixtures.run_marker,cases:Object.fromEntries(phase.case_ids.map(id=>[id,{status:'PASS',http:'PASS'}])),event:{slug:'e'},publication:{slug:'p'},discover:{id:1}};
+  const args={phase,completed:[...phase.batches],state,fixtures,preparedHash,leaseId};assert.equal(mobileDependenciesReady(args),true);
+  for(const other of [undefined,'legacy-1','rails-staging-4',leaseId==='rails-staging-2'?'rails-staging-3':'rails-staging-2'])assert.equal(mobileDependenciesReady({...args,leaseId:other}),false);
+  assert.equal(mobileDependenciesReady({...args,fixtures:{...fixtures,lease_id:undefined}}),false);
+ }
 });
