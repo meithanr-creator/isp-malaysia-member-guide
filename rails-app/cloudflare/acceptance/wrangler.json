@@ -10,7 +10,7 @@
   },
   "containers": [
     {
-      "class_name": "ISPPrivateAcceptance",
+      "class_name": "ISPPrivateAcceptanceContinuation",
       "scheduling_policy": "durable_object",
       "images": {
         "rails": {
@@ -24,7 +24,7 @@
     "bindings": [
       {
         "name": "ACCEPTANCE",
-        "class_name": "ISPPrivateAcceptance"
+        "class_name": "ISPPrivateAcceptanceContinuation"
       }
     ]
   },
@@ -45,6 +45,12 @@
       "tag": "private-acceptance-v1",
       "new_sqlite_classes": [
         "ISPPrivateAcceptance"
+      ]
+    },
+    {
+      "tag": "private-acceptance-continuation-v1",
+      "new_sqlite_classes": [
+        "ISPPrivateAcceptanceContinuation"
       ]
     }
   ],

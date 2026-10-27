@@ -23,6 +23,15 @@ class HostedAcceptanceFixtures
   DOMAIN = "staging.planterapp.co".freeze
   MARKER = /\Aqa-\d{8}-[0-9a-f]{12}\z/
   BLOB_KEY = %r{\A(?:[a-z0-9]{28,128}|managed-uploads/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/[0-9a-f]{48})\z}
+  PROTECTED_BASELINE = {
+    "version" => 1, "kind" => "upload_recovery_tombstones",
+    "source_run_marker" => "qa-20261027-913674d20bad",
+    "blob_ids" => [2, 3].freeze,
+    "upload_operation_id" => "a9ab3941-9489-4764-8a09-6a765c0666ae",
+    "blob_rows_sha256" => "ade7fc2601adff2d43055ad939d988f16e4c734b271dfb7ebe9c8413f102cd4a",
+    "source_retirement_result_sha256" => "2f5b0af73359219b6ede87d3899b93962378cfa7a5f0817210332c373807ecbc"
+  }.freeze
+  RETIREMENT_RESULT = "D:/Projects/isp-member-rails/audit/private-acceptance/actor-retirement-result.json".freeze
   CONTENT = { "events" => Event, "publications" => Publication,
     "consultations" => ConsultationRequest, "imports" => MembershipImport,
     "registry" => MembershipRegistryEntry }.freeze
@@ -81,6 +90,7 @@ class HostedAcceptanceFixtures
     refuse! if @m.key?("lease_id") && @m["lease_id"] != ENV["ISP_STAGING_LEASE"]
     refuse! if %w[rails-staging-3 rails-private-acceptance].include?(ENV["ISP_STAGING_LEASE"]) && @m["lease_id"] != ENV["ISP_STAGING_LEASE"]
     refuse! unless @m["actors"].is_a?(Hash) && @m["records"].is_a?(Hash)
+    verify_protected_baseline!
   end
   def ids(kind) = Array(@m.fetch("records").fetch(kind, [])).map { |r| Integer(r.fetch("id")) }
   def actor_ids = @m.fetch("actors").values.map { |r| Integer(r.fetch("id")) }
@@ -104,6 +114,7 @@ class HostedAcceptanceFixtures
     @m = { "version" => 1, "lease_id" => ENV.fetch("ISP_STAGING_LEASE"), "phase" => "prepared", "run_marker" => "qa-#{Time.now.utc.strftime('%Y%m%d')}-#{SecureRandom.hex(6)}",
       "created_at" => stamp, "target" => @target, "actors" => {}, "records" => {},
       "note" => "Synthetic verification timestamps are constructed fixture state; no mailbox verification or delivery is claimed." }
+    @m["protected_baseline"] = @setup_protected_baseline.deep_dup if continuation?
     (CONTENT.keys + %w[blobs interests]).each { |key| @m["records"][key] = [] }
     ApplicationRecord.transaction do
       @db.execute("LOCK TABLE users, events, publications, consultation_requests, membership_registry_entries, membership_imports IN SHARE ROW EXCLUSIVE MODE")
@@ -185,7 +196,7 @@ class HostedAcceptanceFixtures
     @m["captured_at"] = stamp
   end
   def capture_blobs!(slide_ids)
-    blobs = ActiveStorage::Blob.order(:id).to_a
+    blobs = run_blobs.order(:id).to_a
     refuse! unless blobs.all? { |b| recent?(b) && b.filename.to_s.start_with?(@m["run_marker"]) }
     blobs.each do |blob|
       match = BLOB_KEY.match(blob.key.to_s)
@@ -252,6 +263,64 @@ class HostedAcceptanceFixtures
     JSON.generate(left) == JSON.generate(right)
   end
 
+  def continuation? = ENV["ISP_ACCEPTANCE_CONTINUATION"] == "true"
+
+  def protected_baseline_record!
+    return nil unless continuation?
+    packet_path = "#{ROOT}/packet.json"
+    [packet_path, RETIREMENT_RESULT].each do |path|
+      stat = File.lstat(path)
+      refuse! unless stat.file? && !stat.symlink? &&
+        File.realpath(path).tr("\\", "/").downcase == path.downcase
+    end
+    refuse! unless Digest::SHA256.hexdigest(File.binread(RETIREMENT_RESULT)) ==
+      PROTECTED_BASELINE.fetch("source_retirement_result_sha256")
+    record = JSON.parse(File.binread(packet_path)).fetch("protected_baseline", nil)
+    refuse! unless record == PROTECTED_BASELINE
+    refuse! if @m && @m["protected_baseline"] != record
+    record
+  end
+
+  def verify_protected_baseline!
+    unless continuation?
+      refuse! if @m && @m.key?("protected_baseline")
+      return []
+    end
+    record = protected_baseline_record!
+    blobs = ActiveStorage::Blob.where(id: record.fetch("blob_ids")).order(:id).to_a
+    refuse! unless blobs.map(&:id) == record.fetch("blob_ids")
+    refuse! unless Digest::SHA256.hexdigest(JSON.generate(blobs.map(&:attributes))) == record.fetch("blob_rows_sha256")
+    blobs.each do |blob|
+      match = BLOB_KEY.match(blob.key.to_s)
+      refuse! unless match && match[1] == record.fetch("upload_operation_id") &&
+        blob.filename.to_s.start_with?(record.fetch("source_run_marker") + "-") &&
+        blob.service_name == "production_private" && blob.metadata["scan_status"] == "clean"
+      UploadOperation.verify_owned!(blob, record.fetch("upload_operation_id"))
+      ledger = blob.metadata.fetch(UploadOperation::LEDGER)
+      refuse! unless ledger["state"] == "tombstone" && ledger["last_result"] == "absence_observed"
+    end
+    refuse! if ActiveStorage::Attachment.where(blob_id: record.fetch("blob_ids")).exists?
+    blobs
+  end
+
+  def run_blobs
+    protected = verify_protected_baseline!
+    ActiveStorage::Blob.where.not(id: protected.map(&:id))
+  end
+
+  def managed_models_empty?
+    managed_models.all? { |model| model == ActiveStorage::Blob ? !run_blobs.exists? : !model.exists? }
+  end
+
+  def protected_baseline_receipt
+    return {} unless continuation?
+    verify_protected_baseline!
+    { protected_baseline: @m.fetch("protected_baseline"),
+      protected_baseline_status: %w[cleaned rolled_back].include?(@m["phase"]) ? "CLEAN_TO_PROTECTED_BASELINE" : "PROTECTED_BASELINE_VERIFIED",
+      retained_protected_blob_count: PROTECTED_BASELINE.fetch("blob_ids").length,
+      global_empty_baseline: false }
+  end
+
   def managed_models
     [User, *CONTENT.values, *AUXILIARY.values, EventInterest,
      ActiveStorage::Blob, ActiveStorage::Attachment,
@@ -276,6 +345,7 @@ class HostedAcceptanceFixtures
     refuse! unless (ENV["ISP_PRIVATE_ACCEPTANCE"] == "true") == native
     refuse! if native && ENV["APP_HOST"] != "isp-rails-startup.meithan-r.workers.dev"
     refuse! if ARGV.first != "status" && !native && ENV["ISP_STAGING_LEASE"] != "rails-staging-3"
+    refuse! if ENV.key?("ISP_ACCEPTANCE_CONTINUATION") && (!continuation? || !native)
     original_guard!
     raw = @db.raw_connection
     refuse! unless ENV["NEON_VERIFY_HOST"] == APPROVED_HOST
@@ -287,12 +357,14 @@ class HostedAcceptanceFixtures
   end
 
   def setup!
+    verify_protected_baseline!
+    @setup_protected_baseline = protected_baseline_record! if continuation?
     listing = ActiveStorage::Blob.service.client.client.list_objects_v2(bucket: "isp-staging-private", max_keys: 1)
     refuse! unless listing.contents.empty? && !listing.is_truncated
     @initial_bucket_empty = true
     ApplicationRecord.transaction do
       lock_tables!
-      refuse! if managed_models.any?(&:exists?) || LoginAttemptBucket.exists?
+      refuse! unless managed_models_empty? && !LoginAttemptBucket.exists?
       refuse! unless DiscoverSlide.all.all? { |slide| default_slide?(slide) }
       @initial_registry_state = MembershipRegistryState.order(:id).map(&:attributes)
       refuse! unless MembershipRegistryState.all.all? { |row| row.id == 1 && row.revision == 0 }
@@ -301,11 +373,13 @@ class HostedAcceptanceFixtures
   end
 
   def capture_data!
+    protected = verify_protected_baseline!
     previous = Array(@m.dig("records", "blobs")).deep_dup
     original_capture_data!
     @m["bucket_initially_empty"] = true if @initial_bucket_empty
     history = Array(@m["blob_history"]) + previous + @m.fetch("records").fetch("blobs")
     history.each do |row|
+      refuse! if protected.any? { |blob| row["id"].to_i == blob.id || row["key"] == blob.key }
       refuse! unless row["id"].to_i.positive? && BLOB_KEY.match?(row["key"].to_s) &&
         row["filename"].to_s.start_with?(@m.fetch("run_marker")) && row["service_name"] == "production_private"
     end
@@ -348,6 +422,7 @@ class HostedAcceptanceFixtures
     original = @m["registry_state"].fetch("original")
     refuse! if original.any? && state.map(&:id) != original.map { |row| row.fetch("id") }
     @m["registry_state"]["expected"] = state.map(&:attributes)
+    verify_protected_baseline!
   end
 
   def checked_capture!
@@ -395,12 +470,13 @@ class HostedAcceptanceFixtures
   end
 
   def empty_baseline?
-    !managed_models.any?(&:exists?) &&
+    managed_models_empty? &&
       same_json?(DiscoverSlide.ordered.map { |slide| slide_snapshot(slide) }, @m.fetch("discover").fetch("original")) &&
       same_json?(MembershipRegistryState.order(:id).map(&:attributes), @m.fetch("registry_state").fetch("original"))
   end
 
   def cleanup!
+    verify_protected_baseline!
     refuse! unless %w[prepared active cleanup_started cleaned rolled_back].include?(@m["phase"])
     ApplicationRecord.transaction do
       lock_tables!
@@ -457,6 +533,7 @@ class HostedAcceptanceFixtures
       end
     end
     @m["cleaned_at"] = stamp
+    @m["cleanup_status"] = "CLEAN_TO_PROTECTED_BASELINE" if continuation?
     save!(MANIFEST, @m)
     summary("cleanup")
   end
@@ -480,7 +557,7 @@ class HostedAcceptanceFixtures
       save!(OBSERVATIONS, { version: 1, lease_id: ENV["ISP_STAGING_LEASE"], run_marker: @m["run_marker"], target: @target,
         phase: @m["phase"], captured_at: stamp, actors: {}, events: [], publications: [],
         consultations: [], imports: [], registry: [], discover: DiscoverSlide.ordered.map { |s| slide_snapshot(s) },
-        remaining_throttle_bucket_count: LoginAttemptBucket.count })
+        remaining_throttle_bucket_count: LoginAttemptBucket.count, **protected_baseline_receipt })
       return summary("status")
     end
     refuse! unless %w[prepared active cleanup_started].include?(@m["phase"])
@@ -531,7 +608,7 @@ class HostedAcceptanceFixtures
         pending_outbox_count: AccountToken.where(delivery_status: "pending").count }],
       throttle: throttle_observations,
       counts: CONTENT.to_h { |kind, model| [kind, model.count] }.merge("blobs" => ActiveStorage::Blob.count),
-      remaining_throttle_bucket_count: LoginAttemptBucket.count })
+      remaining_throttle_bucket_count: LoginAttemptBucket.count, **protected_baseline_receipt })
     summary("status")
   end
 
@@ -543,7 +620,7 @@ class HostedAcceptanceFixtures
         consultations: ConsultationRequest.where(id: ids("consultations")).count,
         imports: MembershipImport.where(id: ids("imports")).count,
         registry: MembershipRegistryEntry.where(id: ids("registry")).count,
-        blobs: ActiveStorage::Blob.where(id: ids("blobs")).count })
+        blobs: ActiveStorage::Blob.where(id: ids("blobs")).count }, **protected_baseline_receipt)
   end
 
   def run!(arguments)

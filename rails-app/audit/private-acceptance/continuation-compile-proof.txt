@@ -1,0 +1,42 @@
+
+ ⛅️ wrangler 4.152.0
+────────────────────
+▲ [WARNING] Duplicate key "revision" in object literal [duplicate-object-key]
+
+    index.js:71:484:
+      71 │ ...class:null,...old,...fields,revision:(old?.revision??-1)+1,upda...
+         ╵                                ~~~~~~~~
+
+  The original key "revision" is here:
+
+    index.js:71:258:
+      71 │ ...;const trace=cleanTrace({id,revision:(old?.revision??-1)+1,star...
+         ╵                                ~~~~~~~~
+
+
+▲ [WARNING] Duplicate key "updated_at" in object literal [duplicate-object-key]
+
+    index.js:71:515:
+      71 │ ...sion:(old?.revision??-1)+1,updated_at:now},s.end);if(!trace)thr...
+         ╵                               ~~~~~~~~~~
+
+  The original key "updated_at" is here:
+
+    index.js:71:321:
+      71 │ ...ed_at:old?.started_at??now,updated_at:now,stage:'backend_http',...
+         ╵                               ~~~~~~~~~~
+
+
+Total Upload: 43.89 KiB / gzip: 11.72 KiB
+Your Worker has access to the following bindings:
+Binding                                                                     Resource                  
+env.ACCEPTANCE (ISPPrivateAcceptanceContinuation)                           Durable Object            
+env.ISP_ACCEPTANCE_ENABLED ("false")                                        Environment Variable      
+env.APP_HOST ("isp-rails-startup.meithan-r.workers.dev")                    Environment Variable      
+env.ISP_STAGING_START_AT ("")                                               Environment Variable      
+env.ISP_STAGING_EXPIRES_AT ("")                                             Environment Variable      
+
+The following containers are available:
+- ISPPrivateAcceptanceContinuation (durable_object)
+
+--dry-run: exiting now.

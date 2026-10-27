@@ -107,3 +107,6 @@ export class ISPPrivateAcceptance extends DurableObject {
  }catch{release?.();try{await this.record(id,{stage:'transport',outcome:'failed'});}catch{}if(!['GET','HEAD','OPTIONS'].includes(request.method)&&this.work)await this.stop('transport');return unavailable(id);}
  }
 }
+
+// A fresh namespace preserves the previous controller and its permanent stop latch.
+export class ISPPrivateAcceptanceContinuation extends ISPPrivateAcceptance {}

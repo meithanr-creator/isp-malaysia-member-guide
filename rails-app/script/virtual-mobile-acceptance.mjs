@@ -7,6 +7,7 @@ import {OFFLINE_DASHBOARD_URL,classifyRequestFailure,acceptableOfflineNavigation
 import {LEASE2,LEASE3,leaseContext,readPreparedRelease,preparedTuple,assertActiveRelease,assertWatchdogTuple,assertWritableLease,assertLeaseMutationAllowed} from './staging-lease-context.mjs';
 import {ORIGIN,LIMITS,PROFILES,REQUIRED_CASES,CoverageDeferred,ensure,sha256,encode,argumentsFor,profileWindow,admitCase,safeURL,dependencies,submitOnce,totp,verifyFile,uiComplete,databaseMatches,databaseProof,processReceiptMatches,aggregateStatus,runRenderedJourneys} from './virtual-mobile-journeys.mjs';
 import {privateContext,readPrivateAcceptance,assertPrivateAcceptanceAdmission} from './private-acceptance-context.mjs';
+import {readHistoricalIdentityCarry} from './private-acceptance-carry.mjs';
 export function selectedMobileContext(leaseId=process.env.ISP_STAGING_LEASE??LEASE3){
  if(leaseId==='rails-private-acceptance'){ensure(process.env.ISP_PRIVATE_ACCEPTANCE==='true');return privateContext();}
  ensure([LEASE2,LEASE3].includes(leaseId),'Explicit allowlisted mobile lease required');
@@ -43,7 +44,8 @@ export function readMobileInputs(name,{watchdog=true,now=Date.now()}={}){
 function readNativeMobileInputs(name,{watchdog,now}){
  const n=readPrivateAcceptance({active:watchdog}),r=readPrivate('runtime.json'),runtime=r.value,fixtures=readPrivate('acceptance-fixtures.json').value,http=readPrivate('acceptance-http.json').value,observations=readPrivate('acceptance-db-observations.json').value,phase=readPrivate('functional-phase-summary.json').value;
  ensure(runtime.APP_HOST===new URL(ORIGIN).host&&fixtures.target?.project==='royal-glitter-45740959'&&fixtures.target.host==='ep-delicate-frost-a1o15wrb.ap-southeast-1.aws.neon.tech'&&fixtures.target.database==='neondb');
- dependencies({profile:name,runtime,fixtures,http,observations,phase,preparedHash:n.prepared.prepared_release_sha256,now});
+ const carry=runtime.ISP_ACCEPTANCE_CONTINUATION==='true'?readHistoricalIdentityCarry(n):undefined;
+ dependencies({profile:name,runtime,fixtures,http,observations,phase,preparedHash:n.prepared.prepared_release_sha256,prepared:n.prepared,carry,now});
  if(watchdog&&process.env.ISP_MOBILE_RUNTIME_SHA256!==undefined)ensure(process.env.ISP_MOBILE_RUNTIME_SHA256===sha256(r.raw));
  if(watchdog&&process.env.ISP_MOBILE_ADMISSION_SHA256!==undefined)ensure(process.env.ISP_MOBILE_ADMISSION_SHA256===sha256(encode(n.snapshot)));
  const seal=readPrivate('sealed-version.json').value;

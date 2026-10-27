@@ -1,3 +1,20 @@
+# Current position — correction validated; continuation awaiting GitHub checks
+
+The event-upload correction was Astra-reviewed and all seven GitHub checks passed at source f026ef94c9269569a6454fd1c718822893af540b (run 40557865749). This is source validation, not a new hosted pass.
+
+Hosted acceptance remains 9 of 42 selected HTTP cases passed. The first event-create request returned 422; the historical cause remains unconfirmed. The corrected compatibility setting still needs a hosted event upload/save/preview/publish result. Thirty-three selected HTTP cases and the full virtual iPhone/Android journeys remain open.
+
+Astra has reviewed the continuation source: a fresh private namespace, fresh login/MFA sessions and separately bound historical evidence for the nine completed cases. The original stopped run will remain immutable. Only the two exact recovery tombstones form the protected baseline; new unsafe upload records still block cleanup. Cleanup must report CLEAN_TO_PROTECTED_BASELINE with retained count/hash and global_empty_baseline:false.
+
+Continuation local checks: 88 focused Node tests, 31 gateway tests and 19 Ruby tests / 47 assertions passed. An actual native CLI plan selects bootstrap plus the remaining 33 cases, carries nine historical passes separately and makes zero application requests. The installed Cloudflare compiler accepted the new class/configuration in dry-run mode. These checks do not advance the hosted count.
+
+The continuation code is approved for publication and exact-source GitHub validation. No archive move, new deployment, runtime, domain change or real-member operation has occurred. The pinned Rails image remains unchanged. All local work remains on D; demo areas remain excluded.
+
+The US$5 ceiling is unchanged. Conservatively allocate US$0.10 to the prior 86-second session (rounded to a 90-second bound); US$4.60 prior commitment plus US$0.40 reserved for the continuation totals US$5. The next fixed window is at most 53 minutes, keeping the combined runtime bound below the originally approved 55 minutes. This is commitment accounting, not an invoice. Fresh included-tier headroom is required before a live run.
+
+Four-step status: (1) correction source checks passed; (2) hosted acceptance partial, 9/42; (3) corrections implemented/reviewed, live verification pending; (4) recovery/email/operations/final review/domain launch open. No production-readiness claim is made.
+
+---
 # Current four-step checkpoint — 28 October 2026
 
 This checkpoint supersedes older current-status tables below. Evidence observed on 27 October at 17:11–17:37 UTC (28 October, 01:11–01:37 Malaysia time).

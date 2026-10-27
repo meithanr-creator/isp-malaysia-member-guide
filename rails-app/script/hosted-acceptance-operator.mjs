@@ -2,7 +2,8 @@
 import { lstatSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { parseEnv } from 'node:util';
+import { parseEnv,isDeepStrictEqual } from 'node:util';
+import {PROTECTED_BASELINE} from './private-acceptance-carry.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = 'D:/Projects/isp-member-rails';
@@ -114,7 +115,7 @@ export function buildEnvironment({leaseId=LEGACY_LEASE}={}) {
   return {
     ...env, ...keys,
     ...(selected.fresh?{ISP_STAGING_LEASE:selected.leaseId}:{}),
-    ...(selected.native?{ISP_PRIVATE_ACCEPTANCE:'true'}:{}),
+    ...(selected.native?{ISP_PRIVATE_ACCEPTANCE:'true',...(runtime.ISP_ACCEPTANCE_CONTINUATION==='true'?{ISP_ACCEPTANCE_CONTINUATION:'true'}:{})}:{}),
     DATABASE_URL: database, DATABASE_URL_UNPOOLED: database,
     NEON_VERIFY_HOST: HOST, PGSSLROOTCERT: CA, SSL_CERT_FILE: CA, AWS_CA_BUNDLE: CA, DB_SSLMODE: 'verify-full',
     RAILS_ENV: 'production', RAILS_LOG_LEVEL: 'fatal',
@@ -174,7 +175,12 @@ export function main(args = process.argv.slice(2)) {
     }
     counts[name] = receipt.counts[name];
   }
-  console.log(JSON.stringify({ ok: true, action, phase: receipt.phase, counts }));
+  let protectedReceipt={};
+  if(env.ISP_ACCEPTANCE_CONTINUATION==='true'){
+    if(!isDeepStrictEqual(receipt.protected_baseline,PROTECTED_BASELINE)||receipt.retained_protected_blob_count!==2||receipt.global_empty_baseline!==false||!['PROTECTED_BASELINE_VERIFIED','CLEAN_TO_PROTECTED_BASELINE'].includes(receipt.protected_baseline_status))fail('Protected recovery baseline receipt is incomplete.');
+    protectedReceipt={protected_baseline_status:receipt.protected_baseline_status,retained_protected_blob_count:2,protected_blob_rows_sha256:PROTECTED_BASELINE.blob_rows_sha256,global_empty_baseline:false};
+  }
+  console.log(JSON.stringify({ ok: true, action, phase: receipt.phase, counts,...protectedReceipt }));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

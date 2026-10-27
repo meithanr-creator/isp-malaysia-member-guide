@@ -1,5 +1,6 @@
 // Full rendered virtual-mobile coverage. Importing performs no I/O or network.
 import {createHash,createHmac} from 'node:crypto';
+import {CONTINUATION_BATCHES,continuationMobileSelectionMatches} from './hosted-execution-phase.mjs';
 export const ORIGIN=process.env.ISP_PRIVATE_ACCEPTANCE==='true'&&process.env.ISP_STAGING_LEASE==='rails-private-acceptance'?'https://isp-rails-startup.meithan-r.workers.dev':'https://isp-member-production.meithan-r.workers.dev';
 export const LIMITS=Object.freeze({requests:180,profile_ms:420000,reconcile_reserve_ms:120000,ordinary_ms:20000,upload_ms:45000,pdf_bytes:1048576});
 export const PROFILES=Object.freeze({'iphone-webkit':{device:'iPhone 13',engine:'webkit',admin:'admin_a'},'android-chromium':{device:'Pixel 7',engine:'chromium',admin:'admin_b'}});
@@ -25,12 +26,15 @@ export function admitCase({deadline,requests,now=Date.now(),reserveMs=20000,rese
 export function safeURL(value){
  const url=new URL(value,ORIGIN);ensure(url.origin===ORIGIN&&!url.username&&!url.password&&!url.hash&&url.href.length<=8192,'Only the fixed same-origin browser target is allowed');return url;
 }
-export function dependencies({profile,runtime,fixtures,http,phase,preparedHash,observations,now=Date.now()}){
+export function dependencies({profile,runtime,fixtures,http,phase,preparedHash,observations,prepared,carry,now=Date.now()}){
  ensure(Object.hasOwn(PROFILES,profile)&&fixtures?.phase==='active'&&/^qa-\d{8}-[a-f0-9]{12}$/.test(fixtures.run_marker));
  ensure(phase?.status==='selected_phase_complete'&&phase.mobile_eligible===true&&phase.phase==='functional'&&phase.run_marker===fixtures.run_marker&&phase.release?.prepared_release_sha256===preparedHash);
- ensure(JSON.stringify(phase.completed_batches)===JSON.stringify(BATCHES)&&phase.selected_case_ids?.length===42&&new Set(phase.selected_case_ids).size===42);
+ const continuation=runtime?.ISP_ACCEPTANCE_CONTINUATION==='true';
+ ensure(JSON.stringify(phase.completed_batches)===JSON.stringify(continuation?CONTINUATION_BATCHES:BATCHES)&&phase.selected_case_ids?.length===(continuation?33:42)&&new Set(phase.selected_case_ids).size===(continuation?33:42));
+ if(continuation)ensure(continuationMobileSelectionMatches({phase,state:http,fixtures,prepared,carry}),'Nine sealed historical PASS and thirty-three current PASS with a fresh reconciled bootstrap are required');
+ else ensure(http?.continuation!==true&&!http?.historical_carry,'Continuation evidence cannot enter a different execution mode');
  const leaseId=runtime?.ISP_STAGING_LEASE;
- ensure(['rails-staging-2','rails-staging-3','rails-private-acceptance'].includes(leaseId)&&fixtures.lease_id===leaseId&&phase.lease_id===leaseId&&phase.release?.lease_id===leaseId,'Exact selected mobile lease required');
+ ensure((!continuation||leaseId==='rails-private-acceptance')&&['rails-staging-2','rails-staging-3','rails-private-acceptance'].includes(leaseId)&&fixtures.lease_id===leaseId&&phase.lease_id===leaseId&&phase.release?.lease_id===leaseId,'Exact selected mobile lease required');
  ensure(http?.lease_id===leaseId&&http.prepared_release_sha256===preparedHash&&http.run_marker===fixtures.run_marker&&http.candidate===runtime.CANDIDATE_COMMIT&&http.deployment_id===runtime.CLOUDFLARE_DEPLOYMENT_ID&&JSON.stringify(http.target)===JSON.stringify(fixtures.target)&&!http.halted&&!http.running_batch);
  ensure(phase.selected_case_ids.every(id=>http.cases?.[id]?.status==='PASS'&&http.cases[id].http==='PASS'),'All selected HTTP cases need independent reconciliation');
  const admin=PROFILES[profile].admin,member=fixtures.actors?.member_b,a=fixtures.actors?.[admin];
