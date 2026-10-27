@@ -1,3 +1,18 @@
+# Current milestone checkpoint — 27 October 2026
+
+| Milestone | Current evidence | Remaining gate |
+| --- | --- | --- |
+| P0 Scope and guardrails | Maintained: Rails; D-only files; cumulative US$5; no public launch, DNS cutover, real members or outgoing identity emails | Enforce the separately bounded runtime and shutdown |
+| P1 Source and CI | Source 0099612 passed all seven checks; current controller correction has Astra source approval, 281 release tests and 20 native assertions passing | Exact new-commit CI and refreshed package/grant bindings |
+| P2 Hosting and recovery | Actual Neon/private-R2 read-only access PASS; unarmed package reviewed | Corrected live preflight, inactive deployment/seal, runtime and verified shutdown; full recovery proof remains open |
+| P3 Hosted acceptance/mobile | Revised full inventory 0/63; virtual iPhone/Android accepted | Actual hosted workflows, independent persistence/file/scanner proof, mobile and recovery evidence |
+| P4 Controlled launch | Open | Official identity-mail delivery; first admin/member/content; support, retention and ongoing cost; planterapp.co DNS/TLS; Astra final decision |
+
+The first corrected-storage preflight failed safely on a historical PID-less shutdown record before any application mutation. That record stays intact; current process/application absence is required by the reviewed source correction. Historical records below remain for provenance. Source or fixture tests do not substitute for hosted acceptance.
+
+---
+
+
 # Rails delivery milestones
 
 ## Current production gates — 27 October 2026

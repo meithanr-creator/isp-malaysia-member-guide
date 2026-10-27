@@ -1,3 +1,18 @@
+# Current deployment checkpoint — 27 October 2026
+
+This checkpoint supersedes historical status paragraphs below. Source `0099612fc9a8bca16256b7e33ba5ec27839742dd` passed all seven required checks in push run 40482076742 and applicable PR run 40482084853. Actual CI bundle/source inputs match the immutable tree. Corrected read-only Neon and private R2 access both passed, with no database or object writes.
+
+The actual GET-only preflight stopped before any lease3 Worker/application mutation because the historical legacy shutdown record has no process PID. Its original bytes remain in place. A separate Windows census found no matching ISP controller; this observation did not bypass the guard.
+
+Astra approved the narrow correction. It accepts only the exact retained seven-field terminal record and raw hash, together with a fresh complete process census, an actual Cloudflare HTTP 404 for the old application, and closed ingress/previews. It checks inactive Worker PUT, application POST, sealing and activation. The current operator and permitted sealed watchdog need exact process identities; malformed, foreign, nonterminal and ambiguous states refuse. Emergency cleanup remains independent. Native Windows fixtures passed all 20 assertions; the full saved-file release suite passed 281 tests with no failures or skips. The helper explicitly keeps temporary files and its module cache on D.
+
+Exact new-commit CI, refreshed package/grant binding, fresh live preflight and inactive installation/seal remain required. No lease3 application mutation or runtime has occurred. Owner-approved access ends at 2026-10-27T11:35:00Z (7:35 p.m. Malaysia). It does not start or extend a runtime. The runtime remains at most 55 minutes, with shutdown reserves and the cumulative US$5 ceiling.
+
+Hosted acceptance remains **0/63** and production **NO-GO**. Shop and Plantation Jobs remain frozen DEMO; Academy and Forum stay excluded. Final identity mail, administrator/member/content, support, retention, ongoing-cost and domain/TLS decisions remain separate launch gates.
+
+---
+
+
 # Current source and access checkpoint — 27 October 2026
 
 Astra approved the saved Windows storage transport correction for source publication. Actual276 release tests passed with zero failures/skips/cancellations. It uses only current public IPv4 routes for the two fixed endpoints through a client-local SDK transport, preserving original hostname/signing/strict TLS and existing bounds. No application/image change or global patch. Native79 SDK/transport and25 privacy assertions passed. Corrected exact-commit CI is pending; baseline8f86873 already passed all seven checks.

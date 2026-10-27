@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ProviderRequestError} from './provider-request-outcome.mjs';
-import {C,SECRET_NAMES,canonical,hash,instant,validateCI,validateGrant,workerMetadata,applicationRequest,verifyWorker,selectOwnedApplication,verifyInactiveApplication,preparedRecord,oneShot,runtimeObjects,bootstrapFence,finishHandoffRecords,completeEnvelope,staleLockRecovery,activationAdmission,assertActiveIngressReadback,activationMetadata,admitProviderRequest,failureShutdown} from './lease2-provision-core.mjs';
+import {C,SECRET_NAMES,canonical,hash,instant,validateCI,validateGrant,workerMetadata,applicationRequest,verifyWorker,selectOwnedApplication,verifyInactiveApplication,preparedRecord,oneShot,runtimeObjects,bootstrapFence,finishHandoffRecords,completeEnvelope,staleLockRecovery,assertHistoricalControllerState,activationAdmission,assertActiveIngressReadback,activationMetadata,admitProviderRequest,failureShutdown} from './lease2-provision-core.mjs';
 const NOW=Date.parse('2026-10-27T04:00:00Z'),SOURCE='6'.repeat(40),BUNDLE='7'.repeat(64),NS='8'.repeat(32);
 const NONCE='11111111-2222-4333-8444-555555555555',VER='22222222-3333-4444-8555-666666666666',DEP='33333333-4444-4555-8666-777777777777',APP='44444444-5555-4666-8777-888888888888';
 const config={compatibility_date:'2026-10-26',vars:{ISP_CONTAINER_ENABLED:'false',APP_HOST:C.host,ISP_STAGING_START_AT:'',ISP_STAGING_EXPIRES_AT:'',ISP_DEMO_MODE:'false',ISP_ACCOUNT_EMAILS_ENABLED:'false',ISP_ACCOUNT_EMAIL_DISPATCHER_ENABLED:'false',DB_SSLMODE:'verify-full'}};
@@ -197,4 +197,51 @@ test('active ingress readback stays bound to reconciled PUT version, deployment,
  const foreign=structuredClone(observed);foreign.deployment.id='55555555-6666-4777-8888-999999999999';const separatelyVerified={...third.verifyWorker(foreign,intent,activeConfig,false),module_sha256:BUNDLE};assert.throws(()=>third.assertActiveIngressReadback(initial,separatelyVerified));
  for(const change of [x=>x.content.modules[0].sha256='f'.repeat(64),x=>x.ingress.enabled=true,x=>x.ingress.previews_enabled=true]){const bad=structuredClone(observed);change(bad);assert.throws(()=>third.verifyWorker(bad,intent,activeConfig,false));}
  assert.throws(()=>assertActiveIngressReadback({...initial,module_sha256:undefined},initial));
+});
+
+import {preparedTuple} from './staging-lease-context.mjs';
+
+const LEGACY_TERMINAL_SHA='13c2a72dee8b05dfb5645bedd7087ba77cc321e5accfc91aaab8cf483691f55c';
+const legacyTerminal=()=>({armed:false,container_application_absent:true,ingress_closed:true,verified_at:'2026-10-26T09:55:57.343Z',application_id:C.oldApp,stop_at:'2026-10-26T09:54:50.000Z',updated_at:'2026-10-26T09:55:57.344Z'});
+const retirementProof=()=>({retiredApplication:{application_id:C.oldApp,http_status:404,ok:true,absent:true},ingress:{enabled:false,previews_enabled:false},observedAt:new Date(NOW-1000).toISOString(),now:NOW});
+function censusFixture(){
+ const currentLock={pid:123,nonce:NONCE,mode:'--preflight',at:new Date(NOW-500).toISOString()};
+ const own={pid:123,kind:'provision',fixed_identity:true,mode:'--preflight',created_at:new Date(NOW-1000).toISOString()};
+ return {census:{version:1,complete:true,method:'Win32_Process',observed_at:new Date(NOW-1000).toISOString(),process_count:563,observer_pid:124,parent_pid:123,controllers:[own]},options:{currentPid:123,currentLock,currentNonce:NONCE,mode:'--preflight',now:NOW}};
+}
+test('only the exact retained legacy terminal raw record plus actual current404 and closed ingress can retire missing PID',()=>{
+ assert.equal(third.assertHistoricalControllerState(legacyTerminal(),LEGACY_TERMINAL_SHA,retirementProof()),true);
+ for(const value of [null,undefined,[],{},false,{...legacyTerminal(),pid:null},{...legacyTerminal(),pid:77},{...legacyTerminal(),status:'PASS'},{...legacyTerminal(),armed:true},{...legacyTerminal(),container_application_absent:false},{...legacyTerminal(),ingress_closed:false},{...legacyTerminal(),application_id:APP},{...legacyTerminal(),stop_at:'2026-10-26T09:54:51.000Z'},{...legacyTerminal(),verified_at:'2026-10-26T09:55:58.343Z'},{...legacyTerminal(),updated_at:'2026-10-26T09:55:58.344Z'}])assert.throws(()=>third.assertHistoricalControllerState(value,LEGACY_TERMINAL_SHA,retirementProof()));
+ assert.throws(()=>third.assertHistoricalControllerState(legacyTerminal(),'f'.repeat(64),retirementProof()));
+ for(const change of [{http_status:200},{http_status:403},{http_status:null},{ok:false},{absent:false},{application_id:APP}]){const proof=retirementProof();Object.assign(proof.retiredApplication,change);assert.throws(()=>third.assertHistoricalControllerState(legacyTerminal(),LEGACY_TERMINAL_SHA,proof));}
+ for(const ingress of [{enabled:true,previews_enabled:false},{enabled:false,previews_enabled:true},{enabled:false},null])assert.throws(()=>third.assertHistoricalControllerState(legacyTerminal(),LEGACY_TERMINAL_SHA,{...retirementProof(),ingress}));
+ for(const observedAt of [new Date(NOW-60001).toISOString(),new Date(NOW+5001).toISOString(),'invalid'])assert.throws(()=>third.assertHistoricalControllerState(legacyTerminal(),LEGACY_TERMINAL_SHA,{...retirementProof(),observedAt}));
+ assert.throws(()=>assertHistoricalControllerState(legacyTerminal(),LEGACY_TERMINAL_SHA,retirementProof()));
+});
+test('complete current Windows census requires the exact own operator and fresh exclusive nonce',()=>{
+ const f=censusFixture();assert.equal(third.assertControllerCensus(f.census,f.options),true);
+ for(const change of [{complete:false},{version:2},{method:'snapshot'},{process_count:0},{process_count:8193},{observer_pid:123},{parent_pid:99},{controllers:[]},{controllers:null},{observed_at:new Date(NOW-60001).toISOString()},{observed_at:new Date(NOW+5001).toISOString()}])assert.throws(()=>third.assertControllerCensus({...f.census,...change},f.options));
+ for(const patch of [{currentPid:99},{currentNonce:VER},{currentNonce:undefined},{mode:'--provision'},{currentLock:{...f.options.currentLock,nonce:VER}},{currentLock:{...f.options.currentLock,at:'invalid'}}])assert.throws(()=>third.assertControllerCensus(f.census,{...f.options,...patch}));
+ for(const change of [{pid:0},{pid:'123'},{kind:'watchdog'},{fixed_identity:false},{mode:'--provision'},{created_at:'invalid'},{created_at:new Date(NOW+5001).toISOString()}])assert.throws(()=>third.assertControllerCensus({...f.census,controllers:[{...f.census.controllers[0],...change}]},f.options));
+});
+test('live old, foreign, duplicate or unclassified controllers never inherit an allowed PID exception',()=>{
+ const f=censusFixture();
+ for(const row of [{pid:125,kind:'watchdog',fixed_identity:true,mode:'--arm'},{pid:125,kind:'provision',fixed_identity:true,mode:'--provision'},{pid:125,kind:'other',fixed_identity:false,mode:'unknown'},{pid:123,kind:'provision',fixed_identity:true,mode:'--preflight'}])assert.throws(()=>third.assertControllerCensus({...f.census,controllers:[...f.census.controllers,{...row,created_at:new Date(NOW-2000).toISOString()}]},f.options));
+ for(const allowedWatchdogPid of [0,-1,'125',123,125])assert.throws(()=>third.assertControllerCensus(f.census,{...f.options,allowedWatchdogPid}));
+});
+test('only exact current sealed armed watchdog with fixed --arm command may coexist with activation',()=>{
+ const f=censusFixture(),prepared=fixture3().prepared,preparedHash='d'.repeat(64),tuple=preparedTuple({...prepared,prepared_release_sha256:preparedHash});
+ const state={...tuple,pid:125,armed:true,updated_at:new Date(NOW-1000).toISOString(),stop_at:new Date(NOW+50*60000).toISOString()},watchdog={pid:125,kind:'watchdog',fixed_identity:true,mode:'--arm',created_at:new Date(NOW-2000).toISOString()};
+ const census={...f.census,controllers:[...f.census.controllers,watchdog]},options={...f.options,allowedWatchdogPid:125,watchdogState:state,prepared,preparedHash};
+ assert.equal(third.assertControllerCensus(census,options),true);
+ for(const patch of [{armed:false},{pid:126},{namespace_id:'f'.repeat(32)},{lease_id:'rails-staging-2'},{updated_at:new Date(NOW-45001).toISOString()},{updated_at:new Date(NOW+5001).toISOString()},{stop_at:new Date(NOW).toISOString()}])assert.throws(()=>third.assertControllerCensus(census,{...options,watchdogState:{...state,...patch}}));
+ for(const change of [{kind:'provision'},{fixed_identity:false},{mode:'--stop-now'},{mode:'--arm --extra'},{created_at:new Date(NOW+5000).toISOString()}])assert.throws(()=>third.assertControllerCensus({...census,controllers:[f.census.controllers[0],{...watchdog,...change}]},options));
+ assert.throws(()=>third.assertControllerCensus(f.census,options));assert.throws(()=>third.assertControllerCensus(census,{...options,preparedHash:'f'.repeat(64)}));
+});
+test('each provider mutation boundary refuses a live competing controller before dispatch',async()=>{
+ for(const boundary of ['worker-put','app-post','seal','active-worker-put','active-ingress-post']){
+  const f=censusFixture();f.census.controllers.push({pid:125,kind:'watchdog',fixed_identity:true,mode:'--arm',created_at:new Date(NOW-2000).toISOString()});let dispatched=0,outcome;
+  await assert.rejects(()=>third.oneShot({kind:boundary,intent:{boundary},writeIntent:()=>{},writeOutcome:(_kind,value)=>{outcome=value;},mutate:()=>{third.assertHistoricalControllerState(legacyTerminal(),LEGACY_TERMINAL_SHA,retirementProof());third.assertControllerCensus(f.census,f.options);dispatched++;},reconcile:()=>null}));
+  assert.equal(dispatched,0);assert.equal(outcome.uncertain,true);
+ }
 });

@@ -4,14 +4,15 @@ import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
 import {randomUUID} from 'node:crypto';
-import {releaseProtocol} from './lease2-provision-core.mjs';
+import {spawnSync} from 'node:child_process';
+import {releaseProtocol,CONTROLLER_CENSUS_SCRIPT} from './lease2-provision-core.mjs';
 import {validatePreparedRelease,preparedTuple,leaseContext,selectLease,assertLeaseMutationAllowed,LEGACY_LEASE,LEASE2,LEASE3} from './staging-lease-context.mjs';
 import {LEASE3_POLICY,assertLease3Preflight,assertLease3SafetyBoundary,validateLease3AccessGrant} from './lease3-release-policy.mjs';
 import {stopStaging} from './cloudflare-staging-watchdog.mjs';
 import {readStagingCredential,validateVerifiedApiCredential} from './staging-credential-provider.mjs';
 import {performProviderRequest,publicProviderOutcome} from './provider-request-outcome.mjs';
 const selected=leaseContext(process.env.ISP_STAGING_LEASE===undefined?LEASE2:selectLease());
-const {C,Refused,must,hash,blobHash,canonical,hex,uuid,validateCI,validateConfig,validateBindings,validateGrant,workerMetadata,applicationRequest,verifyWorker,selectOwnedApplication,verifyInactiveApplication,preparedRecord,oneShot,runtimeObjects,bootstrapFence,finishHandoffRecords,completeEnvelope,staleLockRecovery,activationAdmission,assertActiveIngressReadback,activationMetadata,admitProviderRequest,failureShutdown}=releaseProtocol(selected.leaseId);
+const {C,Refused,must,hash,blobHash,canonical,hex,uuid,validateCI,validateConfig,validateBindings,validateGrant,workerMetadata,applicationRequest,verifyWorker,selectOwnedApplication,verifyInactiveApplication,preparedRecord,oneShot,runtimeObjects,bootstrapFence,finishHandoffRecords,completeEnvelope,staleLockRecovery,assertHistoricalControllerState,assertControllerCensus,activationAdmission,assertActiveIngressReadback,activationMetadata,admitProviderRequest,failureShutdown}=releaseProtocol(selected.leaseId);
 const ROOT='D:/Projects/isp-member-rails',PRIVATE=selected.privateRoot,CREDENTIALS=selected.credentialRoot;
 const OWN=fileURLToPath(new URL('..',import.meta.url)),A='/accounts/'+C.account,W=A+'/workers/scripts/'+C.worker,APP=A+'/containers/applications';
 const NOOP='node -e "console.log(\'ISP deployment is disabled; use the reviewed manual release procedure.\')"';
@@ -114,17 +115,43 @@ async function deployment(){
 const namespaces=async()=>{const rows=await get(A+'/workers/durable_objects/namespaces?per_page=1000');must(Array.isArray(rows)&&rows.length<1000);return rows;};
 const apps=async()=>{const rows=await get(APP+'?per_page=100');must(Array.isArray(rows)&&rows.length<100);return rows;};
 
-function localRecord(file){try{return JSON.parse(bytes(file,65536).toString('utf8').replace(/^\uFEFF/,''));}catch(error){if(error.code==='ENOENT')return null;throw error;}}
+function localRecord(file){try{const raw=bytes(file,65536);return {value:JSON.parse(raw.toString('utf8').replace(/^\uFEFF/,'')),sha256:hash(raw)};}catch(error){if(error.code==='ENOENT')return null;throw error;}}
 function processState(pid){must(Number.isSafeInteger(pid)&&pid>0,'Controller PID observation required');try{process.kill(pid,0);return 'live';}catch(error){must(error.code==='ESRCH','Controller liveness unknown');return 'absent';}}
-function noParallelController(allowedWatchdogPid=null){
+function currentControllerCensus(){
+ const env={};for(const name of ['SystemRoot','SYSTEMROOT','WINDIR','windir','ComSpec','COMSPEC'])if(process.env[name]!==undefined)env[name]=process.env[name];
+ env.TEMP='D:/Projects/isp-rails-tools/tmp';env.TMP=env.TEMP;env.PSModuleAnalysisCachePath=env.TEMP+'/isp-controller-module-analysis-cache';fixed(env.TEMP,true);if(fs.existsSync(env.PSModuleAnalysisCachePath))fixed(env.PSModuleAnalysisCachePath);
+ const observed=spawnSync('C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',CONTROLLER_CENSUS_SCRIPT],{cwd:ROOT,env,encoding:'utf8',shell:false,windowsHide:true,timeout:8000,maxBuffer:131072});
+ must(!observed.error&&observed.status===0&&observed.signal===null&&typeof observed.stdout==='string'&&Buffer.byteLength(observed.stdout)<=131072&&observed.stderr==='','Complete bounded controller census required');
+ try{return JSON.parse(observed.stdout.replace(/^\uFEFF/,''));}catch{throw new Refused('Controller census output incomplete');}
+}
+async function noParallelController(allowedWatchdogPid=null,boundary='preflight'){
+ must(selected.leaseId===LEASE3&&['preflight','worker-put','create','seal','activate'].includes(boundary),'Fixed controller boundary required');
+ let historical,currentLock,watchdogState=null;
  for(const leaseId of [LEGACY_LEASE,LEASE2,LEASE3]){
-  const context=leaseContext(leaseId),lock=localRecord(context.privateRoot+'/provision-operator.lock');
-  if(lock){const own=leaseId===selected.leaseId&&lock.pid===process.pid&&lock.nonce===lockNonce;must(own||processState(lock.pid)==='absent','Parallel provisioning controller refused');}
-  const state=localRecord(context.privateRoot+'/watchdog-state.json');
-  if(state){const expected=leaseId===selected.leaseId&&state.pid===allowedWatchdogPid;must(expected||processState(state.pid)==='absent','Parallel watchdog controller refused');}
+  const context=leaseContext(leaseId),lockEntry=localRecord(context.privateRoot+'/provision-operator.lock');
+  if(lockEntry){const lock=lockEntry.value;must(lock&&typeof lock==='object'&&!Array.isArray(lock),'Controller lock malformed');const own=leaseId===selected.leaseId&&lock.pid===process.pid&&lock.nonce===lockNonce&&lock.mode===process.argv[2];must(own||processState(lock.pid)==='absent','Parallel provisioning controller refused');if(own)currentLock=lock;}
+  const stateEntry=localRecord(context.privateRoot+'/watchdog-state.json');
+  if(leaseId===LEGACY_LEASE)must(stateEntry,'Exact historical controller record required');
+  if(stateEntry){
+   const state=stateEntry.value;must(state&&typeof state==='object'&&!Array.isArray(state),'Controller state malformed');
+   if(leaseId===LEGACY_LEASE){historical=stateEntry;if(!Object.hasOwn(state,'pid'))continue;}
+   const expected=Number.isSafeInteger(allowedWatchdogPid)&&allowedWatchdogPid>0&&leaseId===selected.leaseId&&state.pid===allowedWatchdogPid;
+   must(expected||processState(state.pid)==='absent','Parallel watchdog controller refused');if(expected){must(processState(state.pid)==='live','Selected watchdog is not live');watchdogState=state;}
+  }
  }
+ must(currentLock,'Exact current operator lock required');
+ const observedAt=new Date().toISOString(),census=currentControllerCensus();
+ const [retired,ingress]=await Promise.all([raw('GET',APP+'/'+C.oldApp,undefined,true,{captureOutcome:true}),get(W+'/subdomain')]);
+ const retiredApplication={application_id:C.oldApp,http_status:retired.provider_outcome.http_status,ok:retired.provider_outcome.ok===true,absent:retired.value===null};
+ must(historical,'Exact historical controller record required');
+ assertHistoricalControllerState(historical.value,historical.sha256,{retiredApplication,ingress,observedAt});
+ let prepared=null,preparedHash=null;
+ if(allowedWatchdogPid!==null){const source=bytes(p('prepared-release.json'));prepared=validatePreparedRelease(JSON.parse(source.toString('utf8')),selected.leaseId);preparedHash=hash(source);}
+ assertControllerCensus(census,{currentPid:process.pid,currentLock,currentNonce:lockNonce,mode:process.argv[2],allowedWatchdogPid,watchdogState,prepared,preparedHash});
+ durable('controller-boundary-observation-'+randomUUID()+'.json',{version:1,boundary,observed_at:observedAt,historical_state_sha256:historical?.sha256??null,census,retired_application:retiredApplication,retired_request_id:retired.provider_outcome.request_id,ingress});
  return {state:'absent',observed_at:new Date().toISOString()};
 }
+
 function dependencyAccess(){
  // Receipts must come from actual read-only probes; this operator never invents PASS.
  const dbBytes=bytes(p('database-access-observation.json'),65536),r2Bytes=bytes(p('storage-access-observation.json'),65536),db=JSON.parse(dbBytes.toString('utf8')),r2=JSON.parse(r2Bytes.toString('utf8'));
@@ -135,14 +162,14 @@ function dependencyAccess(){
 async function freshPreflight(){
  must(selected.leaseId===LEASE3,'Only the fresh fixed lease may bootstrap');const dependencies=dependencyAccess(),started=Date.now(),first=await deployment();
  const [account,control,ns,applications,content]=await Promise.all([get(A),controls(),namespaces(),apps(),get(W+'/content/v2')]);const last=await deployment();
- const observation={observed_at:new Date(started).toISOString(),account,completeness:{applications:true,namespaces:true},first,last,content,migration_tag:first.version.resources?.script_runtime?.migration_tag,ingress:control.ingress,trigger:control.trigger,controller:noParallelController(),namespaces:ns,applications,dependencies};
+ const observation={observed_at:new Date(started).toISOString(),account,completeness:{applications:true,namespaces:true},first,last,content,migration_tag:first.version.resources?.script_runtime?.migration_tag,ingress:control.ingress,trigger:control.trigger,controller:await noParallelController(null,'preflight'),namespaces:ns,applications,dependencies};
  durable('preflight-observation-'+randomUUID()+'.json',observation);const proof=assertLease3Preflight(observation);return {baseline:first,ns,applications,proof};
 }
 async function liveSafety(phase,worker,applicationId,{watchdogPid=null}={}){
  if(selected.leaseId!==LEASE3)return;const intent=json(p('worker-put-intent.json')),dependencies=dependencyAccess(),started=Date.now();
  const [account,control,ns,applications]=await Promise.all([get(A),controls(),namespaces(),apps()]);let application,instances;
  if(phase!=='create'){[application,instances]=await Promise.all([get(APP+'/'+applicationId),get(APP+'/'+applicationId+'/instances-v2?per_page=100')]);}
- const observation={observed_at:new Date(started).toISOString(),account,completeness:{applications:true,namespaces:true,instances:phase!=='create'},ingress:control.ingress,trigger:control.trigger,controller:noParallelController(watchdogPid),namespaces:ns,applications,application,instances,dependencies};
+ const observation={observed_at:new Date(started).toISOString(),account,completeness:{applications:true,namespaces:true,instances:phase!=='create'},ingress:control.ingress,trigger:control.trigger,controller:await noParallelController(watchdogPid,phase),namespaces:ns,applications,application,instances,dependencies};
  durable('safety-'+phase+'-'+randomUUID()+'.json',{observation});return assertLease3SafetyBoundary(observation,{phase,namespaceId:worker.namespace_id,applicationId,baselineNamespaceIds:intent.baseline.namespace_ids,baselineApplicationIds:intent.baseline.application_ids});
 }
 
@@ -175,7 +202,7 @@ async function provision(context){
  const vars=Object.fromEntries((baseline.version.resources?.bindings||[]).filter(x=>x.type==='plain_text').map(x=>[x.name,x.text]));must(vars.ISP_CONTAINER_ENABLED==='false'&&vars.ISP_STAGING_START_AT===''&&vars.ISP_STAGING_EXPIRES_AT==='');
  const intent={version:1,lease_id:selected.leaseId,preflight:proof,container_name:json(p('worker-upload-metadata.json')).containers?.[0]?.name,nonce:context.pack.nonce,source:context.pack.source,bundle_sha256:context.pack.bundle_sha256,metadata_sha256:context.pack.metadata_sha256,package_sha256:context.packageHash,config:context.config,created_at:new Date().toISOString(),baseline:{...baseline,namespace_ids:ns.map(x=>x.id),application_ids:applications.map(x=>x.id)}};
  const metadata=json(p('worker-upload-metadata.json')),code=bytes(p('worker-bundle.mjs')),body=new FormData();body.set('metadata',new Blob([canonical(metadata)],{type:'application/json'}));body.set('index.mjs',new File([code],'index.mjs',{type:'application/javascript+module'}));
- await oneShot({kind:'worker-put',intent,writeIntent:(k,v)=>durable(k+'-intent.json',v),writeOutcome:(k,v)=>durable(k+'-outcome.json',v),mutate:async()=>{await mutationGuard(context);return await raw('PUT',W,body,false,{captureOutcome:true});},reconcile:()=>observeWorker(intent)});
+ await oneShot({kind:'worker-put',intent,writeIntent:(k,v)=>durable(k+'-intent.json',v),writeOutcome:(k,v)=>durable(k+'-outcome.json',v),mutate:async()=>{await mutationGuard(context);await noParallelController(null,'worker-put');return await raw('PUT',W,body,false,{captureOutcome:true});},reconcile:()=>observeWorker(intent)});
  await createApp(context);
 }
 async function seal(){
