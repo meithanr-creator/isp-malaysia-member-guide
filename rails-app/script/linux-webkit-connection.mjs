@@ -2,6 +2,10 @@ import fs from 'node:fs';
 import {resolve} from 'node:path';
 const VERSION='1.64.1',REVISION='2370',MAX_MS=55*60000;
 import {LEASE2,LEASE3,leaseContext} from './staging-lease-context.mjs';
+export function browserContext(leaseId){
+ if(leaseId==='rails-private-acceptance')return {leaseId,privateRoot:'D:/Projects/isp-rails-tools/isp-staging-private/private-acceptance',auditRoot:'D:/Projects/isp-member-rails/audit/private-acceptance'};
+ return leaseContext(leaseId);
+}
 const FIELDS=['version','lease_id','private_root','audit_root','server_id','engine','platform','arch','node_version','playwright_version','browser_revision','ws_endpoint','created_at','expires_at','server_pid_linux'];
 const refused=()=>{throw Error('Private Linux WebKit connection refused');};
 const guard=ok=>{if(!ok)refused();};
@@ -9,7 +13,7 @@ export function validServerId(v){return typeof v==='string'&&v.length===36&&/^[a
 function instant(v){guard(typeof v==='string');const n=Date.parse(v);guard(Number.isFinite(n)&&new Date(n).toISOString()===v);return n;}
 export function validateLinuxWebKitConnection(p,{serverId,leaseId,deadline,now=Date.now()}={}){
  guard(p!==null&&typeof p==='object'&&!Array.isArray(p)&&Object.keys(p).length===FIELDS.length&&FIELDS.every(k=>Object.hasOwn(p,k)));
- guard([LEASE2,LEASE3].includes(leaseId));const context=leaseContext(leaseId);
+ guard([LEASE2,LEASE3,'rails-private-acceptance'].includes(leaseId));const context=browserContext(leaseId);
  guard(p.lease_id===leaseId&&p.private_root===context.privateRoot&&p.audit_root===context.auditRoot);
  guard(validServerId(serverId)&&p.server_id===serverId&&p.version===2&&p.engine==='webkit'&&p.platform==='linux'&&p.arch==='x64'&&p.node_version==='24.21.0'&&p.playwright_version===VERSION&&p.browser_revision===REVISION);
  guard(Number.isSafeInteger(p.server_pid_linux)&&p.server_pid_linux>0);
@@ -23,7 +27,7 @@ const norm=p=>resolve(p).replaceAll('\\','/').toLowerCase();
 function fixed(p,directory=false){const s=fs.lstatSync(p);guard(!s.isSymbolicLink()&&norm(fs.realpathSync(p))===norm(p)&&(directory?s.isDirectory():s.isFile()));return p;}
 export function readLinuxWebKitConnection({leaseId,privateRoot,deadline,serverId=process.env.ISP_LINUX_WEBKIT_SERVER_ID}={}){
  try{
-  guard([LEASE2,LEASE3].includes(leaseId));const context=leaseContext(leaseId);
+  guard([LEASE2,LEASE3,'rails-private-acceptance'].includes(leaseId));const context=browserContext(leaseId);
   guard(process.platform==='win32'&&privateRoot===context.privateRoot&&validServerId(serverId));
   const directory=`${context.privateRoot}/linux-webkit/${serverId}`;fixed(directory,true);
   const file=fixed(`${directory}/connection.json`);guard(fs.statSync(file).size<=8192);

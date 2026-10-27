@@ -6,7 +6,9 @@ import {connectLinuxWebKit,closeLinuxWebKitConnection} from './linux-webkit-conn
 import {OFFLINE_DASHBOARD_URL,classifyRequestFailure,acceptableOfflineNavigationError} from './virtual-mobile-failures.mjs';
 import {LEASE2,LEASE3,leaseContext,readPreparedRelease,preparedTuple,assertActiveRelease,assertWatchdogTuple,assertWritableLease,assertLeaseMutationAllowed} from './staging-lease-context.mjs';
 import {ORIGIN,LIMITS,PROFILES,REQUIRED_CASES,CoverageDeferred,ensure,sha256,encode,argumentsFor,profileWindow,admitCase,safeURL,dependencies,submitOnce,totp,verifyFile,uiComplete,databaseMatches,databaseProof,processReceiptMatches,aggregateStatus,runRenderedJourneys} from './virtual-mobile-journeys.mjs';
+import {privateContext,readPrivateAcceptance,assertPrivateAcceptanceAdmission} from './private-acceptance-context.mjs';
 export function selectedMobileContext(leaseId=process.env.ISP_STAGING_LEASE??LEASE3){
+ if(leaseId==='rails-private-acceptance'){ensure(process.env.ISP_PRIVATE_ACCEPTANCE==='true');return privateContext();}
  ensure([LEASE2,LEASE3].includes(leaseId),'Explicit allowlisted mobile lease required');
  return leaseContext(leaseId);
 }
@@ -24,6 +26,7 @@ export function durable(path,value,exclusive=false){
 }
 export function readMobileInputs(name,{watchdog=true,now=Date.now()}={}){
  ensure(process.platform==='win32'&&process.versions.node==='24.21.0'&&process.env.ISP_STAGING_LEASE===CONTEXT.leaseId,'Pinned Windows controller and explicit matching lease required');
+ if(CONTEXT.native)return readNativeMobileInputs(name,{watchdog,now});
  if(watchdog)assertLeaseMutationAllowed(CONTEXT);
  fixed(PRIVATE,true);assertWritableLease(CONTEXT);const prepared=readPreparedRelease(CONTEXT),r=readPrivate('runtime.json'),runtime=r.value,release=readPrivate('acceptance-release.json').value;
  assertActiveRelease(CONTEXT,runtime,release,prepared);
@@ -37,6 +40,15 @@ export function readMobileInputs(name,{watchdog=true,now=Date.now()}={}){
  if(watchdog&&process.env.ISP_MOBILE_ADMISSION_SHA256!==undefined)ensure(process.env.ISP_MOBILE_ADMISSION_SHA256===sha256(encode(admissionSnapshot)),'Wrapper admission changed before browser launch');
  return {runtime,fixtures,http,observations,prepared,admissionSnapshot,runtimeHash:sha256(r.raw),release:{...preparedTuple(prepared),worker_version:release.worker_version,deployment_id:release.deployment_id}};
 }
+function readNativeMobileInputs(name,{watchdog,now}){
+ const n=readPrivateAcceptance({active:watchdog}),r=readPrivate('runtime.json'),runtime=r.value,fixtures=readPrivate('acceptance-fixtures.json').value,http=readPrivate('acceptance-http.json').value,observations=readPrivate('acceptance-db-observations.json').value,phase=readPrivate('functional-phase-summary.json').value;
+ ensure(runtime.APP_HOST===new URL(ORIGIN).host&&fixtures.target?.project==='royal-glitter-45740959'&&fixtures.target.host==='ep-delicate-frost-a1o15wrb.ap-southeast-1.aws.neon.tech'&&fixtures.target.database==='neondb');
+ dependencies({profile:name,runtime,fixtures,http,observations,phase,preparedHash:n.prepared.prepared_release_sha256,now});
+ if(watchdog&&process.env.ISP_MOBILE_RUNTIME_SHA256!==undefined)ensure(process.env.ISP_MOBILE_RUNTIME_SHA256===sha256(r.raw));
+ if(watchdog&&process.env.ISP_MOBILE_ADMISSION_SHA256!==undefined)ensure(process.env.ISP_MOBILE_ADMISSION_SHA256===sha256(encode(n.snapshot)));
+ const seal=readPrivate('sealed-version.json').value;
+ return {runtime,fixtures,http,observations,prepared:n.prepared,admissionSnapshot:watchdog?n.snapshot:null,runtimeHash:sha256(r.raw),release:{...n.prepared,worker_version:seal.version_id,deployment_id:seal.deployment_id}};
+}
 function publicReport(j){
  return {version:2,scope:'Virtual browser engines and mobile profiles; physical devices/native installation/native PDF viewer are unproved',status:aggregateStatus(j),run_marker:j.run_marker,release:j.release,profiles:Object.values(j.profiles).map(p=>({name:p.name,status:p.status,engine:p.engine,engine_version:p.engine_version,execution_platform:p.execution_platform,started_at:p.started_at,finished_at:p.finished_at,requests:p.requests,checks:p.checks,cases:p.cases,screenshots:p.screenshots,cleanup:p.cleanup,process_cleanup:p.process_cleanup,db_reconciled:p.db_reconciled,errors:p.errors,failure_phase:p.failure_phase,elapsed_ms:p.elapsed_ms})),deferred:['natural aged MFA step-up is a separate window','physical devices, native install, OS PDF viewer, assistive-technology/conformance audit'],production_release_approved:false};
 }
@@ -44,7 +56,7 @@ function save(j){durable(JOURNAL,j);durable(PUBLIC,publicReport(j));}
 function matchingJournal(j,input){ensure(j?.version===2&&j.lease_id===CONTEXT.leaseId&&j.run_marker===input.fixtures.run_marker&&j.runtime_sha256===input.runtimeHash&&JSON.stringify(j.release)===JSON.stringify(input.release),'Mobile journal release/run differs');}
 export async function executeProfile(name,input){
  ensure(input.admissionSnapshot&&process.env.ISP_MOBILE_RUNTIME_SHA256===input.runtimeHash&&process.env.ISP_MOBILE_ADMISSION_SHA256===sha256(encode(input.admissionSnapshot)),'Original wrapper admission binding required');
- assertLeaseMutationAllowed(CONTEXT);
+ if(CONTEXT.native)assertPrivateAcceptanceAdmission(input.runtime,0,input.admissionSnapshot);else assertLeaseMutationAllowed(CONTEXT);
  ensure(input?.runtime?.ISP_STAGING_LEASE===CONTEXT.leaseId&&input.fixtures?.lease_id===CONTEXT.leaseId&&input.release?.lease_id===CONTEXT.leaseId,'Matching selected mobile execution tuple required');
  const {runtime,fixtures,http,observations}=input,profile=PROFILES[name],window=profileWindow(runtime);
  let journal;
@@ -63,7 +75,7 @@ export async function executeProfile(name,input){
  const operation=(fn,cap=20000)=>bounded(fn,remaining(cap));
  const check=(ok,label)=>{ensure(ok,label);result.checks.push(label);};
  const evaluate=(p,fn,arg)=>operation(()=>p.evaluate(fn,arg));
- const verifyWatchdog=()=>readActiveStagingAdmission(CONTEXT,{expectedRuntime:runtime,prepared:input.prepared,expectedSnapshot:input.admissionSnapshot});
+ const verifyWatchdog=()=>CONTEXT.native?assertPrivateAcceptanceAdmission(runtime,0,input.admissionSnapshot):readActiveStagingAdmission(CONTEXT,{expectedRuntime:runtime,prepared:input.prepared,expectedSnapshot:input.admissionSnapshot});
  const admit=()=>{verifyWatchdog();ensure(Date.now()<window.deadline&&!deadlineHit&&result.requests<LIMITS.requests,'Mobile request/time budget reached');};
  async function role(label,gate,{page:withPage=true,cookies}={}){
   admit();const ctx=await operation(()=>browser.newContext({...devices[profile.device],reducedMotion:'reduce'}),15000);contexts.push(ctx);

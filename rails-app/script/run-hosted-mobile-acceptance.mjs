@@ -18,7 +18,7 @@ export function completeReceipt({profile,leaseId,runMarker,controller,snapshot,o
  const receipt={version:1,lease_id:leaseId,profile,run_marker:runMarker,controller_pid:controller?.pid,controller_exit_code:controller?.code,controller_exited:controller?.finished===true,browser_absent:!!snapshot&&observation?.absent===true,observed_at:new Date(now).toISOString()};
  if(profile==='iphone-webkit')Object.assign(receipt,{server_id:id,server_pid_linux:snapshot?.server?.pid,browser_pid_linux:snapshot?.browser?.pid,server_absent:observation?.own_server_pids?.length===0,wsl_child_exited:server?.finished===true,wsl_child_exit_code:server?.code});
  else receipt.browser_pid_windows=snapshot?.browser?.pid;
- const success=['rails-staging-2','rails-staging-3'].includes(leaseId)&&snapshot?.lease_id===leaseId&&observation?.lease_id===leaseId&&receipt.controller_pid>0&&receipt.controller_exit_code===0&&receipt.controller_exited&&receipt.browser_absent&&Date.parse(finishedAt)<=now&&(profile==='iphone-webkit'?receipt.server_pid_linux>0&&receipt.browser_pid_linux>0&&receipt.server_pid_linux!==receipt.browser_pid_linux&&receipt.server_absent&&receipt.wsl_child_exited&&receipt.wsl_child_exit_code===0:receipt.browser_pid_windows>0);
+ const success=['rails-staging-2','rails-staging-3','rails-private-acceptance'].includes(leaseId)&&snapshot?.lease_id===leaseId&&observation?.lease_id===leaseId&&receipt.controller_pid>0&&receipt.controller_exit_code===0&&receipt.controller_exited&&receipt.browser_absent&&Date.parse(finishedAt)<=now&&(profile==='iphone-webkit'?receipt.server_pid_linux>0&&receipt.browser_pid_linux>0&&receipt.server_pid_linux!==receipt.browser_pid_linux&&receipt.server_absent&&receipt.wsl_child_exited&&receipt.wsl_child_exit_code===0:receipt.browser_pid_windows>0);
  return {receipt,success};
 }
 export function ownWindowsSnapshot(rows,root,controllerPid,previous=[]){
@@ -32,7 +32,7 @@ export function processAbsence(rows,snapshot){return !!snapshot&&snapshot.tracke
 const PY=[
 'import os,sys,json',
 'mode,lease,ident,pid,node,script,mini,tracked=sys.argv[1:]',
-"assert lease in ['rails-staging-2','rails-staging-3']",
+"assert lease in ['rails-staging-2','rails-staging-3','rails-private-acceptance']",
 "want=[node,script,'--lease',lease,'--id',ident]",
 'def record(p):',
 " t=open('/proc/'+str(p)+'/stat').read().rsplit(') ',1)[1].split()",

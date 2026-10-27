@@ -1,0 +1,19 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {waitForPrivateReadiness} from './private-acceptance-health.mjs';
+import {computeCeiling,validateBudget} from './private-acceptance.mjs';
+const denied={status:503,body:'ISP member service is not available yet.',cache:'no-store'};
+function harness(responses){let at=1000,admissions=0;const seen=[];return {seen,get admissions(){return admissions;},input:{deadline:100000,now:()=>at,pause:async ms=>{at+=ms;},admit:()=>{admissions++;},record:x=>seen.push(x),request:async()=>{if(!responses.length)throw Error('unplanned request');return responses.shift();}}};}
+test('known dependency initialization is bounded polling after both anonymous denials',async()=>{const h=harness([denied,denied,denied,{status:200,body:'ready'}]);const r=await waitForPrivateReadiness(h.input);assert.equal(r.status,'PASS');assert.equal(h.admissions,4);assert.equal(r.attempts,2);});
+test('403 and wrong success body fail immediately; there is no permissive health fallback',async()=>{for(const r of [{status:403,body:'blocked'},{status:200,body:'OK'}]){const h=harness([denied,denied,r]);await assert.rejects(waitForPrivateReadiness(h.input));assert.equal(h.admissions,3);}});
+test('anonymous exposure stops before any keyed request',async()=>{const h=harness([{status:200,body:'private'}]);await assert.rejects(waitForPrivateReadiness(h.input),/private_gate/);assert.equal(h.admissions,1);});
+test('transport failure is retained by caller and never blindly replayed',async()=>{let n=0;const h=harness([]);h.input.request=async()=>{n++;throw Error('transport');};await assert.rejects(waitForPrivateReadiness(h.input),/transport/);assert.equal(n,1);});
+test('55 minute compute and cumulative reservation are bounded, not reported as actual charges',()=>{assert.ok(Math.abs(computeCeiling()-0.118272)<1e-12);assert.throws(()=>computeCeiling(3301));assert.equal(validateBudget({ceiling_usd:5,prior_conservative_commitment_usd:4.5,reserved_session_usd:0.5,unallocated_usd:0,actual_invoice:false}).actual_invoice,false);assert.throws(()=>validateBudget({ceiling_usd:6}));});
+
+import {runWatchLoop} from './private-acceptance.mjs';
+test('watch stops even when heartbeat persistence fails and does not require normal packet admission',async()=>{let stopped=0;const result=await runWatchLoop({state:{parent_pid:123,end_at:new Date(3300000).toISOString()},now:()=>1000,isAlive:()=>true,stopping:()=>false,persist:()=>{throw Error('disk failure');},pause:async()=>{},stop:async()=>{stopped++;return {status:'PASS'};}});assert.equal(stopped,1);assert.equal(result.status,'PASS');});
+test('parent absence and invalid local deadline each still invoke the fixed cleanup callback',async()=>{for(const state of [{parent_pid:1,end_at:new Date(3300000).toISOString()},{parent_pid:1,end_at:'bad'}]){let stopped=0;await runWatchLoop({state,now:()=>1000,isAlive:()=>false,persist:()=>assert.fail('must not write'),stop:async()=>{stopped++;}});assert.equal(stopped,1);}});
+
+import {persistProviderObservation} from './private-acceptance.mjs';
+test('cleanup logging failure does not interrupt provider-response processing, and evidence loss is explicit',()=>{let incomplete=false,continued=false;persistProviderObservation({http_status:200},{bestEffort:true,persist:()=>{throw Error('disk full');},markIncomplete:()=>{incomplete=true;}});continued=true;assert.equal(continued,true);assert.equal(incomplete,true);});
+test('ordinary deployment and enable calls remain strict if provider evidence cannot be saved',()=>{assert.throws(()=>persistProviderObservation({http_status:200},{persist:()=>{throw Error('disk full');}}),/disk full/);});

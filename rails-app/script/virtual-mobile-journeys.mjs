@@ -1,6 +1,6 @@
 // Full rendered virtual-mobile coverage. Importing performs no I/O or network.
 import {createHash,createHmac} from 'node:crypto';
-export const ORIGIN='https://isp-member-production.meithan-r.workers.dev';
+export const ORIGIN=process.env.ISP_PRIVATE_ACCEPTANCE==='true'&&process.env.ISP_STAGING_LEASE==='rails-private-acceptance'?'https://isp-rails-startup.meithan-r.workers.dev':'https://isp-member-production.meithan-r.workers.dev';
 export const LIMITS=Object.freeze({requests:180,profile_ms:420000,reconcile_reserve_ms:120000,ordinary_ms:20000,upload_ms:45000,pdf_bytes:1048576});
 export const PROFILES=Object.freeze({'iphone-webkit':{device:'iPhone 13',engine:'webkit',admin:'admin_a'},'android-chromium':{device:'Pixel 7',engine:'chromium',admin:'admin_b'}});
 export const REQUIRED_CASES=Object.freeze(['private_gate','landing_menu_keyboard','member_login','member_profile','consultation','administrator_mfa','discover_edit','event_edit_preview_publish','publication_edit_preview_publish','interest_repeat','protected_pdf_auth_hash','carousel_keyboard_accessibility','pwa','offline_privacy','responsive','logout_back','administrator_logout']);
@@ -30,7 +30,7 @@ export function dependencies({profile,runtime,fixtures,http,phase,preparedHash,o
  ensure(phase?.status==='selected_phase_complete'&&phase.mobile_eligible===true&&phase.phase==='functional'&&phase.run_marker===fixtures.run_marker&&phase.release?.prepared_release_sha256===preparedHash);
  ensure(JSON.stringify(phase.completed_batches)===JSON.stringify(BATCHES)&&phase.selected_case_ids?.length===42&&new Set(phase.selected_case_ids).size===42);
  const leaseId=runtime?.ISP_STAGING_LEASE;
- ensure(['rails-staging-2','rails-staging-3'].includes(leaseId)&&fixtures.lease_id===leaseId&&phase.lease_id===leaseId&&phase.release?.lease_id===leaseId,'Exact selected mobile lease required');
+ ensure(['rails-staging-2','rails-staging-3','rails-private-acceptance'].includes(leaseId)&&fixtures.lease_id===leaseId&&phase.lease_id===leaseId&&phase.release?.lease_id===leaseId,'Exact selected mobile lease required');
  ensure(http?.lease_id===leaseId&&http.prepared_release_sha256===preparedHash&&http.run_marker===fixtures.run_marker&&http.candidate===runtime.CANDIDATE_COMMIT&&http.deployment_id===runtime.CLOUDFLARE_DEPLOYMENT_ID&&JSON.stringify(http.target)===JSON.stringify(fixtures.target)&&!http.halted&&!http.running_batch);
  ensure(phase.selected_case_ids.every(id=>http.cases?.[id]?.status==='PASS'&&http.cases[id].http==='PASS'),'All selected HTTP cases need independent reconciliation');
  const admin=PROFILES[profile].admin,member=fixtures.actors?.member_b,a=fixtures.actors?.[admin];
@@ -69,7 +69,7 @@ export function verifyFile(meta,body,expectedHash,type){
 export const REQUIRED_MUTATIONS=Object.freeze(Object.keys(MUTATIONS));
 export function uiComplete(profile){return REQUIRED_MUTATIONS.every(id=>profile.actions?.[id]?.status==='observed')&&REQUIRED_CASES.every(id=>profile.cases?.[id]?.status==='PASS')&&profile.cleanup==='pass'&&profile.errors?.length===0&&Object.values(profile.actions||{}).every(a=>a.status==='observed');}
 export function databaseMatches(profile,obs,fixtures){
- if(!['rails-staging-2','rails-staging-3'].includes(fixtures?.lease_id)||profile?.lease_id!==fixtures.lease_id||obs?.lease_id!==fixtures.lease_id||!uiComplete(profile)||obs?.version!==1||obs.phase!=='active'||obs.run_marker!==fixtures.run_marker||JSON.stringify(obs.target)!==JSON.stringify(fixtures.target)||!Number.isFinite(Date.parse(obs.captured_at))||!Number.isFinite(Date.parse(profile.finished_at))||Date.parse(obs.captured_at)<Date.parse(profile.finished_at))return false;
+ if(!['rails-staging-2','rails-staging-3','rails-private-acceptance'].includes(fixtures?.lease_id)||profile?.lease_id!==fixtures.lease_id||obs?.lease_id!==fixtures.lease_id||!uiComplete(profile)||obs?.version!==1||obs.phase!=='active'||obs.run_marker!==fixtures.run_marker||JSON.stringify(obs.target)!==JSON.stringify(fixtures.target)||!Number.isFinite(Date.parse(obs.captured_at))||!Number.isFinite(Date.parse(profile.finished_at))||Date.parse(obs.captured_at)<Date.parse(profile.finished_at))return false;
  const e=profile.expected,m=obs.actors?.member_b,a=obs.actors?.[profile.admin];
  if(!e||!m||!a||m.id!==fixtures.actors.member_b.id||m.email!==fixtures.actors.member_b.email||m.role!=='member'||m.account_status!=='active'||Object.entries(e.profile).some(([k,v])=>m[k]!==v)||a.id!==fixtures.actors[profile.admin].id||a.mfa_enabled!==true||a.usable_challenge_count!==0)return false;
  for(const alias of ['member_b',profile.admin]){const baseline=new Set(profile.baseline_sessions?.[alias]||[]);if(!Array.isArray(obs.actors[alias].sessions)||obs.actors[alias].sessions.some(x=>!baseline.has(x.id)))return false;}
@@ -88,12 +88,12 @@ export function databaseProof(profile,observations,fixtures,{retainedRaw,now=Dat
  return {raw,sha256:sha256(raw)};
 }
 export function processReceiptMatches(profile,receipt,journal){
- if(!['rails-staging-2','rails-staging-3'].includes(journal?.lease_id)||profile?.lease_id!==journal.lease_id||receipt?.lease_id!==journal.lease_id||receipt?.version!==1||receipt.status!=='UI_COMPLETE_AWAITING_RECONCILIATION'||receipt.profile!==profile.name||receipt.run_marker!==journal.run_marker||receipt.controller_pid!==profile.controller_pid||receipt.controller_exit_code!==0||receipt.controller_exited!==true||receipt.browser_absent!==true||!Number.isFinite(Date.parse(receipt.observed_at))||!Number.isFinite(Date.parse(profile.finished_at))||Date.parse(receipt.observed_at)<Date.parse(profile.finished_at))return false;
+ if(!['rails-staging-2','rails-staging-3','rails-private-acceptance'].includes(journal?.lease_id)||profile?.lease_id!==journal.lease_id||receipt?.lease_id!==journal.lease_id||receipt?.version!==1||receipt.status!=='UI_COMPLETE_AWAITING_RECONCILIATION'||receipt.profile!==profile.name||receipt.run_marker!==journal.run_marker||receipt.controller_pid!==profile.controller_pid||receipt.controller_exit_code!==0||receipt.controller_exited!==true||receipt.browser_absent!==true||!Number.isFinite(Date.parse(receipt.observed_at))||!Number.isFinite(Date.parse(profile.finished_at))||Date.parse(receipt.observed_at)<Date.parse(profile.finished_at))return false;
  if(profile.name==='iphone-webkit')return receipt.server_id===profile.server_id&&receipt.server_pid_linux===profile.server_pid_linux&&receipt.server_pid_linux>0&&receipt.browser_pid_linux>0&&receipt.server_pid_linux!==receipt.browser_pid_linux&&receipt.server_absent===true&&receipt.wsl_child_exited===true&&receipt.wsl_child_exit_code===0;
  return Number.isSafeInteger(receipt.browser_pid_windows)&&receipt.browser_pid_windows===profile.browser_pid_windows&&receipt.browser_pid_windows>0;
 }
 export function aggregateStatus(journal){
- return ['rails-staging-2','rails-staging-3'].includes(journal?.lease_id)&&Object.keys(PROFILES).every(name=>journal.profiles?.[name]?.lease_id===journal.lease_id&&journal.profiles[name]?.status==='PASS'&&journal.profiles[name].db_reconciled===true&&journal.profiles[name].process_cleanup==='pass'&&uiComplete(journal.profiles[name]))?'PASS':'OPEN';
+ return ['rails-staging-2','rails-staging-3','rails-private-acceptance'].includes(journal?.lease_id)&&Object.keys(PROFILES).every(name=>journal.profiles?.[name]?.lease_id===journal.lease_id&&journal.profiles[name]?.status==='PASS'&&journal.profiles[name].db_reconciled===true&&journal.profiles[name].process_cleanup==='pass'&&uiComplete(journal.profiles[name]))?'PASS':'OPEN';
 }
 async function fields(form,prefix,values){
  for(const [name,value] of Object.entries(values)){const input=form.locator('[name="'+prefix+'['+name+']"]');const tag=await input.evaluate(el=>el.tagName);if(tag==='SELECT')await input.selectOption(value);else await input.fill(value);}

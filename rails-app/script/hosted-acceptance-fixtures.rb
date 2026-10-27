@@ -13,7 +13,8 @@ class HostedAcceptanceFixtures
   ROOT = {
     nil => "D:/Projects/isp-rails-tools/isp-staging-private",
     "rails-staging-2" => "D:/Projects/isp-rails-tools/isp-staging-private/leases/rails-staging-2",
-    "rails-staging-3" => "D:/Projects/isp-rails-tools/isp-staging-private/leases/rails-staging-3"
+    "rails-staging-3" => "D:/Projects/isp-rails-tools/isp-staging-private/leases/rails-staging-3",
+    "rails-private-acceptance" => "D:/Projects/isp-rails-tools/isp-staging-private/private-acceptance"
   }.fetch(ENV["ISP_STAGING_LEASE"]) { raise Refused, "Fixture lease refused." }.freeze
   MANIFEST = "#{ROOT}/acceptance-fixtures.json".freeze
   OBSERVATIONS = "#{ROOT}/acceptance-db-observations.json".freeze
@@ -27,7 +28,10 @@ class HostedAcceptanceFixtures
     "registry" => MembershipRegistryEntry }.freeze
   def refuse! = raise(Refused, "Fixture operation refused; review the private staging prerequisites.")
   def guard!
-    refuse! if ARGV.first != "status" && ENV["ISP_STAGING_LEASE"] != "rails-staging-3"
+    native = ENV["ISP_STAGING_LEASE"] == "rails-private-acceptance"
+    refuse! unless (ENV["ISP_PRIVATE_ACCEPTANCE"] == "true") == native
+    refuse! if native && ENV["APP_HOST"] != "isp-rails-startup.meithan-r.workers.dev"
+    refuse! if ARGV.first != "status" && !native && ENV["ISP_STAGING_LEASE"] != "rails-staging-3"
     refuse! unless Rails.env.production? && ENV["ISP_ACCEPTANCE_FIXTURES"] == "true"
     refuse! unless ENV["ISP_ACCEPTANCE_NEON_PROJECT"] == PROJECT
     refuse! unless ENV["ISP_DEMO_MODE"] == "false"
@@ -75,7 +79,7 @@ class HostedAcceptanceFixtures
     @m = JSON.parse(File.read(MANIFEST))
     refuse! unless @m["version"] == 1 && MARKER.match?(@m["run_marker"].to_s) && @m["target"] == @target
     refuse! if @m.key?("lease_id") && @m["lease_id"] != ENV["ISP_STAGING_LEASE"]
-    refuse! if ENV["ISP_STAGING_LEASE"] == "rails-staging-3" && @m["lease_id"] != "rails-staging-3"
+    refuse! if %w[rails-staging-3 rails-private-acceptance].include?(ENV["ISP_STAGING_LEASE"]) && @m["lease_id"] != ENV["ISP_STAGING_LEASE"]
     refuse! unless @m["actors"].is_a?(Hash) && @m["records"].is_a?(Hash)
   end
   def ids(kind) = Array(@m.fetch("records").fetch(kind, [])).map { |r| Integer(r.fetch("id")) }
@@ -268,7 +272,10 @@ class HostedAcceptanceFixtures
   end
 
   def guard!
-    refuse! if ARGV.first != "status" && ENV["ISP_STAGING_LEASE"] != "rails-staging-3"
+    native = ENV["ISP_STAGING_LEASE"] == "rails-private-acceptance"
+    refuse! unless (ENV["ISP_PRIVATE_ACCEPTANCE"] == "true") == native
+    refuse! if native && ENV["APP_HOST"] != "isp-rails-startup.meithan-r.workers.dev"
+    refuse! if ARGV.first != "status" && !native && ENV["ISP_STAGING_LEASE"] != "rails-staging-3"
     original_guard!
     raw = @db.raw_connection
     refuse! unless ENV["NEON_VERIFY_HOST"] == APPROVED_HOST

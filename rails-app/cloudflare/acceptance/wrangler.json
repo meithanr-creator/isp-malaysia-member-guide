@@ -1,0 +1,60 @@
+{
+  "name": "isp-rails-startup",
+  "account_id": "a9720867333b64a4f8ee70cdfd673eb9",
+  "main": "index.js",
+  "compatibility_date": "2026-10-27",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": {
+    "enabled": false
+  },
+  "containers": [
+    {
+      "class_name": "ISPPrivateAcceptance",
+      "scheduling_policy": "durable_object",
+      "images": {
+        "rails": {
+          "image": "registry.cloudflare.com/a9720867333b64a4f8ee70cdfd673eb9/isp-member-rails@sha256:152480a896060eae82a380dc54f651e199ff1585cd5dd805d0d51b9f3a587d2a"
+        }
+      },
+      "name": "isp-rails-startup"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "ACCEPTANCE",
+        "class_name": "ISPPrivateAcceptance"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "startup-v1",
+      "new_sqlite_classes": [
+        "ISPStartup"
+      ]
+    },
+    {
+      "tag": "startup-neon-v1",
+      "new_sqlite_classes": [
+        "ISPNeonProof"
+      ]
+    },
+    {
+      "tag": "private-acceptance-v1",
+      "new_sqlite_classes": [
+        "ISPPrivateAcceptance"
+      ]
+    }
+  ],
+  "vars": {
+    "ISP_ACCEPTANCE_ENABLED": "false",
+    "APP_HOST": "isp-rails-startup.meithan-r.workers.dev",
+    "ISP_STAGING_START_AT": "",
+    "ISP_STAGING_EXPIRES_AT": ""
+  },
+  "limits": {
+    "cpu_ms": 1000
+  }
+}

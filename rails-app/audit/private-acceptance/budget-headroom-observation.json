@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "observed_at": "2026-10-27T15:53:57.021Z",
+  "source": "Owner-connected Cloudflare Billing / Billable usage page",
+  "source_url": "https://dash.cloudflare.com/a9720867333b64a4f8ee70cdfd673eb9/billing/billable-usage",
+  "cycle": "2026-10-14/2026-11-13",
+  "observed_through": "2026-10-27",
+  "observed_variable_usage_cost_usd": 0,
+  "final_invoice": false,
+  "all_displayed_usage_within_included_tiers": true,
+  "usage": {
+    "durable_object_gb_seconds": 230.41,
+    "durable_object_requests": 266,
+    "r2_class_a_operations": 1430,
+    "r2_class_b_operations": 3660,
+    "r2_gb_months": 0,
+    "worker_requests": 16600,
+    "worker_cpu_ms": 29160,
+    "container_cpu_seconds": 32.59,
+    "container_memory_gib_seconds": 5750,
+    "container_disk_gb_seconds": 11510,
+    "container_egress_gb": 0
+  },
+  "included": {
+    "durable_object_gb_seconds": 400000,
+    "durable_object_requests": 1000000,
+    "r2_class_a_operations": 1000000,
+    "r2_class_b_operations": 10000000,
+    "r2_gb_months": 10,
+    "worker_requests": 10000000,
+    "worker_cpu_ms": 30000000,
+    "container_cpu_seconds": 22500,
+    "container_memory_gib_seconds": 90000,
+    "container_disk_gb_seconds": 720000,
+    "container_egress_gb": 500
+  },
+  "caveat": "Dashboard totals may lag recent usage. Preserve the carried USD4.50 conservative commitment. Recheck shortly before activation; no subscription changes or other-project allocations are proposed."
+}

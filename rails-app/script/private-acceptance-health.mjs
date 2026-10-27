@@ -1,0 +1,17 @@
+// Read-only readiness polling: exact expected gate and dependency responses only.
+import fs from 'node:fs';
+import https from 'node:https';
+import {pathToFileURL} from 'node:url';
+const P='D:/Projects/isp-rails-tools/isp-staging-private/private-acceptance',HOST='isp-rails-startup.meithan-r.workers.dev';
+const requireValue=(v,m)=>{if(!v)throw Error(m);};
+export async function waitForPrivateReadiness({request,admit,record,now=Date.now,pause=ms=>new Promise(r=>setTimeout(r,ms)),deadline}){
+ requireValue(typeof request==='function'&&typeof admit==='function'&&typeof record==='function'&&deadline>now(),'readiness_inputs_required');
+ for(const key of [null,'0'.repeat(64)]){admit(20000);const r=await request('/member/dashboard',{key,accept:'application/json'});record({area:'edge_denial',status:r.status,at:new Date(now()).toISOString()});requireValue(r.status===503&&r.body==='ISP member service is not available yet.'&&/no-store/i.test(r.cache),'private_gate_failed');}
+ let attempts=0;
+ while(now()+20000<deadline&&attempts++<40){admit(20000);const r=await request('/ready',{startup:attempts===1});record({area:'full_dependency_readiness',attempt:attempts,http_status:r.status,at:new Date(now()).toISOString()});if(r.status===200){requireValue(r.body==='ready','readiness_body_mismatch');return {status:'PASS',scope:'actual Rails readiness including Neon/schema, R2 availability and scanner readiness',attempts};}requireValue(r.status===503,'unexpected_readiness_status');await pause(Math.min(5000,Math.max(0,deadline-now()-20000)));}
+ throw Error('dependencies_not_ready_within_bound');
+}
+async function main(){const {readPrivateAcceptance,assertPrivateAcceptanceAdmission}=await import('./private-acceptance-context.mjs'),input=readPrivateAcceptance({active:true}),runtime=input.runtime,observations=[];const deadline=Math.min(Date.now()+6*60000,Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-10*60000);
+ async function request(path,{key=runtime.ISP_STAGING_KEY,accept='text/plain',startup=false}={}){return new Promise((resolve,reject)=>{const headers={Accept:accept};if(key!==null)headers['x-isp-staging-key']=key;let size=0;const limit=startup?190000:20000;const req=https.request('https://'+HOST+path,{method:'GET',headers,rejectUnauthorized:true,family:4,signal:AbortSignal.timeout(Math.min(limit,deadline-Date.now()))},res=>{const chunks=[];res.on('data',chunk=>{size+=chunk.length;if(size>65536)return res.destroy(Error('readiness_response_bound'));chunks.push(chunk);});res.on('error',reject);res.on('end',()=>resolve({status:res.statusCode,body:Buffer.concat(chunks).toString('utf8'),cache:res.headers['cache-control']}));});req.on('error',reject);req.end();});}
+ try{const result=await waitForPrivateReadiness({request,admit:ms=>assertPrivateAcceptanceAdmission(runtime,ms),record:value=>{observations.push(value);fs.writeFileSync(P+'/readiness-observations.json',JSON.stringify(observations,null,2)+'\n');},deadline});fs.writeFileSync(P+'/readiness-result.json',JSON.stringify({...result,finished_at:new Date().toISOString()},null,2)+'\n');console.log(JSON.stringify(result));}catch(e){fs.writeFileSync(P+'/readiness-failure.json',JSON.stringify({status:'FAIL',error_class:e.name,code:e.code??null,at:new Date().toISOString()},null,2)+'\n');throw e;}}
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(e=>{console.error(JSON.stringify({status:'FAIL',stage:/^[a-z0-9_]+$/.test(e.message)?e.message:'private_readiness_failed',error_class:e.name}));process.exitCode=1;});

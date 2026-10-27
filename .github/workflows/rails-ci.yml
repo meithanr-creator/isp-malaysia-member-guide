@@ -141,7 +141,7 @@ jobs:
       - name: Test environment isolation and direct-connection guards
         run: npm run test:neon-tools
       - name: Verify private staging controls and safe shutdown
-        run: node --test script/cloudflare-staging-ops.test.mjs script/cloudflare-staging-watchdog.test.mjs script/staging-lease-context.test.mjs script/prepare-unarmed-lease2.test.mjs script/upload-reviewed-image-2.test.mjs script/linux-webkit-connection.test.mjs script/virtual-mobile-failures.test.mjs script/hosted-execution-phase.test.mjs script/staging-credential-provider.test.mjs script/lease2-provision-core.test.mjs script/native-boot4.test.mjs script/provider-request-outcome.test.mjs script/virtual-mobile-journeys.test.mjs script/run-hosted-mobile-acceptance.test.mjs script/recovery-preflight.test.mjs script/lease3-release-policy.test.mjs script/acceptance-continuation.test.mjs script/active-staging-admission.test.mjs script/staging-access-observations.test.mjs
+        run: node --test script/cloudflare-staging-ops.test.mjs script/cloudflare-staging-watchdog.test.mjs script/staging-lease-context.test.mjs script/prepare-unarmed-lease2.test.mjs script/upload-reviewed-image-2.test.mjs script/linux-webkit-connection.test.mjs script/virtual-mobile-failures.test.mjs script/hosted-execution-phase.test.mjs script/staging-credential-provider.test.mjs script/lease2-provision-core.test.mjs script/native-boot4.test.mjs script/provider-request-outcome.test.mjs script/virtual-mobile-journeys.test.mjs script/run-hosted-mobile-acceptance.test.mjs script/recovery-preflight.test.mjs script/lease3-release-policy.test.mjs script/acceptance-continuation.test.mjs script/active-staging-admission.test.mjs script/staging-access-observations.test.mjs script/private-acceptance-operator.test.mjs script/private-acceptance-metadata.test.mjs script/private-acceptance-context.test.mjs script/private-mobile-cleanup.test.mjs
       - name: Validate bounded hosted acceptance tools without network or credentials
         run: |
           ruby -c script/staging-postgres-access.rb
@@ -158,6 +158,11 @@ jobs:
           node --check script/run-linux-webkit-offline-smoke.mjs
           node --check script/linux-webkit-server.mjs
           node --check script/linux-webkit-offline-smoke.mjs
+          node --check script/offline-browser-preflight.mjs
+          node --check script/private-mobile-cleanup.mjs
+          node --check script/private-acceptance.mjs
+          node --check script/private-acceptance-health.mjs
+          node --check script/run-private-mobile.mjs
           node --check script/virtual-mobile-acceptance.mjs
           node --check script/virtual-mobile-journeys.mjs
           node --check script/run-hosted-mobile-acceptance.mjs

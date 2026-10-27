@@ -10,8 +10,9 @@ const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 import {selectLease,leaseContext,readPreparedRelease,assertActiveRelease,assertWatchdogTuple,assertWritableLease,assertLeaseMutationAllowed} from './staging-lease-context.mjs';
 import {readActiveStagingAdmission,assertHostedRuntimeMode,assertAdmissionSnapshotDigest} from './active-staging-admission.mjs';
 import {immutableObservationProof,reconcileObservationCases} from './immutable-acceptance-evidence.mjs';
-const CONTEXT=leaseContext(selectLease()),PRIVATE=CONTEXT.privateRoot;
-const ORIGIN='https://isp-member-production.meithan-r.workers.dev';
+import {NATIVE_ID,isPrivateAcceptance,privateContext,readPrivateAcceptance,assertPrivateAcceptanceAdmission,assertPrivateAcceptanceCheckpoint} from './private-acceptance-context.mjs';
+const CONTEXT=isPrivateAcceptance()?privateContext():leaseContext(selectLease()),PRIVATE=CONTEXT.privateRoot;
+const ORIGIN=CONTEXT.native?CONTEXT.origin:'https://isp-member-production.meithan-r.workers.dev';
 const HTTP_FILE=path.join(PRIVATE,'acceptance-http.json');
 const OBS_FILE=path.join(PRIVATE,'acceptance-db-observations.json');
 const RESULT_FILE=path.join(CONTEXT.auditRoot,'hosted-acceptance.json');
@@ -22,7 +23,7 @@ function check(ok,message){if(!ok)throw new Error(message);}
 function safePath(file){const target=path.resolve(file);check(/^[dD]:[\\/]/.test(target),'Artifacts must stay on D');let cursor=target;while(!fs.existsSync(cursor))cursor=path.dirname(cursor);for(;;){check(!fs.lstatSync(cursor).isSymbolicLink(),'Reparse/symbolic paths refused');const parent=path.dirname(cursor);if(parent===cursor)break;cursor=parent;}check(/^[dD]:[\\/]/.test(fs.realpathSync(path.dirname(target))),'Resolved destination must stay on D');return target;}
 function json(file){return JSON.parse(fs.readFileSync(safePath(file),'utf8'));}
 function verifyLeaseWatchdog(runtime,prepared,expectedSnapshot,minimumRemainingMs=0){
- return readActiveStagingAdmission(CONTEXT,{expectedRuntime:runtime,prepared,expectedSnapshot,minimumRemainingMs});
+ return CONTEXT.native?assertPrivateAcceptanceAdmission(runtime,minimumRemainingMs,expectedSnapshot):readActiveStagingAdmission(CONTEXT,{expectedRuntime:runtime,prepared,expectedSnapshot,minimumRemainingMs});
 }
 function atomic(file,value){safePath(file);const tmp=file+'.tmp-'+crypto.randomBytes(5).toString('hex');fs.writeFileSync(tmp,JSON.stringify(value,null,2),{mode:0o600,flag:'wx'});fs.renameSync(tmp,file);}
 function attrs(tag){const out={};for(const m of tag.matchAll(/([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g))out[m[1].toLowerCase()]=decode(m[2]??m[3]??m[4]??'');return out;}
@@ -40,7 +41,7 @@ export function safeDiagnostic(value,id,deadline){
   return clean&&value.id===id&&value.deadline===deadline&&Object.keys(value).length===Object.keys(clean).length&&Object.entries(clean).every(([key,item])=>value[key]===item)?clean:null;
 }
 export class Transport{
-  constructor(runtime,state,{prepared,admissionSnapshot,admit,requestImpl=https.request,persistState=value=>atomic(HTTP_FILE,value)}={}){this.admit=admit??(limit=>verifyLeaseWatchdog(runtime,prepared,admissionSnapshot,limit));this.requestImpl=requestImpl;this.persistState=persistState;this.runtime=runtime;this.state=state;this.calls=state.request_count??0;this.active=0;this.waiters=[];this.traces=[];this.jars=new Map();this.stopAt=Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-600000;check(Number.isFinite(this.stopAt)&&this.stopAt>Date.now(),'Unexpired fixed cleanup reserve required');check(Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-Date.parse(state.execution_started)<=55*60000,'Rehearsal may last at most 55 minutes');check(/^[a-f0-9]{64}$/.test(runtime.ISP_STAGING_KEY),'Private rehearsal key required');}
+  constructor(runtime,state,{prepared,admissionSnapshot,admit,byteCap=CONTEXT.native?128*1024*1024:Infinity,requestImpl=https.request,persistState=value=>atomic(HTTP_FILE,value)}={}){this.admit=admit??(limit=>verifyLeaseWatchdog(runtime,prepared,admissionSnapshot,limit));this.requestImpl=requestImpl;this.persistState=persistState;this.runtime=runtime;this.state=state;this.calls=state.request_count??0;this.byteCap=byteCap;this.bytes=state.transferred_bytes??0;check((byteCap===Infinity||Number.isSafeInteger(byteCap)&&byteCap>0)&&Number.isSafeInteger(this.bytes)&&this.bytes>=0&&this.bytes<=byteCap,'Bounded transfer checkpoint required');this.active=0;this.waiters=[];this.traces=[];this.jars=new Map();this.stopAt=Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-600000;if(CONTEXT.native)this.stopAt=Math.min(this.stopAt,Date.parse(runtime.ISP_STAGING_START_AT)+25*60000);check(Number.isFinite(this.stopAt)&&this.stopAt>Date.now(),'Unexpired fixed cleanup reserve required');check(Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-Date.parse(state.execution_started)<=55*60000,'Rehearsal may last at most 55 minutes');check(/^[a-f0-9]{64}$/.test(runtime.ISP_STAGING_KEY),'Private rehearsal key required');}
   jar(alias){if(!this.jars.has(alias))this.jars.set(alias,new CookieJar(this.state.jars?.[alias]));return this.jars.get(alias);}
   async request(alias,target,{method='GET',body,upload=false,startup=false,key=this.runtime.ISP_STAGING_KEY,omitCookie=false,accept="text/html,application/json;q=0.9"}={}){
     const url=sameOrigin(target),limit=startup?120000:upload?45000:20000;
@@ -49,6 +50,7 @@ export class Transport{
     while(this.active>=2)await new Promise(resolve=>this.waiters.push(resolve));
     if(this.calls>=350||Date.now()+limit>=this.stopAt)throw new Blocked('Request budget or cleanup reserve reached');
     this.admit(limit); // After concurrency waiting, immediately before intent and dispatch.
+    const sentBytes=body?.bytes?.length??0;check(Number.isSafeInteger(sentBytes)&&sentBytes>=0&&this.bytes+sentBytes<this.byteCap,'Aggregate transfer budget reached');if(this.byteCap!==Infinity){this.bytes+=sentBytes;this.state.transferred_bytes=this.bytes;}
     this.active++;this.calls++;this.state.request_count=this.calls;
     const started=Date.now(),jar=this.jar(alias),trace={id:crypto.randomUUID(),alias,method,path:url.pathname.replace(/\/(?:files\/[^/]+|event-files\/[^/]+|discover-images\/[^/]+)\/[^/]+/,'/protected-file/:key'),status:null,duration_ms:null};
     this.traces.push(trace);this.state.request_journal??=[];this.state.request_journal.push(trace);
@@ -60,9 +62,9 @@ export class Transport{
         if(key!==null)headers['x-isp-staging-key']=key;
         if(!omitCookie&&jar.header(url))headers.Cookie=jar.header(url);
         if(body){headers['Content-Type']=body.type;headers['Content-Length']=body.bytes.length;}
-        const req=this.requestImpl(url,{method,headers,rejectUnauthorized:true,signal:AbortSignal.timeout(limit)},res=>{
+        const req=this.requestImpl(url,{method,headers,rejectUnauthorized:true,...(CONTEXT.native?{family:4}:{}),signal:AbortSignal.timeout(limit)},res=>{
           jar.accept(res.headers['set-cookie'],url);const chunks=[],digest=crypto.createHash('sha256');let size=0;
-          res.on('data',chunk=>{size+=chunk.length;if(size>30*1024*1024){res.destroy(Error('Response size limit'));return;}digest.update(chunk);chunks.push(chunk);});
+          res.on('data',chunk=>{size+=chunk.length;if(this.byteCap!==Infinity){this.bytes+=chunk.length;this.state.transferred_bytes=this.bytes;if(this.bytes>this.byteCap){res.destroy(Error('Aggregate transfer budget reached'));return;}}if(size>30*1024*1024){res.destroy(Error('Response size limit'));return;}digest.update(chunk);chunks.push(chunk);});
           res.on('error',()=>reject(new Blocked('Response failed; inspect state before continuing')));
           res.on('end',()=>{const bytes=Buffer.concat(chunks);trace.status=res.statusCode;
             if(key===this.runtime.ISP_STAGING_KEY&&!url.pathname.startsWith('/__isp_diagnostics/')&&res.headers['x-isp-trace']!==trace.id){reject(new Blocked('Trusted request correlation unavailable; inspect state before continuing'));return;}
@@ -169,25 +171,28 @@ function reconcile(state){
 }
 function publicReport(state){const cases=Object.entries(INVENTORY).map(([id,[batch,area]])=>{const c=state.cases[id]??{id,area,status:'NOT RUN',http:'NOT RUN',assertions:[]};return{id,area,batch,status:c.status,http:c.http,started_at:c.started_at,finished_at:c.finished_at,assertions:c.assertions,requests:c.requests,db_observed_at:c.db_observed_at,observation_sha256:c.observation_sha256,reason:c.reason};});return{version:1,lease_id:state.lease_id,prepared_release_sha256:state.prepared_release_sha256,rails_source:state.rails_source,image_digest:state.image_digest,application_id:state.application_id,namespace_id:state.namespace_id,run_marker:state.run_marker,candidate:state.candidate,deployment_id:state.deployment_id,origin:ORIGIN,generated_at:new Date().toISOString(),requests:state.request_count??0,areas:Object.fromEntries([...new Set(cases.map(c=>c.area))].map(area=>{const rows=cases.filter(c=>c.area===area);return[area,rows.some(c=>c.status==='FAIL')?'FAIL':rows.every(c=>c.status==='PASS')?'PASS':'BLOCKED'];})),cases};}
 async function execute(batch){
-  assertLeaseMutationAllowed(CONTEXT);
-  assertWritableLease(CONTEXT);
+  if(!CONTEXT.native){assertLeaseMutationAllowed(CONTEXT);assertWritableLease(CONTEXT);}
   check(!process.env.NODE_TLS_REJECT_UNAUTHORIZED||process.env.NODE_TLS_REJECT_UNAUTHORIZED==='1','Insecure ambient TLS setting refused');
-  const runtime=json(path.join(PRIVATE,'runtime.json')),fixtures=json(path.join(PRIVATE,'acceptance-fixtures.json'));
-  const prepared=readPreparedRelease(CONTEXT);
-  let initialAdmission;if(CONTEXT.fresh){assertActiveRelease(CONTEXT,runtime,json(path.join(PRIVATE,'acceptance-release.json')),prepared);initialAdmission=verifyLeaseWatchdog(runtime,prepared);}
+  const native=CONTEXT.native?readPrivateAcceptance({active:true}):null;
+  if(native)check(Date.now()<Date.parse(native.runtime.ISP_STAGING_START_AT)+20*60000,'Private functional batch admission closed');
+  const runtime=native?.runtime??json(path.join(PRIVATE,'runtime.json')),fixtures=json(path.join(PRIVATE,'acceptance-fixtures.json'));
+  const prepared=native?.prepared??readPreparedRelease(CONTEXT);
+  let initialAdmission=native;if(CONTEXT.fresh&&!CONTEXT.native){assertActiveRelease(CONTEXT,runtime,json(path.join(PRIVATE,'acceptance-release.json')),prepared);initialAdmission=verifyLeaseWatchdog(runtime,prepared);}
   if(process.env.ISP_HTTP_ADMISSION_SHA256!==undefined)assertAdmissionSnapshotDigest(initialAdmission?.snapshot,process.env.ISP_HTTP_ADMISSION_SHA256);
   check(fixtures.lease_id===CONTEXT.leaseId,'Fixture lease identity mismatch');
   check(fixtures.version===1&&fixtures.phase==='active'&&/^qa-\d{8}-[a-f0-9]{12}$/.test(fixtures.run_marker),'Active reviewed fixture manifest required');
-  assertHostedRuntimeMode(runtime);
+  if(!CONTEXT.native)assertHostedRuntimeMode(runtime);
   check(runtime.ISP_ACCOUNT_EMAILS_ENABLED==='false'&&runtime.ISP_ACCOUNT_EMAIL_DISPATCHER_ENABLED==='false','Disabled identity mail flags required');
   check(/^[a-f0-9]{40}$/.test(runtime.CANDIDATE_COMMIT??'')&&/^[a-zA-Z0-9_-]{6,128}$/.test(runtime.CLOUDFLARE_DEPLOYMENT_ID??''),'Pinned candidate commit and deployment ID required');
   check(BATCHES.includes(batch),'Choose one listed batch');
   const savedState=fs.existsSync(HTTP_FILE);
   let state;if(savedState)state=json(HTTP_FILE);
+  if(savedState&&CONTEXT.native)assertPrivateAcceptanceCheckpoint(native,state);
   if(savedState&&CONTEXT.fresh)check(state.lease_id===CONTEXT.leaseId&&state.prepared_release_sha256===prepared.prepared_release_sha256,'Checkpoint lease identity mismatch');
   if(state){check(state.run_marker===fixtures.run_marker&&state.candidate===runtime.CANDIDATE_COMMIT&&state.deployment_id===runtime.CLOUDFLARE_DEPLOYMENT_ID&&JSON.stringify(state.target)===JSON.stringify(fixtures.target),'Checkpoint candidate/deployment/target mismatch');check(!state.halted&&!state.running_batch,'Prior interrupted/failed execution requires inspection; automatic retry refused');check(!state.completed_batches?.includes(batch),'Completed batch cannot be replayed');reconcile(state);check(!Object.values(state.cases).some(c=>c.http==='PASS'&&c.db?.length&&c.status!=='PASS'),'Capture fresh independent observations and reconcile before another batch');}
   else {check(batch==='identity','Identity must be the first batch');state={version:1,run_marker:fixtures.run_marker,target:fixtures.target,candidate:runtime.CANDIDATE_COMMIT,deployment_id:runtime.CLOUDFLARE_DEPLOYMENT_ID,execution_started:new Date().toISOString(),cases:{},actors:{},completed_batches:[],created:{events:[],publications:[],consultations:[],imports:[],discover:[]}};}
   if(CONTEXT.fresh&&!savedState)Object.assign(state,{lease_id:CONTEXT.leaseId,prepared_release_sha256:prepared.prepared_release_sha256,rails_source:prepared.rails_source,image_digest:prepared.image_digest,application_id:prepared.application_id,namespace_id:prepared.namespace_id});
+  if(CONTEXT.native&&!savedState)state.native_admission_snapshot=initialAdmission.snapshot;
   check(BATCHES.slice(0,BATCHES.indexOf(batch)).every(b=>state.completed_batches.includes(b)),'Prior batches must finish with independent evidence');
   state.running_batch=batch;
   const t=new Transport(runtime,state,{prepared,admissionSnapshot:initialAdmission?.snapshot}),mark=fixtures.run_marker;atomic(HTTP_FILE,state);
@@ -606,5 +611,5 @@ function selftest(){
   check(benignPdf('synthetic').subarray(0,5).toString()==='%PDF-','Harmless PDF fixture malformed');
   console.log(JSON.stringify({ok:true,offline:true,batches:BATCHES,cases:Object.keys(INVENTORY).length,network_requests:0}));
 }
-async function main(){const args=process.argv.slice(2);if(args.length===1&&args[0]==='--selftest')return selftest();if(args.length===1&&args[0]==='--reconcile'){const state=json(HTTP_FILE);reconcile(state);atomic(HTTP_FILE,state);atomic(RESULT_FILE,publicReport(state));return console.log(JSON.stringify({ok:true,network_requests:0,pending_db:Object.values(state.cases).filter(c=>c.http==='PASS'&&c.db?.length&&c.status==='BLOCKED').map(c=>c.id),failed:Object.values(state.cases).filter(c=>c.status==='FAIL').map(c=>c.id)}));}if(args[0]==='--execute'&&args[1]==='--batch'&&args.length===3)return execute(args[2]);check(args.length===0||(args.length===1&&args[0]==='--plan'),'Use --plan, --selftest, --reconcile, or --execute --batch NAME');console.log(JSON.stringify({network_requests:0,origin:ORIGIN,batches:BATCHES,inventory:INVENTORY,observation:'After each batch, run the private fixture operator status command, then --reconcile. Never replay a started batch.',limits:{requests:350,concurrency:2,ordinary_ms:20000,files_ms:45000,cleanup_reserve_minutes:10}}));}
+async function main(){const args=process.argv.slice(2);if(args.length===1&&args[0]==='--selftest')return selftest();if(args.length===1&&args[0]==='--reconcile'){const state=json(HTTP_FILE);if(CONTEXT.native)assertPrivateAcceptanceCheckpoint(readPrivateAcceptance(),state,{active:false});reconcile(state);atomic(HTTP_FILE,state);atomic(RESULT_FILE,publicReport(state));return console.log(JSON.stringify({ok:true,network_requests:0,pending_db:Object.values(state.cases).filter(c=>c.http==='PASS'&&c.db?.length&&c.status==='BLOCKED').map(c=>c.id),failed:Object.values(state.cases).filter(c=>c.status==='FAIL').map(c=>c.id)}));}if(args[0]==='--execute'&&args[1]==='--batch'&&args.length===3)return execute(args[2]);check(args.length===0||(args.length===1&&args[0]==='--plan'),'Use --plan, --selftest, --reconcile, or --execute --batch NAME');console.log(JSON.stringify({network_requests:0,origin:ORIGIN,batches:BATCHES,inventory:INVENTORY,observation:'After each batch, run the private fixture operator status command, then --reconcile. Never replay a started batch.',limits:{requests:350,concurrency:2,ordinary_ms:20000,files_ms:45000,cleanup_reserve_minutes:10}}));}
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(()=>{console.error('Hosted acceptance refused or interrupted. Inspect the private prerequisites/checkpoint; no secrets were printed.');process.exitCode=1;});

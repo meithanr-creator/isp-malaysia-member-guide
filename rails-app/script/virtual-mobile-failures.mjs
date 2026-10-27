@@ -1,4 +1,4 @@
-export const OFFLINE_DASHBOARD_URL='https://isp-member-production.meithan-r.workers.dev/member/dashboard';
+export const OFFLINE_DASHBOARD_URL=(process.env.ISP_PRIVATE_ACCEPTANCE==='true'&&process.env.ISP_STAGING_LEASE==='rails-private-acceptance'?'https://isp-rails-startup.meithan-r.workers.dev':'https://isp-member-production.meithan-r.workers.dev')+'/member/dashboard';
 export function classifyRequestFailure(facts={},state={}){
  const raw=typeof facts?.errorText==='string'?facts.errorText.trim():'';
  const excluded=/tim(?:e|ed)[\s_-]*out|closed|abort|cancel/i.test(raw);
