@@ -23,7 +23,7 @@ jobs:
         database: [sqlite, postgresql]
     services:
       postgres:
-        image: postgres:17
+        image: postgres:18
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -48,6 +48,9 @@ jobs:
         run: bundle exec rails db:create db:migrate
       - name: Run application and security tests
         run: bundle exec rails test
+      - name: Prove recovery inventory queries against real PostgreSQL
+        if: matrix.database == 'postgresql'
+        run: bundle exec ruby script/recovery-inventory-ci.rb
       - name: Check Rails autoloading
         run: bundle exec rails zeitwerk:check
       - name: Scan Rails code
@@ -138,7 +141,7 @@ jobs:
       - name: Test environment isolation and direct-connection guards
         run: npm run test:neon-tools
       - name: Verify private staging controls and safe shutdown
-        run: node --test script/cloudflare-staging-ops.test.mjs script/cloudflare-staging-watchdog.test.mjs script/staging-lease-context.test.mjs script/prepare-unarmed-lease2.test.mjs script/upload-reviewed-image-2.test.mjs script/linux-webkit-connection.test.mjs script/virtual-mobile-failures.test.mjs script/hosted-execution-phase.test.mjs script/staging-credential-provider.test.mjs script/lease2-provision-core.test.mjs
+        run: node --test script/cloudflare-staging-ops.test.mjs script/cloudflare-staging-watchdog.test.mjs script/staging-lease-context.test.mjs script/prepare-unarmed-lease2.test.mjs script/upload-reviewed-image-2.test.mjs script/linux-webkit-connection.test.mjs script/virtual-mobile-failures.test.mjs script/hosted-execution-phase.test.mjs script/staging-credential-provider.test.mjs script/lease2-provision-core.test.mjs script/provider-request-outcome.test.mjs script/virtual-mobile-journeys.test.mjs script/run-hosted-mobile-acceptance.test.mjs script/recovery-preflight.test.mjs
       - name: Validate bounded hosted acceptance tools without network or credentials
         run: |
           ruby -c script/hosted-acceptance-fixtures.rb
@@ -149,6 +152,15 @@ jobs:
           node --check script/linux-webkit-server.mjs
           node --check script/linux-webkit-offline-smoke.mjs
           node --check script/virtual-mobile-acceptance.mjs
+          node --check script/virtual-mobile-journeys.mjs
+          node --check script/run-hosted-mobile-acceptance.mjs
+          node --check script/recovery-preflight.mjs
+          node --check script/recovery-preflight-io.mjs
+          node --check script/neon-restore-rehearsal.mjs
+          node --check script/run-neon-fingerprint.mjs
+          ruby -c script/neon-restore-fingerprint.rb
+          ruby -c script/recovery-fingerprint-inventory.rb
+          bundle exec ruby script/recovery-fingerprint-inventory.test.rb
           node script/hosted-acceptance.mjs --selftest
           ISP_STAGING_LEASE=rails-staging-2 node script/hosted-acceptance.mjs --selftest
           ISP_STAGING_LEASE=rails-staging-2 node script/hosted-acceptance.mjs --plan

@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "reviewed_at_utc": "2026-10-27 05:34:03 UTC",
+  "reviewer": "Astra high",
+  "agent": "/root/astra_release_review",
+  "source_base": "99a8ef4cadb79da495e3359a1cffdff3e82e3667",
+  "disposition": "GO_FOR_PUBLICATION_ONLY",
+  "browser": "GO_FOR_SOURCE_PUBLICATION",
+  "recovery": "GO_FOR_SOURCE_PUBLICATION",
+  "exact_file_sha256": {
+    "script/virtual-mobile-acceptance.mjs": "dd3cb9690efcc582fa0400e7d44900617989c440c0f5923a9a62a8bbfdb36645",
+    "script/virtual-mobile-journeys.mjs": "dbf4c27182040e59da8bb3148dc24f594bf260435f6a88e140c3e98715528f15",
+    "script/virtual-mobile-journeys.test.mjs": "c96df2f82b83f6bbaf5ca3a0b6de7bad287568d46f81e7d563e0737f101ae3fc",
+    "script/run-hosted-mobile-acceptance.mjs": "98cba61d8803dbd92383bac96d02ce0aad906aea197740091dbea30a16ac694f",
+    "script/run-hosted-mobile-acceptance.test.mjs": "d8ecbc9786f6e86e881ed2d9a5124bab1da7124714e12d792f4b733dedf8c913",
+    "docs/VIRTUAL-MOBILE-COVERAGE.md": "6316226a03a79ace3640e5db0c8e77f6bb96243ea8b47a430851b1c3d7d4dac6",
+    "script/neon-restore-rehearsal.mjs": "9c76dcd334366a083b8b3c384175f68f58579d88cf83553550b5b80216712f3b",
+    "script/neon-restore-fingerprint.rb": "e46bc8ea589ae15d6a7e0537fedbf816b6dc1af56aeb577afe76ee1eadc39c09",
+    "script/run-neon-fingerprint.mjs": "9a6e9d9bc5cdf669ed003267afbea9f327e3f825170ff7709e5c55b99901aa99",
+    "script/recovery-preflight.mjs": "eb67f31aba2dc3e0303bdd1b0d3600aeebfc7123b4c87ee77a2061999877c4b2",
+    "script/recovery-preflight.test.mjs": "84f690ee048a7d9ef17edb91f20f97c62c169e3a731f20788f6862027b7a7af2",
+    "script/recovery-preflight-io.mjs": "7d2428d251482bbe4a0fac20acf479e53aba5e5fd89e4e8c1501535e5039cf78",
+    "script/recovery-fingerprint-inventory.rb": "19de9bce7e84b97eb02edd642ce76241719d46266c4f33f07137a53585d9e1ca",
+    "script/recovery-fingerprint-inventory.test.rb": "8e708c698f61d2e4c26b6efc09610f83c5d688d50c6ae001bfe1e071fc938777",
+    "script/recovery-inventory-ci.rb": "d7b0147573e15416c4021f002e7e8af863589de9e8655b3c56fee269d3d6b3d6",
+    "docs/RECOVERY-PREFLIGHT.md": "d42a985a93d125868bd818a678ac95146ea37613457dfb509529fc29dce70142",
+    ".github/workflows/ci.yml": "4d178765feb9d00d31f9d89279b0db4324594395e2a1cc3437da624c696424c9"
+  },
+  "corrected_findings": [
+    "Missing browser API injection with early callback contract",
+    "Failed outer-controller receipt could be accepted",
+    "Retained database proof could be rebound to a different capture hash",
+    "CI recovery inventory used wrong database environment variable"
+  ],
+  "independent_evidence": {
+    "node": {
+      "passed": 28,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "evidence": "cohort-a-browser-recovery-node-tests.txt"
+    },
+    "ruby": {
+      "runs": 7,
+      "assertions": 39,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "evidence": "cohort-a-recovery-ruby-tests.txt"
+    }
+  },
+  "exact_new_commit_ci_required": true,
+  "real_pg18_sql_execution": "PENDING_EXACT_COMMIT_CI",
+  "fresh_recovery_runtime_adapter": "BLOCKED",
+  "hosted_acceptance_passed": 0,
+  "hosted_acceptance_total": 63,
+  "provider_execution_approved": false,
+  "production_approved": false,
+  "exclusions": [
+    "lease3 integration",
+    "Actual restoration and generated-ID writes",
+    "Hosted browser journeys",
+    "Runtime admission or provider cleanup"
+  ]
+}

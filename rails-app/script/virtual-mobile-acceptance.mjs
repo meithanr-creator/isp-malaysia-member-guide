@@ -1,156 +1,165 @@
-// Dedicated software acceptance browsers; never attach to a user's browser profile.
+// One explicit profile per run. Browser mutations are journalled before submission.
 import fs from 'node:fs';
 import {createRequire} from 'node:module';
-import {fileURLToPath} from 'node:url';
-import {connectLinuxWebKit,closeLinuxWebKitConnection,boundedBrowserOperation} from './linux-webkit-connection.mjs';
+import {pathToFileURL} from 'node:url';
+import {connectLinuxWebKit,closeLinuxWebKitConnection} from './linux-webkit-connection.mjs';
 import {OFFLINE_DASHBOARD_URL,classifyRequestFailure,acceptableOfflineNavigationError} from './virtual-mobile-failures.mjs';
-import {selectLease,leaseContext,readPreparedRelease,assertActiveRelease,assertWatchdogTuple,assertWritableLease} from './staging-lease-context.mjs';
-const CONTEXT=leaseContext(selectLease());
-if(process.argv[2]==='--execute')assertWritableLease(CONTEXT);
-const ROOT='D:/Projects/isp-member-rails',PRIVATE=CONTEXT.privateRoot;
-const ORIGIN='https://isp-member-production.meithan-r.workers.dev';
-process.env.PLAYWRIGHT_BROWSERS_PATH='D:/Projects/isp-rails-tools/virtual-browsers';
-for(const key of ['DEBUG','PWDEBUG','NODE_OPTIONS','NODE_PATH','NODE_COMPILE_CACHE'])delete process.env[key];
-const require=createRequire('D:/Projects/isp-rails-tools/virtual-browser-tools/package.json');
-const {chromium,webkit,devices}=require('playwright');
-const report={version:1,scope:'Virtual browser engines and mobile profiles; no physical-device or native installation claim',started_at:new Date().toISOString(),profiles:[]};
-const save=()=>fs.writeFileSync(`${CONTEXT.auditRoot}/virtual-mobile-acceptance.json`,JSON.stringify(report,null,2));
-const assert=(value,message)=>{if(!value)throw new Error(message)};
-const read=name=>JSON.parse(fs.readFileSync(`${PRIVATE}/${name}`,'utf8'));
-async function main(){
- if(process.argv[2]!=='--execute')throw new Error('Explicit --execute required');if(require('playwright/package.json').version!=='1.64.1')throw new Error('Reviewed browser tool version required');
- const runtime=read('runtime.json'),fixtures=read('acceptance-fixtures.json'),release=read('acceptance-release.json'); report.release={worker_source:release.worker_source,worker_version:release.worker_version,rails_source:release.rails_source,image_digest:release.image_digest}; report.run_marker=fixtures.run_marker;
- const prepared=readPreparedRelease(CONTEXT);
- if(CONTEXT.fresh){
-  assertActiveRelease(CONTEXT,runtime,release,prepared);
-  const plan=read('watchdog-plan.json'),state=read('watchdog-state.json'),now=Date.now(),updated=Date.parse(state.updated_at);
-  assertWatchdogTuple(CONTEXT,runtime,plan,state,prepared);
-  assert(state.armed===true&&Number.isFinite(updated)&&updated<=now+5000&&now-updated<=45000&&Date.parse(state.stop_at)===Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-5*60000&&Number.isSafeInteger(state.pid)&&state.pid>0,'Live matching watchdog required');
-  try{process.kill(state.pid,0);}catch{assert(false,'Live matching watchdog required');}
- }
- const deadline=Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-10*60000;
- assert(runtime.APP_HOST===new URL(ORIGIN).host&&/^[a-f0-9]{64}$/.test(runtime.ISP_STAGING_KEY),'Private runtime missing');
- assert(Number.isFinite(deadline)&&Date.now()<deadline,'Acceptance window unavailable');
- assert(process.platform==='win32','Windows acceptance controller required');
- const browserTmp=PRIVATE+'/virtual-browser-tmp';try{fs.mkdirSync(browserTmp,{mode:0o700});}catch(e){assert(e.code==='EEXIST','Private browser temp unavailable');}
- assert(fs.lstatSync(browserTmp).isDirectory()&&!fs.lstatSync(browserTmp).isSymbolicLink()&&fs.realpathSync(browserTmp).replaceAll('\\','/').toLowerCase()===browserTmp.toLowerCase(),'Private D browser temp required');
- process.env.TMP=browserTmp;process.env.TEMP=browserTmp;process.env.TMPDIR=browserTmp;
- report.controller={platform:'win32',pid_windows:process.pid};
- assert(fixtures.phase==='active'&&fixtures.target?.project==='royal-glitter-45740959'&&fixtures.target?.host==='ep-delicate-frost-a1o15wrb.ap-southeast-1.aws.neon.tech'&&fixtures.target?.database==='neondb'&&fixtures.actors.member_b&&/^qa-\d{8}-[a-f0-9]{12}$/.test(fixtures.run_marker),'Controlled active fixture required'); if(!CONTEXT.fresh)assert(/^[a-f0-9]{40}$/.test(release.worker_source)&&/^[a-f0-9-]{36}$/.test(release.worker_version)&&release.rails_source==='c9a5142bd8c949c6415c3639c0113ee015f9a3f4'&&release.image_digest==='sha256:0187a1e32351a3f7a8f9c87a48798c0adf31f3b6c4116309c78f638582700cd2','Exact release metadata required');
- for(const [name,engine,profile] of [['iphone-webkit',webkit,'iPhone 13'],['android-chromium',chromium,'Pixel 7']]){
-  const result={name,profile,engine:name.includes('webkit')?'WebKit':'Chromium',checks:[],screenshots:[],errors:[],requests:0};report.profiles.push(result);save();
-  let browser,context,page,stopTimer,phase='browser_setup',phaseStart=Date.now(),deadlineHit=false,journeyComplete=false;
-  const offlineState={armed:false,consumed:false};let offlineFailureResolve;
-  const remaining=cap=>{const ms=Math.min(cap,deadline-Date.now());assert(Number.isSafeInteger(ms)&&ms>0,'Mobile deadline reached');return ms;};
-  const bounded=(operation,cap=12000)=>boundedBrowserOperation(operation,remaining(cap));
-  const evaluate=(fn,arg)=>bounded(()=>page.evaluate(fn,arg));
-  const failProfile=(error,failedPhase=phase)=>{
-   if(result.status!=='fail'){
-    result.failure_phase=failedPhase;result.status='fail';result.failure='Virtual browser acceptance failed; detailed error retained privately';
-    try{fs.writeFileSync(PRIVATE+'/'+name+'-failure.txt',String(error?.stack||error),{mode:0o600});}catch{result.failure_evidence='write failed';}
-   }
-   process.exitCode=1;
-  };
-  const check=(ok,label)=>{assert(ok,label);result.checks.push(label)};
-  try{
-   assert(Date.now()<deadline,'Acceptance window unavailable');
-   browser=name==='iphone-webkit'
-    ?await connectLinuxWebKit(webkit,{privateRoot:PRIVATE,deadline})
-    :await engine.launch({headless:true,artifactsDir:browserTmp,downloadsPath:browserTmp,timeout:remaining(30000)});
-   result.execution_platform=name==='iphone-webkit'?'linux':'win32';result.connection=name==='iphone-webkit'?'private-loopback-playwright':'local-launch';result.engine_version=browser.version();
-   context=await bounded(()=>browser.newContext({...devices[profile],reducedMotion:'reduce'}),15000);
-   result.viewport=devices[profile].viewport;result.touch=devices[profile].hasTouch;
-   stopTimer=setTimeout(()=>{deadlineHit=true;void context.close().catch(()=>{});},Math.max(1,deadline-Date.now()));
-   context.on('request',()=>{result.requests++;});
-   context.on('requestfailed',request=>{
-    let isMainFrame=false;try{isMainFrame=request.frame()===page?.mainFrame();}catch{}
-    const outcome=classifyRequestFailure({url:request.url(),method:request.method(),isNavigationRequest:request.isNavigationRequest(),isMainFrame,errorText:request.failure()?.errorText},offlineState);
-    if(outcome==='expected-offline-navigation'){offlineState.consumed=true;result.expected_offline_failures=(result.expected_offline_failures||0)+1;offlineFailureResolve?.();}
-    else result.errors.push(outcome);
-   });
-   context.on('page',observed=>observed.on('pageerror',()=>result.errors.push('Application JavaScript error')));
-   await context.route('**/*',route=>Date.now()>=deadline||result.requests>180?route.abort():route.continue());
-   page=await bounded(()=>context.newPage(),15000);page.setDefaultTimeout(12000);page.setDefaultNavigationTimeout(20000);
-   const admit=()=>assert(!deadlineHit&&Date.now()<deadline&&result.requests<180,'Bounded mobile admission refused');
-   const api=async(method,url,options={})=>{admit();result.requests++;return context.request[method](url,{...options,maxRedirects:0,timeout:remaining(20000)});};
-   result.navigation=[];result.lifecycle_events=[];
-   page.on('response',response=>{if(response.request().isNavigationRequest()&&response.frame()===page.mainFrame())result.navigation.push({phase,status:response.status(),elapsed_ms:Date.now()-phaseStart});});
-   page.on('domcontentloaded',()=>result.lifecycle_events.push({phase,event:'domcontentloaded',elapsed_ms:Date.now()-phaseStart}));
-   phase='full_readiness'; phaseStart=Date.now();
-   admit();result.requests++;const readiness=await context.request.get(ORIGIN+'/ready',{headers:{'x-isp-staging-key':runtime.ISP_STAGING_KEY},maxRedirects:0,timeout:Math.min(120000,deadline-Date.now())});check(readiness.status()===200,'Bounded scanner and Rails readiness before navigation');
-   phase='review_form'; phaseStart=Date.now();
-   const form=await page.goto(`${ORIGIN}/__isp_review`);check(form.status()===200,'Private review form loads in rendered browser');
-   await page.getByLabel('Review access code',{exact:true}).fill(runtime.ISP_STAGING_KEY);
-   const pending=page.waitForResponse(r=>r.url()===ORIGIN+'/__isp_review'&&r.request().method()==='POST');
-   const [opened]=await Promise.all([pending,page.getByRole('button',{name:'Open private review',exact:true}).tap()]);
-   check(opened.status()===303,'Rendered same-origin review entry accepted');
-   const cookies=await context.cookies(ORIGIN),gate=cookies.find(c=>c.name==='__Host-isp_acceptance');
-   check(gate&&gate.secure&&gate.httpOnly&&gate.sameSite==='Strict'&&!gate.value.includes(runtime.ISP_STAGING_KEY)&&gate.expires*1000<=Date.parse(runtime.ISP_STAGING_EXPIRES_AT)+1000,'Browser accepts secure fixed-expiry cookie without raw key');
-   phase='landing'; phaseStart=Date.now();
-   await page.waitForURL(ORIGIN+'/');
-   const home=await page.goto(ORIGIN);check(home.status()===200,'Landing page loads in actual engine');   await page.locator('.welcome-hero').waitFor();await evaluate(()=>document.fonts.ready);
-   check((await page.locator('img[alt="Official ISP crest"]').count())===1,'Official crest present');
-   check(await evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Landing has no horizontal overflow');
-   const menu=page.getByLabel('Explore ISP menu',{exact:true});await menu.tap();
-   await page.getByRole('navigation',{name:'Explore ISP',exact:true}).waitFor();
-   check((await page.getByRole('link',{name:/ISP Academy|Community forum/}).count())===0,'Removed areas absent from navigation');
-   check((await page.getByRole('link',{name:/ISP shop/}).innerText()).includes('DEMO')&&(await page.getByRole('link',{name:/Plantation jobs/}).innerText()).includes('DEMO'),'Frozen demos clearly marked; not exercised');
-   const box=await menu.boundingBox();check(box.width>=44&&box.height>=44,'Menu touch target at least 44 CSS pixels');
-   check(box.x>devices[profile].viewport.width/2,'Three-line menu stays top right');
-   await menu.tap();
-   const snap=async label=>{const file=`${CONTEXT.auditRoot}/${name}-${label}.png`;await page.screenshot({path:file,fullPage:true});result.screenshots.push(file);};
-   await snap('landing');
-   phase='member_login';phaseStart=Date.now();await page.goto(`${ORIGIN}/login`);await page.getByLabel('Email address',{exact:true}).fill(fixtures.actors.member_b.email);await page.getByLabel('Password',{exact:true}).fill(fixtures.actors.member_b.password);
-   await Promise.all([page.waitForURL('**/member/dashboard'),page.getByRole('button',{name:'Sign in',exact:false}).tap()]);
-   check(page.url()===`${ORIGIN}/member/dashboard`,'Controlled member signs in through rendered form');
-   await page.locator('.member-home').waitFor();check(await evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Member dashboard fits mobile viewport');
-   await snap('dashboard');
-   for(const [label,route,selector] of [['events','/events','main h1'],['profile','/member/profile/edit','form'],['consultation','/member/consultation_requests/new','textarea'],['publications','/member/publications','main h1']]){
-    phase='member_'+label; phaseStart=Date.now();
-    const response=await page.goto(ORIGIN+route);check(response.status()===200,`${label} member page accessible`);await page.locator(selector).first().waitFor();
-    check(await evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${label} has no horizontal overflow`);
-    if(label==='consultation'){await page.locator('textarea').tap();check(await evaluate(()=>document.activeElement?.tagName==='TEXTAREA'),'Consultation input receives mobile focus');}
-    if(label==='events'||label==='consultation')await snap(label);
-   }
-   phase='discover';phaseStart=Date.now();await page.goto(ORIGIN);check((await page.locator('.discover-card').count())>=2,'Discover has multiple review slides');const before=await page.locator('.discover-card:visible').innerText();await page.getByRole('button',{name:'Next slide',exact:true}).tap();
-   check((await page.locator('.discover-card:visible').count())===1&&(await page.locator('.discover-card:visible').innerText())!==before,'Discover carousel changes the visible slide');
-   phase='pwa';phaseStart=Date.now();const manifest=await api('get',`${ORIGIN}/manifest.json`);check(manifest.status()===200,'PWA manifest loads');
-   const data=await manifest.json();check(data.display==='standalone'&&data.icons?.some(icon=>icon.sizes==='192x192')&&data.icons?.some(icon=>icon.sizes==='512x512'),'PWA manifest contains standalone mode and phone icons');
-   await page.waitForFunction(()=>navigator.serviceWorker?.controller!==null&&navigator.serviceWorker?.controller!==undefined,{},{timeout:12000});
-   const cacheState=await evaluate(async()=>({controlled:!!navigator.serviceWorker.controller,keys:await caches.keys()}));
-   check(cacheState.controlled&&cacheState.keys.length===0,'Network-only service worker controls page without private data caches');
-   phase='offline_privacy';phaseStart=Date.now();
-   await page.goto(OFFLINE_DASHBOARD_URL);await page.locator('.member-home').waitFor();
-   check((await page.locator('.member-home').count())===1,'Online dashboard root verified before offline check');
-   admit();assert(deadline-Date.now()>30000&&result.requests<160,'Offline case requires remaining time and budget');
-   await page.goto('about:blank');let offlineRejected=false,offlineError='',privateRendered=-1;
-   try{
-    await bounded(()=>context.setOffline(true));check(await evaluate(()=>navigator.onLine===false),'Browser explicitly reports offline mode');
-    const failedEvent=new Promise(resolve=>{offlineFailureResolve=resolve;});offlineState.armed=true;
-    try{
-     const navigation=page.goto(OFFLINE_DASHBOARD_URL,{timeout:remaining(20000)}).then(()=>({rejected:false,error:''}),error=>({rejected:true,error:String(error.message||'')}));
-     const [outcome]=await Promise.all([navigation,bounded(()=>failedEvent,20000)]);offlineRejected=outcome.rejected;offlineError=outcome.error;
-    }finally{offlineState.armed=false;offlineFailureResolve=undefined;}
-    privateRendered=await bounded(()=>page.locator('.member-home').count());
-   }finally{offlineState.armed=false;offlineFailureResolve=undefined;await bounded(()=>context.setOffline(false));}
-   check(offlineRejected&&offlineState.consumed&&result.expected_offline_failures===1&&acceptableOfflineNavigationError(offlineError)&&!deadlineHit&&Date.now()<deadline&&result.requests<180&&privateRendered===0,'Offline network failure cannot render private dashboard');
-   phase='responsive';phaseStart=Date.now();await page.goto(`${ORIGIN}/member/dashboard`);await page.setViewportSize({width:320,height:740});
-   check(await evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Member dashboard has no horizontal overflow at 320px width');
-   phase='logout';phaseStart=Date.now();await page.setViewportSize(devices[profile].viewport);await page.getByLabel('Explore ISP menu',{exact:true}).tap();
-   await Promise.all([page.waitForURL(url=>url.pathname==='/'||url.pathname==='/login'),page.getByRole('button',{name:'Sign out',exact:true}).tap()]);
-   const denied=await page.goto(`${ORIGIN}/member/dashboard`);check(new URL(page.url()).pathname==='/login','Logout prevents dashboard access');
-   await page.waitForLoadState('networkidle',{timeout:remaining(10000)});check(result.requests<=180,'Mobile request budget respected');check(result.errors.length===0,'No unexpected transport failures or uncaught application JavaScript errors');journeyComplete=true;
-  }catch(error){failProfile(error);}
-  finally{
-   clearTimeout(stopTimer);let cleanupFailed=false;
-   try{await closeLinuxWebKitConnection(()=>context?.close(),()=>{});}catch(error){cleanupFailed=true;failProfile(error,'browser_cleanup');}
-   try{await closeLinuxWebKitConnection(()=>browser?.close(),()=>{});}catch(error){cleanupFailed=true;failProfile(error,'browser_cleanup');}
-   result.cleanup=cleanupFailed?'fail':'pass';
-   if(journeyComplete&&!cleanupFailed&&result.errors.length===0&&!deadlineHit&&Date.now()<deadline&&result.requests<=180)result.status='pass';
-   else if(result.status!=='fail')failProfile(Error('Final mobile evidence, deadline or cleanup check failed'),'browser_cleanup');
-   result.finished_at=new Date().toISOString();save();
-  }
- }
- report.finished_at=new Date().toISOString();save();console.log(JSON.stringify({profiles:report.profiles.map(p=>({name:p.name,engine:p.engine,version:p.engine_version,status:p.status,checks:p.checks.length,failure:p.failure})),evidence:`${CONTEXT.auditRoot}/virtual-mobile-acceptance.json`}));
+import {leaseContext,readPreparedRelease,preparedTuple,assertActiveRelease,assertWatchdogTuple,assertWritableLease} from './staging-lease-context.mjs';
+import {ORIGIN,LIMITS,PROFILES,REQUIRED_CASES,CoverageDeferred,ensure,sha256,encode,argumentsFor,profileWindow,admitCase,safeURL,dependencies,submitOnce,totp,verifyFile,uiComplete,databaseMatches,databaseProof,processReceiptMatches,aggregateStatus,runRenderedJourneys} from './virtual-mobile-journeys.mjs';
+export const ROOT='D:/Projects/isp-member-rails',CONTEXT=leaseContext('rails-staging-2'),PRIVATE=CONTEXT.privateRoot;
+const JOURNAL=PRIVATE+'/acceptance-mobile.json',PUBLIC=CONTEXT.auditRoot+'/virtual-mobile-acceptance.json';
+function fixed(path,directory=false){const st=fs.lstatSync(path);ensure(!st.isSymbolicLink()&&fs.realpathSync(path).replaceAll('\\','/').toLowerCase()===path.toLowerCase()&&(directory?st.isDirectory():st.isFile()),'Fixed D browser path required');return st;}
+export function readPrivate(name,max=16777216){const p=PRIVATE+'/'+name;ensure(fixed(p).size<=max);const raw=fs.readFileSync(p,'utf8');return {value:JSON.parse(raw.replace(/^\uFEFF/,'')),raw};}
+export function durable(path,value,exclusive=false){
+ fixed(path.slice(0,path.lastIndexOf('/')),true);
+ const raw=encode(value),tmp=path+'.'+process.pid+'.tmp',fd=fs.openSync(tmp,'wx',0o600);
+ try{fs.writeFileSync(fd,raw);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}
+ if(exclusive)ensure(!fs.existsSync(path),'Existing mobile evidence cannot be overwritten');
+ fs.renameSync(tmp,path);
 }
-main().catch(()=>{report.failure='Virtual acceptance prerequisites or runner failed; private values suppressed';save();console.error(report.failure);process.exitCode=1});
+export function readMobileInputs(name,{watchdog=true,now=Date.now()}={}){
+ ensure(process.platform==='win32'&&process.versions.node==='24.21.0'&&process.env.ISP_STAGING_LEASE==='rails-staging-2','Pinned Windows controller and explicit lease2 required');
+ fixed(PRIVATE,true);assertWritableLease(CONTEXT);const prepared=readPreparedRelease(CONTEXT),r=readPrivate('runtime.json'),runtime=r.value,release=readPrivate('acceptance-release.json').value;
+ assertActiveRelease(CONTEXT,runtime,release,prepared);
+ ensure(runtime.APP_HOST===new URL(ORIGIN).host&&/^[a-f0-9]{64}$/.test(runtime.ISP_STAGING_KEY));
+ const fixtures=readPrivate('acceptance-fixtures.json').value,http=readPrivate('acceptance-http.json').value,observations=readPrivate('acceptance-db-observations.json').value;
+ ensure(fixtures.target?.project==='royal-glitter-45740959'&&fixtures.target?.host==='ep-delicate-frost-a1o15wrb.ap-southeast-1.aws.neon.tech'&&fixtures.target?.database==='neondb','Fixed synthetic target required');
+ const phasePath=CONTEXT.auditRoot+'/functional-phase-summary.json';ensure(fixed(phasePath).size<=1048576);const phase=JSON.parse(fs.readFileSync(phasePath,'utf8'));
+ dependencies({profile:name,runtime,fixtures,http,observations,phase,preparedHash:prepared.prepared_release_sha256,now});
+ if(watchdog){const plan=readPrivate('watchdog-plan.json').value,state=readPrivate('watchdog-state.json').value,updated=Date.parse(state.updated_at);
+  assertWatchdogTuple(CONTEXT,runtime,plan,state,prepared);
+  ensure(state.armed===true&&Number.isFinite(updated)&&updated<=now+5000&&now-updated<=45000&&Date.parse(state.stop_at)===Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-300000&&Number.isSafeInteger(state.pid)&&state.pid>0,'Live matching watchdog required');process.kill(state.pid,0);
+ }
+ return {runtime,fixtures,http,observations,prepared,runtimeHash:sha256(r.raw),release:{...preparedTuple(prepared),worker_version:release.worker_version,deployment_id:release.deployment_id}};
+}
+function publicReport(j){
+ return {version:2,scope:'Virtual browser engines and mobile profiles; physical devices/native installation/native PDF viewer are unproved',status:aggregateStatus(j),run_marker:j.run_marker,release:j.release,profiles:Object.values(j.profiles).map(p=>({name:p.name,status:p.status,engine:p.engine,engine_version:p.engine_version,execution_platform:p.execution_platform,started_at:p.started_at,finished_at:p.finished_at,requests:p.requests,checks:p.checks,cases:p.cases,screenshots:p.screenshots,cleanup:p.cleanup,process_cleanup:p.process_cleanup,db_reconciled:p.db_reconciled,errors:p.errors,failure_phase:p.failure_phase,elapsed_ms:p.elapsed_ms})),deferred:['natural aged MFA step-up is a separate window','physical devices, native install, OS PDF viewer, assistive-technology/conformance audit'],production_release_approved:false};
+}
+function save(j){durable(JOURNAL,j);durable(PUBLIC,publicReport(j));}
+function matchingJournal(j,input){ensure(j?.version===2&&j.lease_id==='rails-staging-2'&&j.run_marker===input.fixtures.run_marker&&j.runtime_sha256===input.runtimeHash&&JSON.stringify(j.release)===JSON.stringify(input.release),'Mobile journal release/run differs');}
+export async function executeProfile(name,input){
+ const {runtime,fixtures,http,observations}=input,profile=PROFILES[name],window=profileWindow(runtime);
+ let journal;
+ if(fs.existsSync(JOURNAL)){journal=readPrivate('acceptance-mobile.json').value;matchingJournal(journal,input);}else journal={version:2,lease_id:'rails-staging-2',run_marker:fixtures.run_marker,runtime_sha256:input.runtimeHash,release:input.release,profiles:{}};
+ ensure(!Object.hasOwn(journal.profiles,name),'A started profile is never replayed; reconcile unknown outcomes before a new reviewed run');
+ if(name==='android-chromium')ensure(journal.profiles['iphone-webkit']?.status==='PASS'&&journal.profiles['iphone-webkit'].db_reconciled===true&&journal.profiles['iphone-webkit'].process_cleanup==='pass','Capture/status and reconcile iPhone before Android');
+ const result={name,admin:profile.admin,controller_pid:process.pid,server_id:name==='iphone-webkit'?process.env.ISP_LINUX_WEBKIT_SERVER_ID:null,status:'OPEN',started_at:new Date().toISOString(),checks:[],screenshots:[],errors:[],requests:0,cleanup:'pending',db_reconciled:false,process_cleanup:'pending',cases:Object.fromEntries(REQUIRED_CASES.map(id=>[id,{status:'NOT_RUN'}])),actions:{},expected:{},baseline_sessions:Object.fromEntries(['member_b',profile.admin].map(alias=>[alias,observations.actors[alias].sessions.map(s=>s.id)]))};
+ journal.profiles[name]=result;save(journal);
+ const tmp=PRIVATE+'/virtual-browser-tmp';try{fs.mkdirSync(tmp,{mode:0o700});}catch(e){ensure(e.code==='EEXIST');}fixed(tmp,true);process.env.TMP=tmp;process.env.TEMP=tmp;process.env.TMPDIR=tmp;
+ process.env.PLAYWRIGHT_BROWSERS_PATH='D:/Projects/isp-rails-tools/virtual-browsers';
+ for(const k of Object.keys(process.env))if(['DEBUG','PWDEBUG','NODE_OPTIONS','NODE_PATH','NODE_COMPILE_CACHE'].includes(k.toUpperCase()))delete process.env[k];
+ const require=createRequire('D:/Projects/isp-rails-tools/virtual-browser-tools/package.json'),{chromium,webkit,devices}=require('playwright');ensure(require('playwright/package.json').version==='1.64.1');
+ let browser,browserServer,page,phase='browser_setup',deadlineHit=false,timer,stopPoll;const contexts=[],offlineState={armed:false,consumed:false};let failedResolve;
+ const remaining=(cap=20000)=>{const ms=Math.min(cap,window.deadline-Date.now());ensure(ms>0&&!deadlineHit,'Profile deadline reached');return ms;};
+ const bounded=async(fn,ms=20000)=>{let t;try{return await Promise.race([Promise.resolve().then(fn),new Promise((_,reject)=>{t=setTimeout(()=>reject(Error('Bounded browser operation timed out')),ms);})]);}finally{clearTimeout(t);}};
+ const operation=(fn,cap=20000)=>bounded(fn,remaining(cap));
+ const check=(ok,label)=>{ensure(ok,label);result.checks.push(label);};
+ const evaluate=(p,fn,arg)=>operation(()=>p.evaluate(fn,arg));
+ const verifyWatchdog=()=>{const state=readPrivate('watchdog-state.json').value,plan=readPrivate('watchdog-plan.json').value,now=Date.now(),updated=Date.parse(state.updated_at);assertWatchdogTuple(CONTEXT,runtime,plan,state,input.prepared);ensure(state.armed===true&&Number.isFinite(updated)&&updated<=now+5000&&now-updated<=45000&&Date.parse(state.stop_at)===window.end-300000&&Number.isSafeInteger(state.pid)&&state.pid>0,'Live matching watchdog required');process.kill(state.pid,0);};
+ const admit=()=>ensure(Date.now()<window.deadline&&!deadlineHit&&result.requests<LIMITS.requests,'Mobile request/time budget reached');
+ async function role(label,gate,{page:withPage=true,cookies}={}){
+  admit();const ctx=await operation(()=>browser.newContext({...devices[profile.device],reducedMotion:'reduce'}),15000);contexts.push(ctx);
+  ctx.on('request',()=>{result.requests++;});
+  ctx.on('requestfailed',r=>{let main=false;try{main=r.frame()===page?.mainFrame();}catch{}const kind=classifyRequestFailure({url:r.url(),method:r.method(),isNavigationRequest:r.isNavigationRequest(),isMainFrame:main,errorText:r.failure()?.errorText},offlineState);if(kind==='expected-offline-navigation'){offlineState.consumed=true;result.expected_offline_failures=(result.expected_offline_failures||0)+1;failedResolve?.();}else result.errors.push(kind);});
+  ctx.on('page',p=>{p.setDefaultTimeout(12000);p.setDefaultNavigationTimeout(20000);p.on('pageerror',()=>result.errors.push('Application JavaScript error'));});
+  await ctx.route('**/*',route=>{const u=new URL(route.request().url());return Date.now()>=window.deadline||result.requests>LIMITS.requests||!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==ORIGIN?route.abort():route.continue();});
+  if(cookies)await operation(()=>ctx.addCookies(cookies));else if(gate)await operation(()=>ctx.addCookies([gate]));
+  return {context:ctx,page:withPage?await operation(()=>ctx.newPage()):undefined};
+ }
+ async function api(ctx,url){admit();result.requests++;return operation(()=>ctx.request.get(safeURL(url).href,{maxRedirects:0,timeout:remaining()}));}
+ async function go(p,url,selector){admit();const target=safeURL(url);const turbo=new URL(p.url()).origin===ORIGIN&&await evaluate(p,()=>!!window.Turbo?.visit);
+  if(turbo)await evaluate(p,u=>window.Turbo.visit(u),target.href);else{const r=await p.goto(target.href,{timeout:remaining()});check(r?.status()===200,'Rendered same-origin page loads');}
+  await p.waitForURL(u=>u.pathname===target.pathname,{timeout:remaining()});await p.locator(selector).first().waitFor({timeout:remaining()});
+ }
+ async function submit(id,p,button,{upload=false}={}){
+  admit();verifyWatchdog();ensure(!Object.hasOwn(result.actions,id),'Mutation intent already exists; no replay');
+  const form=await operation(()=>button.evaluate(el=>{const f=el.form;return f?{action:f.action,method:f.method,override:f.querySelector('[name="_method"]')?.value,csrf:!!f.querySelector('[name="authenticity_token"]')?.value,review_key:!!f.querySelector('input[name="access_key"][type="password"][maxlength="64"][autocomplete="off"]'),lock_version:f.querySelector('[name$="[lock_version]"],[name="lock_version"]')?.value??null,revision:f.querySelector('[name="revision"]')?.value??null}:null;}));
+  return submitOnce({id,form,writeIntent:async(action,contract)=>{result.actions[action]={status:'intent',at:new Date().toISOString(),...contract};save(journal);},
+   perform:async()=>{const path=safeURL(form.action).pathname,cap=upload?45000:20000;
+    const pending=p.waitForResponse(r=>new URL(r.url()).origin===ORIGIN&&new URL(r.url()).pathname===path&&r.request().method()==='POST',{timeout:remaining(cap)});
+    const [response]=await operation(()=>Promise.all([pending,button.tap({timeout:remaining(cap)})]),cap);
+    check([302,303].includes(response.status()),'Rendered mutation receives its expected redirect');
+    return {status:response.status(),at:new Date().toISOString()};},
+   writeObserved:async(action,observation)=>{result.actions[action]={...result.actions[action],status:'observed',observation};save(journal);}
+  });
+ }
+ async function file(p,url,hash,type,label){
+  admit();const target=safeURL(url).href,download=await operation(()=>p.evaluate(async({url,max})=>{
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);let reader;
+   try{const r=await fetch(url,{credentials:'same-origin',cache:'no-store',redirect:'error',signal:controller.signal});reader=r.body.getReader();const chunks=[];let length=0;
+    for(;;){const {done,value}=await reader.read();if(done)break;length+=value.length;if(length>max)throw Error('File bound');chunks.push(value);}
+    const bytes=new Uint8Array(length);let at=0;for(const c of chunks){bytes.set(c,at);at+=c.length;}let raw='';for(let i=0;i<bytes.length;i+=8192)raw+=String.fromCharCode(...bytes.subarray(i,i+8192));
+    return {status:r.status,type:r.headers.get('content-type'),cache:r.headers.get('cache-control'),disposition:r.headers.get('content-disposition'),base64:btoa(raw)};
+   }finally{clearTimeout(timer);if(reader)await reader.cancel().catch(()=>{});}
+  },{url:target,max:LIMITS.pdf_bytes}));
+  const bytes=Buffer.from(download.base64,'base64');verifyFile(download,bytes,hash,type);const path=PRIVATE+'/'+name+'-'+label;fs.writeFileSync(path,bytes,{flag:'wx',mode:0o600});check(true,'Browser-fetched file has exact independently expected bytes and private response headers');
+ }
+ async function audit(p){
+  const state=await evaluate(p,()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,main:document.querySelectorAll('main#main').length,lang:document.documentElement.lang,unlabelled:[...document.querySelectorAll('input:not([type=hidden]):not([type=submit]):not([type=button]),select,textarea')].filter(e=>!e.disabled&&!e.labels?.length&&!e.getAttribute('aria-label')&&!e.getAttribute('aria-labelledby')).length,missingAlt:document.querySelectorAll('img:not([alt])').length}));
+  check(!state.overflow&&state.main===1&&!!state.lang&&state.unlabelled===0&&state.missingAlt===0,'Rendered structure has one main, language, field labels, image alternatives and no horizontal overflow');
+ }
+ async function offline(p,ctx){
+  await go(p,'/member/dashboard','.member-home');await p.goto('about:blank');let rejection=false,error='',privateCount=-1;
+  try{await operation(()=>ctx.setOffline(true));check(await evaluate(p,()=>navigator.onLine===false),'Engine reports explicit offline state');
+   const failed=new Promise(resolve=>{failedResolve=resolve;});offlineState.armed=true;
+   try{const navigation=p.goto(OFFLINE_DASHBOARD_URL,{timeout:remaining()}).then(()=>({rejected:false}),e=>({rejected:true,error:String(e.message||'')}));const [v]=await operation(()=>Promise.all([navigation,failed]));rejection=v.rejected;error=v.error;}finally{offlineState.armed=false;failedResolve=undefined;}
+   privateCount=await operation(()=>p.locator('.member-home').count());
+  }finally{offlineState.armed=false;failedResolve=undefined;await operation(()=>ctx.setOffline(false));}
+  check(rejection&&offlineState.consumed&&result.expected_offline_failures===1&&acceptableOfflineNavigationError(error)&&privateCount===0,'Single deliberate offline dashboard request fails without restoring private content');
+ }
+ try{
+  const controlId=process.env.ISP_MOBILE_CONTROLLER_ID;
+  ensure(/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(controlId||''),'Fresh outer controller UUID required');
+  const stopPath=PRIVATE+'/mobile-browser-control/'+controlId+'/controller-stop';
+  stopPoll=setInterval(()=>{try{if(!fs.existsSync(stopPath))return;ensure(fixed(stopPath).size<=64&&fs.readFileSync(stopPath,'utf8')===controlId+'\n');deadlineHit=true;clearInterval(stopPoll);for(const c of contexts)void c.close().catch(()=>{});if(browserServer)void browserServer.close().catch(()=>{});}catch{deadlineHit=true;clearInterval(stopPoll);for(const c of contexts)void c.close().catch(()=>{});}},250);
+  browser=name==='iphone-webkit'?await connectLinuxWebKit(webkit,{privateRoot:PRIVATE,deadline:window.deadline}):null;
+  if(!browser){browserServer=await operation(()=>chromium.launchServer({headless:true,downloadsPath:tmp,timeout:remaining(30000)}),30000);result.browser_pid_windows=browserServer.process().pid;save(journal);browser=await operation(()=>chromium.connect(browserServer.wsEndpoint(),{timeout:remaining(15000)}),15000);}
+  if(name==='iphone-webkit')result.server_pid_linux=readPrivate('linux-webkit/'+result.server_id+'/connection.json',8192).value.server_pid_linux;
+  result.engine=profile.engine;result.engine_version=browser.version();result.execution_platform=name==='iphone-webkit'?'linux':'win32';const member=await role('member',null);page=member.page;result.viewport=devices[profile.device].viewport;
+  timer=setTimeout(()=>{deadlineHit=true;for(const c of contexts)void c.close().catch(()=>{});},remaining(window.deadline-Date.now()));
+  // This header is used for this one same-origin read only. It is never installed globally.
+  admit();result.requests++;const ready=await operation(()=>member.context.request.get(ORIGIN+'/ready',{headers:{'x-isp-staging-key':runtime.ISP_STAGING_KEY},maxRedirects:0,timeout:remaining(120000)}),120000);check(ready.status()===200,'Bounded full readiness succeeds before navigation');
+  await runRenderedJourneys({name,profile,page,context:member.context,viewport:devices[profile.device].viewport,runtime,fixtures,http,baseline:observations,check,evaluate,submit,go,audit,file,role,offline,api,
+   scenario:async(id,reserveMs,reserveRequests,run)=>{phase=id;verifyWatchdog();
+    if(!admitCase({deadline:window.deadline,requests:result.requests,reserveMs,reserveRequests})){result.cases[id]={status:'DEFERRED',reason:'Insufficient complete-case time/request budget'};save(journal);throw new CoverageDeferred();}
+    const start=Date.now();result.cases[id]={status:'RUNNING',started_at:new Date().toISOString()};save(journal);
+    try{await bounded(run,Math.min(reserveMs,remaining(reserveMs)));ensure(result.errors.length===0&&Date.now()<window.deadline&&!deadlineHit&&result.requests<=LIMITS.requests);result.cases[id]={...result.cases[id],status:'PASS',elapsed_ms:Date.now()-start};save(journal);}
+    catch(e){deadlineHit=true;result.cases[id]={...result.cases[id],status:e instanceof CoverageDeferred?'DEFERRED':'FAIL',elapsed_ms:Date.now()-start};save(journal);throw e;}},
+   capture:(key,value)=>{result.expected[key]=value;save(journal);},
+   shot:async(p,label)=>{const path=CONTEXT.auditRoot+'/'+name+'-'+label+'.png';await operation(()=>p.screenshot({path,fullPage:true}),20000);result.screenshots.push(path);save(journal);},
+   pause:ms=>operation(()=>new Promise(resolve=>setTimeout(resolve,ms)),ms+1000),
+   nextOtp:async alias=>{const last=Math.max(http.actors[alias].last_otp_step||0,result.last_otp_step||0),step=Math.max(Math.floor(Date.now()/30000)+1,last+1),wait=step*30000+1000-Date.now();ensure(wait<61000&&remaining(wait+15000)>wait);await bounded(()=>new Promise(resolve=>setTimeout(resolve,wait)),wait+1000);result.last_otp_step=step;save(journal);return totp(http.actors[alias].totp_secret);}
+  });
+ }catch(error){
+  deadlineHit=true;result.failure_phase=phase;result.failure=error instanceof CoverageDeferred?'DEFERRED':'FAIL';if(!(error instanceof CoverageDeferred))result.errors.push('Browser operation or assertion failed');
+  try{fs.writeFileSync(PRIVATE+'/'+name+'-failure.txt',String(error?.stack||error),{flag:'wx',mode:0o600});}catch{}
+ }finally{
+  clearTimeout(timer);clearInterval(stopPoll);let closed=true;
+  for(const ctx of contexts)try{await closeLinuxWebKitConnection(()=>ctx.close(),()=>{});}catch{closed=false;}
+  if(browser)try{await closeLinuxWebKitConnection(()=>browser.close(),()=>{});}catch{closed=false;}
+  if(browserServer)try{await closeLinuxWebKitConnection(()=>browserServer.close(),()=>{});}catch{closed=false;}
+  result.cleanup=closed?'pass':'fail';if(!closed)result.errors.push('Browser context/server cleanup failed');
+  result.finished_at=new Date().toISOString();result.elapsed_ms=Date.parse(result.finished_at)-Date.parse(result.started_at);save(journal);
+ }
+ ensure(uiComplete(result),'Virtual profile incomplete; aggregate remains OPEN and mutation intents cannot be replayed');
+ return {status:'UI_COMPLETE_AWAITING_RECONCILIATION',profile:name,run_marker:fixtures.run_marker,controller_pid:process.pid,browser_pid_windows:result.browser_pid_windows??null,aggregate:'OPEN'};
+}
+export function reconcileProfile(name,input){
+ const journal=readPrivate('acceptance-mobile.json').value;matchingJournal(journal,input);const profile=journal.profiles[name];ensure(profile,'Profile has not run');
+ const receipt=readPrivate('virtual-mobile-'+name+'-process.json').value;
+ ensure(processReceiptMatches(profile,receipt,journal),'Exact controller/browser/server process absence receipt required');
+ const proofName='virtual-mobile-'+name+'-db-proof.json',proofPath=PRIVATE+'/'+proofName,exists=fs.existsSync(proofPath);
+ const proof=databaseProof(profile,input.observations,input.fixtures,{retainedRaw:exists?readPrivate(proofName).raw:undefined});
+ if(!exists)durable(proofPath,input.observations,true);
+ const retained=readPrivate(proofName);ensure(retained.raw===proof.raw&&sha256(retained.raw)===proof.sha256,'Retained DB proof bytes changed');
+ profile.process_cleanup='pass';profile.db_reconciled=true;profile.status='PASS';profile.reconciled_at=new Date().toISOString();profile.db_observation_sha256=sha256(retained.raw);
+ save(journal);return {status:aggregateStatus(journal),profile:name,profile_status:'PASS',run_marker:journal.run_marker};
+}
+export async function main(args=process.argv.slice(2)){
+ const command=argumentsFor(args);if(command.mode==='plan'){console.log(encode({version:2,status:'OPEN',profiles:Object.keys(PROFILES),required_cases:REQUIRED_CASES,limits:LIMITS,automatic_retries:0,ordering:'execute one profile; fixture capture-ids/status; reconcile it; then next profile',executes:false}));return;}
+ const input=readMobileInputs(command.profile,{watchdog:command.mode==='execute'}),lock=PRIVATE+'/acceptance-mobile.lock';let fd;
+ try{fd=fs.openSync(lock,'wx',0o600);fs.writeFileSync(fd,encode({pid:process.pid,profile:command.profile,mode:command.mode,started_at:new Date().toISOString()}));fs.fsyncSync(fd);
+  const result=command.mode==='execute'?await executeProfile(command.profile,input):reconcileProfile(command.profile,input);console.log(JSON.stringify(result));
+ }finally{if(fd!==undefined){fs.closeSync(fd);fs.unlinkSync(lock);}}
+}
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(()=>{console.error('Virtual mobile acceptance refused or incomplete; aggregate OPEN. Inspect private evidence.');process.exitCode=1;});

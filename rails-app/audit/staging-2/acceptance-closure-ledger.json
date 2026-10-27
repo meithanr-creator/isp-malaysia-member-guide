@@ -4,14 +4,18 @@
   "lease_id": "rails-staging-2",
   "application_source": "80d32fddf88251a6608ba047a577ce16efe8c834",
   "image_digest": "sha256:152480a896060eae82a380dc54f651e199ff1585cd5dd805d0d51b9f3a587d2a",
-  "last_published_harness": "6ab82580f8bad7f70a09f4f313156248b7f9e080",
+  "last_published_harness": "99a8ef4cadb79da495e3359a1cffdff3e82e3667",
   "execution": null,
   "production_decision": "NO_GO",
   "preparation_evidence": [
     "image-build.json",
     "inactive-preparation.json",
     "linux-webkit-engine.json",
-    "ci-6ab8258-summary.json"
+    "ci-6ab8258-summary.json",
+    "ci-99a8ef4-summary.json",
+    "inactive-bootstrap-failure-20261027.json",
+    "inactive-final-observation-20261027.json",
+    "storage-readonly-preflight-20261027.json"
   ],
   "rule": "PASS requires actual assertions, matching sealed release/target/window and hashed evidence; CI or preparation success alone never marks a hosted case PASS.",
   "cases": [
@@ -645,5 +649,14 @@
       "evidence": [],
       "note": null
     }
-  ]
+  ],
+  "infrastructure_attempt": {
+    "status": "blocked",
+    "evidence": "inactive-bootstrap-failure-20261027.json",
+    "full_hosted_run_started": false,
+    "application_creation": "uncertain",
+    "observed_application_absent": true,
+    "observed_ingress_closed": true,
+    "terminal_abort_persisted": true
+  }
 }

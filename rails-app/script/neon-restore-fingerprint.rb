@@ -1,3 +1,14 @@
+# Legacy v1 execution is historical. Current preparation uses --preflight in the Node wrapper.
+require "json"
+if ARGV == ["--inventory-capabilities"]
+  require_relative "recovery-fingerprint-inventory"
+  puts JSON.generate(version:2,read_only:true,requires:"active repeatable-read or serializable read-only PostgreSQL18 transaction",inventory:%w[all_public_tables schema columns constraints indexes types migrations MFA every_public_or_public_owned_sequence sequence_options_ownership_defaults_state_highwater],execution_enabled:false,restore_rollback:"NOT RUN")
+  exit
+end
+if ENV["ISP_STAGING_LEASE"] && ENV["ISP_STAGING_LEASE"] != "legacy-1"
+  warn "Legacy fingerprint refused for a fresh lease. Use the current preflight; runtime admission remains required."
+  exit 1
+end
 # Read-only, fixed-project snapshot/restore evidence. Private rows never leave memory.
 require "json"
 require "pg"
@@ -66,3 +77,4 @@ rescue StandardError => error
 ensure
   conn&.close
 end
+

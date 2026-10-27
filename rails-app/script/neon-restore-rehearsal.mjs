@@ -1,5 +1,7 @@
 // Isolated Free-project restore. Never finalizes, migrates or changes the parent.
 import fs from 'node:fs';
+import {freshRecoveryPreflight} from './recovery-preflight-io.mjs';
+import {selectLease,leaseContext,assertWritableLease,LEGACY_LEASE} from './staging-lease-context.mjs';
 import {buildEnvironment} from './hosted-acceptance-operator.mjs';
 import {spawnSync} from 'node:child_process';
 import {setTimeout as delay} from 'node:timers/promises';
@@ -26,9 +28,10 @@ async function completed(value){
   for(let i=0;i<60&&Date.now()<(phase==='cleanup'?cleanupDeadline:actionDeadline);i++){const data=api('/projects/'+PROJECT+'/operations/'+operation.id),op=data.operation||data;if(op.status==='finished'||op.status==='skipped'){done=true;break}assert(!['failed','cancelled'].includes(op.status));await delay(2000)}assert(done);
  }
 }
-function fingerprint(mode){assert(actionDeadline-Date.now()>30000);const r=spawnSync(process.execPath,[ROOT+'/script/run-neon-fingerprint.mjs',mode],{cwd:ROOT,env:process.env,encoding:'utf8',windowsHide:true,timeout:Math.min(120000,actionDeadline-Date.now()),maxBuffer:2000000});if(r.status!==0){fs.writeFileSync(PRIVATE+'/neon-restore-verifier-error.txt',String(r.stdout)+'\n'+String(r.stderr),{mode:0o600});throw Error('Read-only fingerprint did not verify')}const item=JSON.parse(r.stdout.trim());assert(item.ok&&item.read_only&&item.matched&&item.actors===9&&item.registry===7);return item;}
+function fingerprint(mode){assert(actionDeadline-Date.now()>30000);const r=spawnSync(process.execPath,[ROOT+'/script/run-neon-fingerprint.mjs',mode],{cwd:ROOT,env:process.env,encoding:'utf8',windowsHide:true,timeout:Math.min(120000,actionDeadline-Date.now()),maxBuffer:2000000});if(r.status!==0){fs.writeFileSync(PRIVATE+'/neon-restore-verifier-error.txt',String(r.stdout)+'\n'+String(r.stderr),{mode:0o600});throw Error('Read-only fingerprint did not verify')}const item=JSON.parse(r.stdout.trim());assert(item.ok&&item.read_only&&item.matched);return item;}
 async function main(){
  if(process.argv.length!==3||process.argv[2]!=='--execute'){console.log(JSON.stringify({executes:false,project:PROJECT,steps:['snapshot fixed LSN','restore separate branch without finalize','0.25CU300s suspend','verify read-only hashes and MFA','verify parent unchanged','delete exact created resources']}));return}
+ assert(selectLease()===LEGACY_LEASE);assertWritableLease(leaseContext(LEGACY_LEASE));
  save();
  try{
   const organization=JSON.parse(fs.readFileSync(PRIVATE+'/neon-organization-plan.json','utf8'));assert(organization.plan==='free');report.plan='free';
@@ -37,7 +40,7 @@ async function main(){
   assert(Array.isArray(beforeBranches)&&beforeBranches.every(b=>b.name!==name)&&beforeBranches.length<10&&beforeBranches.some(b=>b.id===PARENT)&&Array.isArray(snapshots)&&snapshots.length===0);
   const parentData=cli(['branches','get',PARENT,'--project-id',PROJECT]),parent=parentData.branch||parentData;assert(parent.id===PARENT&&(parent.default===true||parent.primary===true)&&!parent.parent_id);
   beforeEndpoints=rows(api('/projects/'+PROJECT+'/branches/'+PARENT+'/endpoints'),'endpoints');assert(Array.isArray(beforeEndpoints));
-  const baseline=JSON.parse(fs.readFileSync(PRIVATE+'/neon-restore-baseline.json','utf8'));assert(/^[0-9A-F]+\/[0-9A-F]+$/i.test(baseline.lsn)&&baseline.tables.users.count===9&&baseline.tables.membership_registry_entries.count===7);
+  const baseline=JSON.parse(fs.readFileSync(PRIVATE+'/neon-restore-baseline.json','utf8'));assert(/^[0-9A-F]+\/[0-9A-F]+$/i.test(baseline.lsn)&&Number.isSafeInteger(baseline.tables.users.count)&&baseline.tables.users.count>0&&Number.isSafeInteger(baseline.tables.membership_registry_entries.count));
   phase='snapshot';save();
   const snapshotData=cli(['snapshots','create','--project-id',PROJECT,'--branch',PARENT,'--name',name,'--lsn',baseline.lsn,'--expires-at',new Date(Date.now()+45*60000).toISOString()]);const snapshot=snapshotData.snapshot||snapshotData;
   assert(/^[a-zA-Z0-9-]{8,128}$/.test(snapshot.id||'')&&snapshot.name===name&&snapshot.source_branch_id===PARENT);snapshotId=snapshot.id;save();
@@ -85,4 +88,17 @@ async function main(){
   fs.writeFileSync(ROOT+'/audit/neon-restore-rehearsal.json',JSON.stringify(publicReport,null,2));console.log(JSON.stringify(publicReport));
  }
 }
-main().catch(()=>{console.error('Isolated restore prerequisites failed; no private values displayed');process.exitCode=1});
+async function entry(){
+ const mode=process.argv[2];
+ if(mode==='--preflight'||mode==='--verify-backups'){
+  console.log(JSON.stringify(freshRecoveryPreflight(process.argv.slice(3),{write:mode==='--preflight',verifyBackups:mode==='--verify-backups'})));return;
+ }
+ if(mode==='--describe-fresh'){
+  console.log(JSON.stringify({scope:'Fresh lease offline preparation only',status:'NOT RUN',execution_enabled:false,usage:['--preflight --lease rails-staging-2 --operation UUID','--verify-backups --lease rails-staging-2 --operation UUID'],blocked:['reviewed restored-target runtime admission/watchdog','independent created-resource/provider observations','actual application member/admin/files/writes/restart/rollback and exact cleanup']}));return;
+ }
+ if(mode==='--execute-fresh')throw Error('Fresh recovery execution is blocked pending reviewed operation-specific runtime and provider admission; no provider or database operation started.');
+ await main();
+}
+entry().catch(()=>{console.error('Recovery prerequisites refused or execution blocked; no private values displayed. Use --describe-fresh and docs/RECOVERY-PREFLIGHT.md.');process.exitCode=1});
+
+

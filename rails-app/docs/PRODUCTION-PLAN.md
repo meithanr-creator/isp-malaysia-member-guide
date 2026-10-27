@@ -1,6 +1,6 @@
 # Production transition plan
 
-> Current authority: [26 October closure ledger](PRODUCTION-CLOSURE-2026-10-26.md). The first hosted rehearsal ran and is stopped; production is NO-GO. Nine initial identity cases and a bounded database restore passed. Event upload and both hosted mobile attempts failed. Offline whole-area fixes are being verified. Statements below that say the runtime has not started are historical. The owner accepted virtual mobile scope; physical-device/native-install evidence is unclaimed and is not a new owner-action gate.
+> Current authority: [27 October status](PRODUCTION-STATUS-2026-10-27.md) and [current milestones](MILESTONES.md). The revised full hosted run has not started. The inactive Worker was deployed; application creation remains unconfirmed and the terminal stop observed closed ingress/no application. Production is NO-GO. Earlier runtime and source statements below are historical; no old lease is reset.
 
 Updated: 26 October 2026 (Asia/Kuala_Lumpur). Director/reviewer: Astra. Implementation and independent testing: GPT-6.1 Sol, extra-high reasoning. Project and artifacts: `D:\Projects\isp-member-rails`; runtime/tooling: `D:\Projects\isp-rails-tools`. Repository: `meithanr-creator/isp-malaysia-member-guide`, Rails source under `rails-app/`. Reported handover baseline: `rails-member-events` at `3673fe30e842cd987b9827c669493b58d89c0e91`; the coordinator must verify the remote head before delivery.
 

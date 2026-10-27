@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "scope": "direct read-only staging R2; not hosted application proof",
+  "captured_at": "2026-10-27T02:55:08Z",
+  "mutations": 0,
+  "tls_verified": true,
+  "status": "pass",
+  "authenticated_head_status": 200,
+  "authenticated_list_status": 200,
+  "empty_observed": true,
+  "truncated": false,
+  "filenames_in_evidence": false
+}

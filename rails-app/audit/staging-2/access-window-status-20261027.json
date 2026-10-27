@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "captured_at": "2026-10-27T04:24:15.7081636Z",
+  "deployment_access_period": {
+    "not_before": "2026-10-27T02:25:00Z",
+    "expires_on": "2026-10-27T03:25:00Z",
+    "period_ended": true,
+    "renewed": false
+  },
+  "storage_policy": {
+    "exact_expiry_time_observed": false,
+    "permission": "Object Read & Write",
+    "source": "read-only Cloudflare R2 token UI",
+    "bucket": "isp-staging-private",
+    "name": "ISP staging rehearsal — private bucket",
+    "expiry_date_shown": "2026-10-27",
+    "status_shown": "Active until Oct 27, 2026",
+    "modified": false
+  },
+  "provider_resources_last_observed_at": "2026-10-27T03:14:36.335Z",
+  "application_present": false,
+  "ingress_closed": true,
+  "runtime_dates_blank": true,
+  "full_hosted_run_started": false,
+  "production_approved": false,
+  "cumulative_ceiling_usd": 5,
+  "credentials_in_evidence": false
+}

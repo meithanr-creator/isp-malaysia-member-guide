@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "application_source": "80d32fddf88251a6608ba047a577ce16efe8c834",
+  "release_control_source": "99a8ef4cadb79da495e3359a1cffdff3e82e3667",
+  "ci_run": 40436297509,
+  "worker_put_confirmed": true,
+  "worker": {
+    "namespace_id": "8ff8ea955b644da5b0cb2759e3c01c65",
+    "worker_version": "0a619974-23df-4ae3-9870-9e6e12fcc943",
+    "deployment_id": "82e1b292-6886-4526-8941-a3854cfe18c2"
+  },
+  "application_post_intent_at": "2026-10-27T02:40:33.178Z",
+  "application_request_sha256": "1299bbcae062bb9d1977af184b46a493792fbc0840d770a1d36f25d7014b89e6",
+  "application_outcome": {
+    "request_returned_success": false,
+    "observed": null,
+    "uncertain": true
+  },
+  "latest_stop_observation": {
+    "version": 1,
+    "application_absent": true,
+    "ingress_closed": true,
+    "abort_persisted": true,
+    "creation_outcome_confirmed": false,
+    "namespace_preserved": true,
+    "at": "2026-10-27T02:44:31.129Z"
+  },
+  "overall_bootstrap_status": "UNCERTAIN_APPLICATION_CREATION",
+  "seal_created": false,
+  "runtime_created": false,
+  "runtime_started": false,
+  "automatic_retries": 0,
+  "new_post_forbidden": true,
+  "production_approved": false,
+  "cumulative_ceiling_usd": 5,
+  "diagnostic_gap": "Original provider transport/status/error details were discarded; actual rejection cause is unproven."
+}

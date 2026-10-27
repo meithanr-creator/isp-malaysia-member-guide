@@ -1,5 +1,6 @@
 // Pure lease-2 release boundaries and one-shot mutation discipline.
 import {createHash} from 'node:crypto';
+import {publicProviderOutcome} from './provider-request-outcome.mjs';
 import {validatePreparedRelease,preparedTuple,assertRuntimeRelease,assertWatchdogTuple,leaseContext,LEASE2} from './staging-lease-context.mjs';
 export const C=Object.freeze({
  account:'a9720867333b64a4f8ee70cdfd673eb9',worker:'isp-member-production',lease:'rails-staging-2',className:'RailsStaging2',
@@ -88,11 +89,13 @@ export function preparedRecord({source,worker,app}){
  return validatePreparedRelease({version:1,lease_id:C.lease,account:C.account,worker:C.worker,application_name:C.worker,application_id:app.id,namespace_id:worker.namespace_id,class_name:C.className,worker_source:source,rails_source:C.rails,image_digest:C.digest,rollback_worker_version:worker.worker_version,rollback_deployment_id:worker.deployment_id,activation:false});
 }
 export async function oneShot({kind,intent,writeIntent,writeOutcome,mutate,reconcile}){
- await writeIntent(kind,intent);let sent=false,observation=null;
- try{await mutate();sent=true;}catch{}
- try{observation=await reconcile();}catch{}
- await writeOutcome(kind,{request_returned_success:sent,observed:observation,uncertain:!sent||observation===null});
- must(sent&&observation!==null,'Mutation outcome requires read-only reconciliation; do not replay it');return observation;
+ await writeIntent(kind,intent);let sent=false,observation=null,requestOutcome=null,reconciliationFailure=null,reconciliationFailed=false;
+ try{const exchange=await mutate();sent=true;requestOutcome=publicProviderOutcome(exchange?.provider_outcome);}catch(error){requestOutcome=publicProviderOutcome(error);}
+ try{observation=await reconcile();}catch(error){reconciliationFailed=true;reconciliationFailure=publicProviderOutcome(error);}
+ await writeOutcome(kind,{request_returned_success:sent,observed:observation,uncertain:!sent||observation===null,
+  request_outcome:requestOutcome,reconciliation_failed:reconciliationFailed,reconciliation_request_outcome:reconciliationFailure});
+ if(!sent||observation===null){const error=new Refused('Mutation outcome requires read-only reconciliation; do not replay it');error.provider_outcome=requestOutcome;throw error;}
+ return observation;
 }
 export function runtimeObjects({prepared,preparedHash,seed,secrets,grant,packageHash,helperHash,ciRun,now=Date.now()}){
  validatePreparedRelease(prepared);validateBindings(secrets,seed);must(hex(preparedHash,64));
@@ -160,5 +163,5 @@ export async function failureShutdown({persistAbort,stop,persistResult}){
  try{await persistAbort();abortPersisted=true;}catch{}
  try{result=await stop();}catch{}
  if(result)try{await persistResult(result);}catch{}
- return {abort_persisted:abortPersisted,result,shutdown_confirmed:result?.container_application_absent===true&&result?.ingress_closed===true};
+ return {abort_persisted:abortPersisted,result,shutdown_confirmed:result?.container_application_absent===true&&result?.ingress_closed===true&&result?.provider_evidence_complete!==false&&result?.status!=='FAIL'};
 }

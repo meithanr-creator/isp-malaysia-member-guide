@@ -1,5 +1,19 @@
 # Rails delivery milestones
 
+## Current production gates — 27 October 2026
+
+This table is current. The earlier M0–M7/UI checkpoints below are historical local-review evidence. See PRODUCTION-STATUS-2026-10-27.md and audit/staging-2/acceptance-closure-ledger.json for exact receipts and unclosed cases.
+
+| Gate | Current status | Evidence / next condition |
+| --- | --- | --- |
+| P0 Scope and guardrails | Maintained | Rails; all files on D; US$5 cumulative incremental ceiling; Shop/Jobs frozen DEMO; Academy/Forum excluded; no real-member operation, identity mail, paid upgrade, DNS cutover or public launch. |
+| P1 Reviewed source and CI | Passed for source99a8ef4; subsequent corrections await review/CI | All7 required push jobs40436297509 and PR40436305054 passed;112 release-tool tests passed. Astra approved that source. The next provider-diagnostics/mobile/recovery source candidate has 163 Node tests plus 7 Ruby tests/39 assertions passing locally; Astra review and exact new-commit CI are separate gates. No hosted case is closed by these results. |
+| P2 Hosting and recovery | BLOCKED on actual application-creation outcome; full recovery remains open | Exact image is in Cloudflare. Inactive Worker PUT and module/namespace readback passed; application POST was unconfirmed. Terminal stop observed no app/closed ingress, but does not prove the never-observed creation outcome. Preserve journals/no replay; fix bounded provider diagnostics and obtain review/CI. No sealed runtime exists. |
+| P3 Hosted acceptance and virtual mobile | NOT RUN for the revised full candidate | All63 hosted case closures remain open. Local engine readiness/CI do not close hosted cases. First functional phase selects42 HTTP cases; full browser journeys and independent reconciliation/cleanup are required separately. |
+| P4 Production launch | NO-GO | Required P2/P3 evidence, verified identity-mail delivery, approved first admin/member records/content, support/retention/ongoing-cost ownership, domain/TLS readiness and Astra final decision remain. |
+
+## Historical delivery checkpoints
+
 Updated 25 October 2026, Asia/Kuala_Lumpur. Director/PMO: Astra high. Implementation and independent testing: GPT-6.1 Sol extra high. Parent coordinates integration and release.
 
 | Gate | Status | Acceptance evidence |

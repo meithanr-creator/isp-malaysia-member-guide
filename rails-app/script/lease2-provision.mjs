@@ -8,11 +8,13 @@ import {C,Refused,must,hash,blobHash,canonical,hex,uuid,validateCI,validateConfi
 import {validatePreparedRelease,preparedTuple,leaseContext,LEASE2} from './staging-lease-context.mjs';
 import {stopStaging} from './cloudflare-staging-watchdog.mjs';
 import {readStagingCredential,validateVerifiedApiCredential} from './staging-credential-provider.mjs';
+import {performProviderRequest,publicProviderOutcome} from './provider-request-outcome.mjs';
 const ROOT='D:/Projects/isp-member-rails',PRIVATE='D:/Projects/isp-rails-tools/isp-staging-private/leases/rails-staging-2',CREDENTIALS='D:/Projects/isp-rails-tools/isp-staging-private';
 const OWN=fileURLToPath(new URL('..',import.meta.url)),A='/accounts/'+C.account,W=A+'/workers/scripts/'+C.worker,APP=A+'/containers/applications';
 const NOOP='node -e "console.log(\'ISP deployment is disabled; use the reviewed manual release procedure.\')"';
 const SCRIPT='2add92d700014660819ef6b5d266f104',TRIGGER='338f5327-8486-4f8a-aa9a-b0ee4739f427';
 let phase='arguments',lockNonce,token,tokenInfo,requestCount=0,emergencyRequestCount=0,activationIngressAllowed=false,rollbackVersionAllowed=null;
+let providerEvidenceFailed=false,emergencyEvidenceMode=false;
 const normal=p=>resolve(p).replaceAll('\\','/').toLowerCase();
 function fixed(p,directory=false){const s=fs.lstatSync(p);must(!s.isSymbolicLink()&&normal(fs.realpathSync(p))===normal(p)&&(directory?s.isDirectory():s.isFile()),'Fixed D path required');return s;}
 function bytes(p,max=2*1024*1024){must(fixed(p).size<=max,'Private file too large');return fs.readFileSync(p);}
@@ -25,13 +27,13 @@ function identicalOrWrite(name,value){const existing=optional(name);if(existing)
 function has(name){try{fixed(p(name));return true;}catch(e){if(e.code==='ENOENT')return false;throw e;}}
 function noAbort(){bootstrapFence({aborted:has('provision-abort.json'),cleaned:has('provision-cleaned.json'),handedOff:has('watchdog-handoff.json')});}
 function noHandoff(){bootstrapFence({handedOff:has('watchdog-handoff.json')},{cleanup:true});}
-function helperHash(root=ROOT){return hash(['script/lease2-provision-core.mjs','script/lease2-provision.mjs','script/staging-lease-context.mjs','script/cloudflare-staging-ops.mjs','script/cloudflare-staging-watchdog.mjs','script/staging-credential-provider.mjs'].map(x=>x+':'+hash(bytes(root+'/'+x))).join('\n'));}
+function helperHash(root=ROOT){return hash(['script/lease2-provision-core.mjs','script/lease2-provision.mjs','script/staging-lease-context.mjs','script/cloudflare-staging-ops.mjs','script/cloudflare-staging-watchdog.mjs','script/staging-credential-provider.mjs','script/provider-request-outcome.mjs'].map(x=>x+':'+hash(bytes(root+'/'+x))).join('\n'));}
 async function buildProof(root){
  const require=createRequire(root+'/cloudflare/package.json');must(require('esbuild').version==='0.28.2');must(json(root+'/cloudflare/node_modules/@cloudflare/containers/package.json').version==='0.3.7');
  const b=await require('esbuild').build({absWorkingDir:root+'/cloudflare',entryPoints:['staging/index.js'],bundle:true,write:false,metafile:true,format:'esm',platform:'neutral',target:'es2022',external:['cloudflare:*']});
  must(b.outputFiles.length===1);const code=b.outputFiles[0].contents,files={};
  for(const name of Object.keys(b.metafile.inputs)){const abs=resolve(root+'/cloudflare',name);must(normal(abs).startsWith(normal(root)+'/'));if(!normal(abs).includes('/node_modules/'))files[abs.slice(root.length+1).replaceAll('\\','/')]=blobHash(bytes(abs));}
- for(const name of ['cloudflare/package.json','cloudflare/package-lock.json','script/lease2-provision-core.mjs','script/lease2-provision.mjs','script/staging-lease-context.mjs','script/cloudflare-staging-ops.mjs','script/cloudflare-staging-watchdog.mjs','script/staging-credential-provider.mjs'])files[name]=blobHash(bytes(root+'/'+name));
+ for(const name of ['cloudflare/package.json','cloudflare/package-lock.json','script/lease2-provision-core.mjs','script/lease2-provision.mjs','script/staging-lease-context.mjs','script/cloudflare-staging-ops.mjs','script/cloudflare-staging-watchdog.mjs','script/staging-credential-provider.mjs','script/provider-request-outcome.mjs'])files[name]=blobHash(bytes(root+'/'+name));
  return {code,proof:{bundle_sha256:hash(code),files,helper_sha256:helperHash(root)}};
 }
 function loadPackage(){
@@ -47,22 +49,31 @@ function grantFor(context,purpose='inactive-provision',allowExpired=false){
  return {grant,end};
 }
 async function raw(method,path,body,allow404=false,options={}){
- const budget=admitProviderRequest({normal:requestCount,emergency:emergencyRequestCount},{emergency:options.emergency===true});requestCount=budget.normal;emergencyRequestCount=budget.emergency;
+ const emergency=options.emergency===true||emergencyEvidenceMode;
+ const admit=()=>{
+ const budget=admitProviderRequest({normal:requestCount,emergency:emergencyRequestCount},{emergency});requestCount=budget.normal;emergencyRequestCount=budget.emergency;
  const getPaths=[W+'/deployments',W+'/content/v2',W+'/subdomain',A+'/workers/durable_objects/namespaces?per_page=1000',APP+'?per_page=100',A,A+'/builds/workers/'+SCRIPT+'/triggers','/user/tokens/verify'];
  const appPath=new RegExp('^'+APP+'/[a-f0-9-]{36}(?:/instances-v2\\?per_page=100)?$');
  must((method==='GET'&&(getPaths.includes(path)||appPath.test(path)||new RegExp('^'+W+'/versions/[a-f0-9-]{36}$').test(path)))||(method==='PUT'&&path===W)||(method==='POST'&&path===APP)||(method==='POST'&&path===W+'/subdomain'&&body?.previews_enabled===false&&(body.enabled===false||(activationIngressAllowed&&body.enabled===true)))||(method==='POST'&&path===W+'/deployments'&&rollbackVersionAllowed&&body?.strategy==='percentage'&&body.versions?.length===1&&body.versions[0].version_id===rollbackVersionAllowed&&body.versions[0].percentage===100)||(method==='DELETE'&&appPath.test(path)&&!path.includes('instances-v2')),'Provider path refused');
+ };
  const headers={Authorization:'Bearer '+token,Accept:'application/json'};let value=body;
  if(body&&!(body instanceof FormData)){headers['Content-Type']='application/json';value=JSON.stringify(body);}
- const response=await fetch('https://api.cloudflare.com/client/v4'+path,{method,headers,body:value,redirect:'error',signal:AbortSignal.any([...(options.signal?[options.signal]:[]),AbortSignal.timeout(Math.max(1,Math.ceil(Math.min(20000,options.timeoutMs??20000))))])});
- if(allow404&&response.status===404){await response.body?.cancel();return null;}must(response.ok,'Provider request failed');must(!/rel=["']?next/i.test(response.headers.get('link')||''),'Partial provider page header refused');
- const limit=4*1024*1024,chunks=[];let count=0;for await(const chunk of response.body){count+=chunk.length;must(count<=limit,'Provider response exceeded bound');chunks.push(chunk);}const data=Buffer.concat(chunks);
- if(path===W+'/content/v2'){
-  const type=response.headers.get('content-type')||'';must(type.startsWith('multipart/'),'Serving module response must be multipart');
-  const form=await new Response(data,{headers:{'content-type':type}}).formData(),modules=[];
-  for(const [name,file] of form){must(file instanceof File);modules.push({name,sha256:hash(Buffer.from(await file.arrayBuffer()))});}
-  return {entrypoint:response.headers.get('cf-entrypoint'),modules};
- }
- const envelope=JSON.parse(data.toString('utf8'));return completeEnvelope(envelope);
+ try{
+  const exchange=await performProviderRequest({method,endpoint:path,body:value,headers,allow404,admit,signal:options.signal,timeoutMs:options.timeoutMs??20000,bestEffortEvidence:emergency,
+   persist:(kind,record)=>durable('provider-request-'+record.request_id+'-'+kind+'.json',record),
+   parseSuccess:async(data,response,envelope)=>{
+    must(!/rel=["']?next/i.test(response.headers.get('link')||''),'Partial provider page header refused');
+    if(path===W+'/content/v2'){
+     const type=response.headers.get('content-type')||'';must(type.startsWith('multipart/'),'Serving module response must be multipart');
+     const form=await new Response(data,{headers:{'content-type':type}}).formData(),modules=[];
+     for(const [name,file] of form){must(file instanceof File);modules.push({name,sha256:hash(Buffer.from(await file.arrayBuffer()))});}
+     return {entrypoint:response.headers.get('cf-entrypoint'),modules};
+    }
+    return completeEnvelope(envelope);
+   }});
+  if(exchange.provider_outcome.evidence_write_failed)providerEvidenceFailed=true;
+  return options.captureOutcome?exchange:exchange.value;
+ }catch(error){if(publicProviderOutcome(error)?.evidence_write_failed)providerEvidenceFailed=true;throw error;}
 }
 const get=(path,allow404=false)=>raw('GET',path,undefined,allow404);
 async function authenticate(){
@@ -108,7 +119,7 @@ async function createApp(context){
  await mutationGuard(context);must(has('worker-put-intent.json')&&!has('app-post-intent.json'),'Application POST cannot be replayed');
  const intent=json(p('worker-put-intent.json')),worker=await observeWorker(intent);must((await apps()).filter(x=>x.name===C.worker||x.durable_objects?.namespace_id===worker.namespace_id).length===0,'Application already exists; reconcile instead');
  const body=applicationRequest(worker.namespace_id);
- return oneShot({kind:'app-post',intent:{namespace_id:worker.namespace_id,request_sha256:hash(canonical(body)),created_at:new Date().toISOString()},writeIntent:(k,v)=>durable(k+'-intent.json',v),writeOutcome:(k,v)=>durable(k+'-outcome.json',v),mutate:async()=>{await mutationGuard(context);await raw('POST',APP,body);},reconcile:()=>observeApp(intent,worker)});
+ return oneShot({kind:'app-post',intent:{namespace_id:worker.namespace_id,request_sha256:hash(canonical(body)),created_at:new Date().toISOString()},writeIntent:(k,v)=>durable(k+'-intent.json',v),writeOutcome:(k,v)=>durable(k+'-outcome.json',v),mutate:async()=>{await mutationGuard(context);return await raw('POST',APP,body,false,{captureOutcome:true});},reconcile:()=>observeApp(intent,worker)});
 }
 async function provision(context){
  await mutationGuard(context);must(!has('worker-put-intent.json')&&!has('app-post-intent.json'),'Worker PUT cannot be replayed');
@@ -117,7 +128,7 @@ async function provision(context){
  const vars=Object.fromEntries((baseline.version.resources?.bindings||[]).filter(x=>x.type==='plain_text').map(x=>[x.name,x.text]));must(vars.ISP_CONTAINER_ENABLED==='false'&&vars.ISP_STAGING_START_AT===''&&vars.ISP_STAGING_EXPIRES_AT==='');
  const intent={version:1,nonce:context.pack.nonce,source:context.pack.source,bundle_sha256:context.pack.bundle_sha256,metadata_sha256:context.pack.metadata_sha256,package_sha256:context.packageHash,config:context.config,created_at:new Date().toISOString(),baseline:{...baseline,namespace_ids:ns.map(x=>x.id),application_ids:applications.map(x=>x.id)}};
  const metadata=json(p('worker-upload-metadata.json')),code=bytes(p('worker-bundle.mjs')),body=new FormData();body.set('metadata',new Blob([canonical(metadata)],{type:'application/json'}));body.set('index.mjs',new File([code],'index.mjs',{type:'application/javascript+module'}));
- await oneShot({kind:'worker-put',intent,writeIntent:(k,v)=>durable(k+'-intent.json',v),writeOutcome:(k,v)=>durable(k+'-outcome.json',v),mutate:async()=>{await mutationGuard(context);await raw('PUT',W,body);},reconcile:()=>observeWorker(intent)});
+ await oneShot({kind:'worker-put',intent,writeIntent:(k,v)=>durable(k+'-intent.json',v),writeOutcome:(k,v)=>durable(k+'-outcome.json',v),mutate:async()=>{await mutationGuard(context);return await raw('PUT',W,body,false,{captureOutcome:true});},reconcile:()=>observeWorker(intent)});
  await createApp(context);
 }
 async function seal(){
@@ -149,9 +160,9 @@ async function cleanup(){
   }
  }catch{}
  try{const ingress=await call('GET',W+'/subdomain');ingressClosed=ingress.enabled===false&&ingress.previews_enabled===false;}catch{}
- const partial={version:1,application_absent:absent,ingress_closed:ingressClosed,abort_persisted:abortPersisted,creation_outcome_confirmed:creationConfirmed,namespace_preserved:true,at:new Date().toISOString()};
+ const partial={version:1,application_absent:absent,ingress_closed:ingressClosed,abort_persisted:abortPersisted,creation_outcome_confirmed:creationConfirmed,provider_evidence_complete:!providerEvidenceFailed,namespace_preserved:true,at:new Date().toISOString()};
  try{durable('bootstrap-cleanup-observation-'+randomUUID()+'.json',partial);}catch{}
- must(abortPersisted&&absent&&ingressClosed&&creationConfirmed,'Bootstrap shutdown or uncertain creation outcome remains unconfirmed');
+ must(abortPersisted&&absent&&ingressClosed&&creationConfirmed&&!providerEvidenceFailed,'Bootstrap shutdown or uncertain creation outcome remains unconfirmed');
  const existing=optional('provision-cleaned.json');if(existing)return existing;durable('provision-cleaned.json',partial);return partial;
 }
 
@@ -226,7 +237,7 @@ function captureActive(context,worker){
 async function emergencyStop(){
  const prepared=validatePreparedRelease(json(p('prepared-release.json'))),preparedHash=hash(bytes(p('prepared-release.json'))),plan=json(p('watchdog-plan.json'));
  const result=await stopStaging(plan,(path,method='GET',body,allow404=false,options={})=>raw(method,A+path,body,allow404,{...options,emergency:true}),(ms,{signal}={})=>new Promise((resolve,reject)=>{let timer;const aborted=()=>{clearTimeout(timer);reject(Error('Cleanup pause aborted'));};if(signal?.aborted)return aborted();timer=setTimeout(()=>{signal?.removeEventListener('abort',aborted);resolve();},ms);signal?.addEventListener('abort',aborted,{once:true});}),{context:leaseContext(LEASE2),prepared:{...prepared,prepared_release_sha256:preparedHash}});
- must(result.container_application_absent===true&&result.ingress_closed===true,'Sealed emergency shutdown unconfirmed');return result;
+ must(result.container_application_absent===true&&result.ingress_closed===true,'Sealed emergency shutdown unconfirmed');return {...result,provider_evidence_complete:!providerEvidenceFailed,...(providerEvidenceFailed?{status:'FAIL',shutdown_confirmed:false}: {})};
 }
 async function activate(){
  const context=await activationGuard();must(!has('active-worker-put-intent.json')&&!has('active-ingress-post-intent.json')&&!has('acceptance-release.json'),'Active mutations cannot be replayed');
@@ -235,9 +246,9 @@ async function activate(){
  body.set('metadata',new Blob([canonical(metadata)],{type:'application/json'}));body.set('index.mjs',new File([bytes(p('worker-bundle.mjs'))],'index.mjs',{type:'application/javascript+module'}));
  const intent={version:1,nonce,source:context.pack.source,bundle_sha256:context.pack.bundle_sha256,metadata_sha256:hash(canonical(metadata)),prepared_release_sha256:context.preparedHash,baseline:{deployment:{id:context.prepared.rollback_deployment_id},version:{id:context.prepared.rollback_worker_version},namespace_ids:[]}};
  try{
-  await oneShot({kind:'active-worker-put',intent,writeIntent:(k,v)=>durable(k+'-intent.json',v),writeOutcome:(k,v)=>durable(k+'-outcome.json',v),mutate:async()=>{await activationGuard();await raw('PUT',W,body);},reconcile:()=>observeActive(context,false)});
+  await oneShot({kind:'active-worker-put',intent,writeIntent:(k,v)=>durable(k+'-intent.json',v),writeOutcome:(k,v)=>durable(k+'-outcome.json',v),mutate:async()=>{await activationGuard();return await raw('PUT',W,body,false,{captureOutcome:true});},reconcile:()=>observeActive(context,false)});
   await activationGuard();await controls();
-  const worker=await oneShot({kind:'active-ingress-post',intent:{version:1,prepared_release_sha256:context.preparedHash,enabled:true,previews_enabled:false,at:new Date().toISOString()},writeIntent:(k,v)=>durable(k+'-intent.json',v),writeOutcome:(k,v)=>durable(k+'-outcome.json',v),mutate:async()=>{await activationGuard();activationIngressAllowed=true;try{await raw('POST',W+'/subdomain',{enabled:true,previews_enabled:false});}finally{activationIngressAllowed=false;}},reconcile:()=>observeActive(context,true)});
+  const worker=await oneShot({kind:'active-ingress-post',intent:{version:1,prepared_release_sha256:context.preparedHash,enabled:true,previews_enabled:false,at:new Date().toISOString()},writeIntent:(k,v)=>durable(k+'-intent.json',v),writeOutcome:(k,v)=>durable(k+'-outcome.json',v),mutate:async()=>{await activationGuard();activationIngressAllowed=true;try{return await raw('POST',W+'/subdomain',{enabled:true,previews_enabled:false},false,{captureOutcome:true});}finally{activationIngressAllowed=false;}},reconcile:()=>observeActive(context,true)});
   return captureActive(context,worker);
  }catch{
   const stopped=await failureShutdown({persistAbort:()=>{if(!has('sealed-activation-aborted.json'))durable('sealed-activation-aborted.json',{version:1,prepared_release_sha256:context.preparedHash,at:new Date().toISOString()});},stop:emergencyStop,persistResult:result=>durable('activation-emergency-stop.json',result)});
@@ -265,7 +276,7 @@ async function rollback(){
  const version=await get(W+'/versions/'+prepared.rollback_worker_version),binding=version.resources?.bindings?.find(x=>x.name==='RAILS_CONTAINER');
  must(version.id===prepared.rollback_worker_version&&binding?.class_name===C.className&&binding.namespace_id===prepared.namespace_id,'Compatible sealed rollback namespace required');
  const body={strategy:'percentage',versions:[{version_id:prepared.rollback_worker_version,percentage:100}],annotations:{'workers/message':'ISP sealed inactive rollback'}};
- return oneShot({kind:'rollback-deployment-post',intent:{version:1,prepared_release_sha256:hash(bytes(p('prepared-release.json'))),rollback_worker_version:prepared.rollback_worker_version,request_sha256:hash(canonical(body))},writeIntent:(k,v)=>durable(k+'-intent.json',v),writeOutcome:(k,v)=>durable(k+'-outcome.json',v),mutate:async()=>{rollbackVersionAllowed=prepared.rollback_worker_version;try{await raw('POST',W+'/deployments',body);}finally{rollbackVersionAllowed=null;}},reconcile:reconcileRollback});
+ return oneShot({kind:'rollback-deployment-post',intent:{version:1,prepared_release_sha256:hash(bytes(p('prepared-release.json'))),rollback_worker_version:prepared.rollback_worker_version,request_sha256:hash(canonical(body))},writeIntent:(k,v)=>durable(k+'-intent.json',v),writeOutcome:(k,v)=>durable(k+'-outcome.json',v),mutate:async()=>{rollbackVersionAllowed=prepared.rollback_worker_version;try{return await raw('POST',W+'/deployments',body,false,{captureOutcome:true});}finally{rollbackVersionAllowed=null;}},reconcile:reconcileRollback});
 }
 
 function inspectLock(){
@@ -285,7 +296,7 @@ async function main(){
  must(process.platform==='win32'&&normal(OWN)===normal(ROOT)&&process.versions.node==='24.21.0','Fixed Windows/D controller required');fixed(ROOT,true);fixed(PRIVATE,true);fixed(CREDENTIALS,true);
  lockNonce=randomUUID();durable('provision-operator.lock',{pid:process.pid,nonce:lockNonce,mode,at:new Date().toISOString()});let result;
  try{
-  phase=mode;
+  phase=mode;emergencyEvidenceMode=mode==='--cleanup';
   if(mode==='--package')result=await packageRelease();
   else if(mode==='--prepare-runtime')result=prepareRuntime();
   else if(mode==='--finish-handoff')result=finishHandoff();
@@ -303,4 +314,4 @@ async function main(){
   console.log(JSON.stringify({ok:true,operation:mode,...result,provider_requests:requestCount+emergencyRequestCount,emergency_provider_requests:emergencyRequestCount,production_approved:false}));
  }finally{const lock=optional('provision-operator.lock');if(lock?.nonce===lockNonce)fs.unlinkSync(p('provision-operator.lock'));}
 }
-main().catch(error=>{console.error(JSON.stringify({error:error instanceof Refused?error.message:'Lease2 operation failed; private state preserved',phase,automatic_retries:0}));process.exitCode=1;});
+main().catch(error=>{console.error(JSON.stringify({error:error instanceof Refused?error.message:'Lease2 operation failed; private state preserved',phase,automatic_retries:0,...(publicProviderOutcome(error)?{provider_outcome:publicProviderOutcome(error)}:{})}));process.exitCode=1;});

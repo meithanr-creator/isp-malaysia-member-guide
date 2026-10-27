@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {ProviderRequestError} from './provider-request-outcome.mjs';
 import {C,SECRET_NAMES,canonical,hash,instant,validateCI,validateGrant,workerMetadata,applicationRequest,verifyWorker,selectOwnedApplication,verifyInactiveApplication,preparedRecord,oneShot,runtimeObjects,bootstrapFence,finishHandoffRecords,completeEnvelope,staleLockRecovery,activationAdmission,activationMetadata,admitProviderRequest,failureShutdown} from './lease2-provision-core.mjs';
 const NOW=Date.parse('2026-10-27T04:00:00Z'),SOURCE='6'.repeat(40),BUNDLE='7'.repeat(64),NS='8'.repeat(32);
 const NONCE='11111111-2222-4333-8444-555555555555',VER='22222222-3333-4444-8555-666666666666',DEP='33333333-4444-4555-8666-777777777777',APP='44444444-5555-4666-8777-888888888888';
@@ -112,4 +113,36 @@ test('activation request exhaustion cannot spend the separate emergency budget',
 });
 test('all fractional grant/runtime timestamps are refused, including nonzero milliseconds',()=>{
  for(const value of ['2026-10-27T04:00:00.001Z','2026-10-27T04:00:00.100Z','2026-10-27T04:00:00.999Z'])assert.throws(()=>instant(value));
+});
+
+test('one-shot preserves HTTP mutation evidence separately from failed reconciliation and never retries',async()=>{
+ const base={request_id:NONCE,method:'POST',endpoint:'/accounts/'+C.account+'/containers/applications',request_sha256:'a'.repeat(64),request_hash_scope:'wire-body',fetch_invoked:true,headers_received:true,http_status:403,stage:'http_error',body_state:'complete',parse_state:'json',provider_success:false,error_codes:[10000],ok:false};
+ const read={...base,request_id:VER,method:'GET',endpoint:'/accounts/'+C.account+'/containers/applications/'+APP,http_status:500};
+ let stored,calls=0;
+ await assert.rejects(oneShot({kind:'app-post',intent:{},writeIntent:()=>{},writeOutcome:(_kind,value)=>{stored=value;},
+  mutate:()=>{calls++;throw new ProviderRequestError({...base,headers:{Authorization:'never-copy-token'},message:'private-provider-message'});},
+  reconcile:()=>{throw new ProviderRequestError(read);}}),error=>error.provider_outcome.http_status===403);
+ assert.equal(calls,1);assert.equal(stored.uncertain,true);assert.equal(stored.request_returned_success,false);
+ assert.equal(stored.request_outcome.http_status,403);assert.deepEqual(stored.request_outcome.error_codes,[10000]);
+ assert.equal(stored.reconciliation_failed,true);assert.equal(stored.reconciliation_request_outcome.http_status,500);
+ assert.equal(JSON.stringify(stored).includes('never-copy-token'),false);assert.equal(JSON.stringify(stored).includes('private-provider-message'),false);
+});
+
+test('successful provider response stays distinct from later local reconciliation rejection',async()=>{
+ const outcome={request_id:NONCE,method:'POST',endpoint:'/accounts/'+C.account+'/containers/applications',request_sha256:'a'.repeat(64),request_hash_scope:'wire-body',fetch_invoked:true,headers_received:true,http_status:200,stage:'complete',body_state:'complete',parse_state:'json',provider_success:true,error_codes:[],ok:true};
+ let stored;
+ await assert.rejects(oneShot({kind:'app-post',intent:{},writeIntent:()=>{},writeOutcome:(_kind,value)=>{stored=value;},
+  mutate:()=>({value:{id:APP},provider_outcome:outcome}),reconcile:()=>{throw Error('identity mismatch');}}));
+ assert.equal(stored.request_returned_success,true);assert.equal(stored.request_outcome.http_status,200);assert.equal(stored.request_outcome.ok,true);
+ assert.equal(stored.reconciliation_failed,true);assert.equal(stored.reconciliation_request_outcome,null);assert.equal(stored.uncertain,true);
+});
+
+test('emergency stop still runs while incomplete request evidence prevents a clean shutdown claim',async()=>{
+ let stopped=0;
+ const result=await failureShutdown({persistAbort:()=>{throw Error('disk full');},stop:()=>{stopped++;return {container_application_absent:true,ingress_closed:true,provider_evidence_complete:false};},persistResult:()=>{throw Error('disk full');}});
+ assert.equal(stopped,1);assert.equal(result.result.container_application_absent,true);assert.equal(result.shutdown_confirmed,false);
+});
+
+test('diagnostic work preserves the complete reviewed default-policy zero-instance payload',()=>{
+ assert.deepEqual(applicationRequest(NS),{name:C.worker,scheduling_policy:'default',configuration:{image:'registry.cloudflare.com/'+C.account+'/isp-member-rails@'+C.digest,instance_type:'standard-2'},instances:0,max_instances:1,durable_objects:{namespace_id:NS},observability:{logs:{enabled:false}}});
 });
