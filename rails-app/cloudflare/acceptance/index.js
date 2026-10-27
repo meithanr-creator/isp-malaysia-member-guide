@@ -110,3 +110,6 @@ export class ISPPrivateAcceptance extends DurableObject {
 
 // A fresh namespace preserves the previous controller and its permanent stop latch.
 export class ISPPrivateAcceptanceContinuation extends ISPPrivateAcceptance {}
+
+// Fixed final tail uses a new namespace and preserves both prior stop latches.
+export class ISPPrivateAcceptanceFinal extends ISPPrivateAcceptance {}

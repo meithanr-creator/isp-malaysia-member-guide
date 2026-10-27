@@ -1,6 +1,7 @@
 // Fixed historical evidence for the nine completed private identity cases.
 // No provider calls, credentials export, actor restore or work on import.
 import fs from 'node:fs';
+import {readTailCarry} from './private-acceptance-tail.mjs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 export const CARRIED_CASE_IDS=Object.freeze(['edge_denial','health','visitor_denial','credential_rejection','member_login','admin_enrollment','profile_forgery','role_boundaries','response_headers']);
@@ -50,7 +51,7 @@ export function inspectPreviousAcceptance(){return buildRecord(CURRENT_ROOT);}
 export function prepareHistoricalIdentityCarry(){return buildRecord(ARCHIVE_ROOT);}
 export function readHistoricalIdentityCarry(native){
  exactDirectory(CURRENT_ROOT);check(!fs.lstatSync(local(CURRENT_ROOT+'/continuation-carry.json')).isSymbolicLink(),'Redirected carry refused');const raw=fs.readFileSync(local(CURRENT_ROOT+'/continuation-carry.json')),sha256=hash(raw);check(sha256===native?.prepared?.historical_carry_sha256,'Sealed historical carry binding required');
- const carry=JSON.parse(raw.toString('utf8'));check(canonical(carry)===canonical(buildRecord(ARCHIVE_ROOT)),'Archived historical evidence changed');validateHistoricalIdentityCarry(carry,native);return {...carry,sha256};
+ const carry=JSON.parse(raw.toString('utf8'));check(canonical(carry)===canonical(buildRecord(ARCHIVE_ROOT)),'Archived historical evidence changed');validateHistoricalIdentityCarry(carry,native);return {...carry,sha256,...(native.prepared.final_tail?{tail:readTailCarry(native)}:{})};
 }
 export function archivePreviousAcceptance(){
  check(process.platform==='win32','Archive mutation is restricted to Windows drive D');

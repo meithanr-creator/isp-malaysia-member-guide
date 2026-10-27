@@ -166,6 +166,36 @@ class DiscoverManagementTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "replacement image advances the saved editor token and still rejects a stale lock" do
+    sign_in
+    patch admin_discover_slide_path(@slide), params: { discover_slide: { image: discover_upload, lock_version: @slide.lock_version } }
+    assert_response :redirect
+    old_blob_id = @slide.reload.image.blob_id
+    get admin_discover_path
+    editor_token = assert_select("form[action=?] input[name='discover_slide[lock_version]']", admin_discover_slide_path(@slide)).first["value"]
+    assert_equal @slide.reload.lock_version, Integer(editor_token)
+
+    patch admin_discover_slide_path(@slide), params: { discover_slide: { title: "Saved replacement", image: discover_upload(filename: "replacement.png"), lock_version: editor_token } }
+    assert_redirected_to admin_discover_path(anchor: "discover-card-#{@slide.id}")
+    saved_version = @slide.reload.lock_version
+    assert_operator saved_version, :>, Integer(editor_token)
+    assert_not_equal old_blob_id, @slide.image.blob_id
+    before = @slide.attributes
+    saved_blob_id = @slide.image.blob_id
+    get admin_discover_path
+    saved_token = assert_select("form[action=?] input[name='discover_slide[lock_version]']", admin_discover_slide_path(@slide)).first["value"]
+    assert_equal saved_version, Integer(saved_token)
+
+    patch admin_discover_slide_path(@slide), params: { discover_slide: { title: "Stale replacement", image: discover_upload(filename: "stale.png"), lock_version: editor_token } }
+    assert_response :unprocessable_entity
+    assert_equal before, @slide.reload.attributes
+    assert_equal saved_blob_id, @slide.image.blob_id
+
+    patch admin_discover_slide_path(@slide), params: { discover_slide: { title: "Saved editor reused", lock_version: saved_token } }
+    assert_response :redirect
+    assert_equal "Saved editor reused", @slide.reload.title
+    assert_equal saved_blob_id, @slide.image.blob_id
+  end
   test "admin supplied public slide copy and alternative text are escaped" do
     sign_in
     patch admin_discover_slide_path(@slide), params: { discover_slide: { tag: '<b>Tag</b>', title: '<script>alert("sample")</script>', description: '<img src=x onerror="alert(1)">', image_alt: '" onerror="alert(1)', lock_version: @slide.lock_version } }

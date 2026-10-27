@@ -12,7 +12,7 @@ import {readActiveStagingAdmission,assertHostedRuntimeMode,assertAdmissionSnapsh
 import {immutableObservationProof,reconcileObservationCases} from './immutable-acceptance-evidence.mjs';
 import {NATIVE_ID,isPrivateAcceptance,privateContext,readPrivateAcceptance,assertPrivateAcceptanceAdmission,assertPrivateAcceptanceCheckpoint} from './private-acceptance-context.mjs';
 import {CARRIED_CASE_IDS,readHistoricalIdentityCarry} from './private-acceptance-carry.mjs';
-import {CONTINUATION_BOOTSTRAP_ACTORS,CONTINUATION_CURRENT_CASE_IDS,bootstrapActorBinding,continuationBootstrapReady,historicalIdentityCarryMatches} from './hosted-execution-phase.mjs';
+import {FINAL_TAIL_BATCHES,FINAL_TAIL_CASE_IDS,FINAL_TAIL_CARRIED_CASE_IDS,finalTailCarryMatches,finalTailSetupReady,CONTINUATION_BOOTSTRAP_ACTORS,CONTINUATION_CURRENT_CASE_IDS,bootstrapActorBinding,continuationBootstrapReady,historicalIdentityCarryMatches} from './hosted-execution-phase.mjs';
 const CONTEXT=isPrivateAcceptance()?privateContext():leaseContext(selectLease()),PRIVATE=CONTEXT.privateRoot;
 const ORIGIN=CONTEXT.native?CONTEXT.origin:'https://isp-member-production.meithan-r.workers.dev';
 const HTTP_FILE=path.join(PRIVATE,'acceptance-http.json');
@@ -188,17 +188,19 @@ function reconcile(state,{native,fixtures,carry}={}){
  if(CONTEXT.native){
   native??=readPrivateAcceptance();const continuation=native.runtime.ISP_ACCEPTANCE_CONTINUATION==='true';
   check((state.continuation===true)===continuation,'Continuation checkpoint mode mismatch');
-  if(continuation){fixtures??=json(path.join(PRIVATE,'acceptance-fixtures.json'));carry??=readHistoricalIdentityCarry(native);check(historicalIdentityCarryMatches({carry,prepared:native.prepared,state,fixtures}),'Sealed historical carry differs from the current checkpoint');}
+  if(continuation){fixtures??=json(path.join(PRIVATE,'acceptance-fixtures.json'));carry??=readHistoricalIdentityCarry(native);check((native.prepared.final_tail===true?finalTailCarryMatches:historicalIdentityCarryMatches)({carry,prepared:native.prepared,state,fixtures}),'Sealed historical carry differs from the current checkpoint');}
  }
  let raw;try{const file=safePath(OBS_FILE);check(fs.statSync(file).size<=16777216,'Observation byte bound');raw=fs.readFileSync(file);}catch(error){if(error.code==='ENOENT')return;throw error;}
  if(state.continuation)reconcileBootstrapSessions({state,fixtures,raw,seal:retainObservation});
+ if(state.final_tail)reconcileTailSetup({state,raw,seal:retainObservation});
  reconcileObservationCases({state,raw,inventory:INVENTORY,seal:retainObservation,rulesMatch:observationRulesMatch,leaseId:CONTEXT.leaseId});
 }
 export function publicReport(state){
- const carried=state.continuation?state.historical_carry?.cases:[];
- if(state.continuation)check(Array.isArray(carried)&&carried.length===9&&CARRIED_CASE_IDS.every(id=>carried.some(c=>c.id===id&&c.status==='PASS_CARRIED')&&!Object.hasOwn(state.cases,id)),'Historical PASS must stay separate from current cases');
+ const carried=state.continuation?[...(state.historical_carry?.cases||[]),...(state.final_tail?state.historical_carry?.tail?.cases||[]:[])]:[];
+ const carriedIds=state.final_tail?FINAL_TAIL_CARRIED_CASE_IDS:CARRIED_CASE_IDS;
+ if(state.continuation)check(Array.isArray(carried)&&carried.length===carriedIds.length&&carriedIds.every(id=>carried.some(c=>c.id===id&&c.status==='PASS_CARRIED')&&!Object.hasOwn(state.cases,id)),'Historical PASS must stay separate from current cases');
  const cases=Object.entries(INVENTORY).map(([id,[batch,area]])=>{const c=carried?.find(c=>c.id===id)??state.cases[id]??{id,area,status:'NOT RUN',http:'NOT RUN',assertions:[]};return{id,area,batch,status:c.status,http:c.http,original_run_marker:c.original_run_marker,started_at:c.started_at,finished_at:c.finished_at,assertions:c.assertions,requests:c.requests?.map(({private_response_evidence,private_response_capture,...safe})=>safe),db_observed_at:c.db_observed_at,observation_sha256:c.observation_sha256,reason:c.reason};});
- return{version:1,lease_id:state.lease_id,prepared_release_sha256:state.prepared_release_sha256,rails_source:state.rails_source,image_digest:state.image_digest,application_id:state.application_id,namespace_id:state.namespace_id,run_marker:state.run_marker,candidate:state.candidate,deployment_id:state.deployment_id,origin:ORIGIN,generated_at:new Date().toISOString(),requests:state.request_count??0,...(state.continuation?{historical_carry:state.historical_carry,carried_pass_count:carried.length,current_pass_count:CONTINUATION_CURRENT_CASE_IDS.filter(id=>state.cases[id]?.status==='PASS'&&state.cases[id].http==='PASS').length,bootstrap:state.bootstrap&&Object.fromEntries(['status','http','started_at','finished_at','db_observed_at','observation_sha256'].map(k=>[k,state.bootstrap[k]]))}:{}),areas:Object.fromEntries([...new Set(cases.map(c=>c.area))].map(area=>{const rows=cases.filter(c=>c.area===area);return[area,rows.some(c=>c.status==='FAIL')?'FAIL':rows.every(c=>['PASS','PASS_CARRIED'].includes(c.status))?'PASS':'BLOCKED'];})),cases};
+ return{version:1,lease_id:state.lease_id,prepared_release_sha256:state.prepared_release_sha256,rails_source:state.rails_source,image_digest:state.image_digest,application_id:state.application_id,namespace_id:state.namespace_id,run_marker:state.run_marker,candidate:state.candidate,deployment_id:state.deployment_id,origin:ORIGIN,generated_at:new Date().toISOString(),requests:state.request_count??0,...(state.continuation?{historical_carry:state.historical_carry,carried_pass_count:carried.length,current_pass_count:(state.final_tail?FINAL_TAIL_CASE_IDS:CONTINUATION_CURRENT_CASE_IDS).filter(id=>state.cases[id]?.status==='PASS'&&state.cases[id].http==='PASS').length,bootstrap:state.bootstrap&&Object.fromEntries(['status','http','started_at','finished_at','db_observed_at','observation_sha256'].map(k=>[k,state.bootstrap[k]]))}:{}),areas:Object.fromEntries([...new Set(cases.map(c=>c.area))].map(area=>{const rows=cases.filter(c=>c.area===area);return[area,rows.some(c=>c.status==='FAIL')?'FAIL':rows.every(c=>['PASS','PASS_CARRIED'].includes(c.status))?'PASS':'BLOCKED'];})),cases};
 }
 export async function bootstrapFreshSessions({state,fixtures,login,probe,persist,now=()=>new Date().toISOString()}){
  check(state.continuation===true&&!state.halted&&!state.bootstrap&&!Object.keys(state.cases||{}).length&&!Object.keys(state.actors||{}).length&&!Object.keys(state.jars||{}).length&&!state.completed_batches?.length&&!state.request_journal?.length&&(state.request_count??0)===0&&Object.values(state.created||{}).every(rows=>Array.isArray(rows)&&rows.length===0),'Fresh bootstrap intent is one-shot; old authentication state cannot be imported');
@@ -222,6 +224,14 @@ export function reconcileBootstrapSessions({state,fixtures,raw,seal,now=Date.now
  const retained=seal('sessions','bootstrap',raw);check(retained.sha256===proof.sha256&&retained.length===proof.length&&typeof retained.file==='string','Bootstrap observation identity differs');
  Object.assign(b,{status:matched?'PASS':'FAIL',db_observed_at:obs.captured_at,observation_sha256:retained.sha256,observation_file:retained.file,session_ids:sessionIds});if(!matched)state.halted=true;return 1;
 }
+export function reconcileTailSetup({state,raw,seal,now=Date.now()}){
+ const p=state.tail_setup;if(p?.http!=='PASS'||p.status!=='BLOCKED')return 0;
+ const obs=JSON.parse(Buffer.from(raw).toString('utf8').replace(/^\uFEFF/,'')),captured=Date.parse(obs.captured_at);
+ if(obs.version!==1||obs.phase!=='active'||obs.lease_id!==state.lease_id||obs.run_marker!==state.run_marker||JSON.stringify(obs.target)!==JSON.stringify(state.target)||!Number.isFinite(captured)||!Number.isFinite(Date.parse(p.observed_after))||p.run_marker!==state.run_marker||captured<Date.parse(p.observed_after)||captured>now+5000)return 0;
+ const matched=Array.isArray(p.db)&&p.db.length===2&&observationRulesMatch(obs,p.db),proof=immutableObservationProof(raw),retained=seal('prerequisites','tail-setup',raw);
+ check(retained.sha256===proof.sha256&&retained.length===proof.length&&typeof retained.file==='string','Tail setup observation identity differs');
+ Object.assign(p,{status:matched?'PASS':'FAIL',db_observed_at:obs.captured_at,observation_sha256:retained.sha256,observation_file:retained.file});if(!matched)state.halted=true;return 1;
+}
 async function execute(batch){
   if(!CONTEXT.native){assertLeaseMutationAllowed(CONTEXT);assertWritableLease(CONTEXT);}
   check(!process.env.NODE_TLS_REJECT_UNAUTHORIZED||process.env.NODE_TLS_REJECT_UNAUTHORIZED==='1','Insecure ambient TLS setting refused');
@@ -229,9 +239,9 @@ async function execute(batch){
   if(native)check(Date.now()<Date.parse(native.runtime.ISP_STAGING_START_AT)+20*60000,'Private functional batch admission closed');
   const runtime=native?.runtime??json(path.join(PRIVATE,'runtime.json')),fixtures=json(path.join(PRIVATE,'acceptance-fixtures.json'));
   const prepared=native?.prepared??readPreparedRelease(CONTEXT);
-  const continuation=runtime.ISP_ACCEPTANCE_CONTINUATION==='true';
+  const continuation=runtime.ISP_ACCEPTANCE_CONTINUATION==='true',finalTail=prepared.final_tail===true;
   check((process.env.ISP_ACCEPTANCE_CONTINUATION==='true')===continuation&&(!continuation||CONTEXT.native),'Explicit native continuation runtime required');
-  const carry=continuation?readHistoricalIdentityCarry(native):null,executionBatches=continuation?['bootstrap',...BATCHES.slice(1)]:BATCHES;
+  const carry=continuation?readHistoricalIdentityCarry(native):null,executionBatches=finalTail?FINAL_TAIL_BATCHES:continuation?['bootstrap',...BATCHES.slice(1)]:BATCHES;
   let initialAdmission=native;if(CONTEXT.fresh&&!CONTEXT.native){assertActiveRelease(CONTEXT,runtime,json(path.join(PRIVATE,'acceptance-release.json')),prepared);initialAdmission=verifyLeaseWatchdog(runtime,prepared);}
   if(process.env.ISP_HTTP_ADMISSION_SHA256!==undefined)assertAdmissionSnapshotDigest(initialAdmission?.snapshot,process.env.ISP_HTTP_ADMISSION_SHA256);
   check(fixtures.lease_id===CONTEXT.leaseId,'Fixture lease identity mismatch');
@@ -246,11 +256,12 @@ async function execute(batch){
   if(savedState&&CONTEXT.fresh)check(state.lease_id===CONTEXT.leaseId&&state.prepared_release_sha256===prepared.prepared_release_sha256,'Checkpoint lease identity mismatch');
   if(state){check(state.run_marker===fixtures.run_marker&&state.candidate===runtime.CANDIDATE_COMMIT&&state.deployment_id===runtime.CLOUDFLARE_DEPLOYMENT_ID&&JSON.stringify(state.target)===JSON.stringify(fixtures.target),'Checkpoint candidate/deployment/target mismatch');check(!state.halted&&!state.running_batch,'Prior interrupted/failed execution requires inspection; automatic retry refused');check(!state.completed_batches?.includes(batch),'Completed batch cannot be replayed');reconcile(state,{native,fixtures,carry});if(continuation)check(continuationBootstrapReady(state,fixtures),'Fresh bootstrap requires independent session and actor reconciliation before content work');check(!Object.values(state.cases).some(c=>c.http==='PASS'&&c.db?.length&&c.status!=='PASS'),'Capture fresh independent observations and reconcile before another batch');}
   else {check(batch===(continuation?'bootstrap':'identity'),'Fresh setup must be the first batch');state={version:1,run_marker:fixtures.run_marker,target:fixtures.target,candidate:runtime.CANDIDATE_COMMIT,deployment_id:runtime.CLOUDFLARE_DEPLOYMENT_ID,execution_started:new Date().toISOString(),cases:{},actors:{},completed_batches:[],created:{events:[],publications:[],consultations:[],imports:[],discover:[]}};}
-  if(continuation&&!savedState)Object.assign(state,{continuation:true,historical_carry:carry});
+  if(continuation&&!savedState)Object.assign(state,{continuation:true,...(finalTail?{final_tail:true}:{}),historical_carry:carry});
   if(CONTEXT.fresh&&!savedState)Object.assign(state,{lease_id:CONTEXT.leaseId,prepared_release_sha256:prepared.prepared_release_sha256,rails_source:prepared.rails_source,image_digest:prepared.image_digest,application_id:prepared.application_id,namespace_id:prepared.namespace_id});
   if(CONTEXT.native&&!savedState)state.native_admission_snapshot=initialAdmission.snapshot;
-  if(continuation)check(historicalIdentityCarryMatches({carry,prepared,state,fixtures}),'Current checkpoint must retain the exact sealed historical carry');
+  if(continuation)check((finalTail?finalTailCarryMatches:historicalIdentityCarryMatches)({carry,prepared,state,fixtures}),'Current checkpoint must retain the exact sealed historical carry');
   check(executionBatches.slice(0,executionBatches.indexOf(batch)).every(b=>state.completed_batches.includes(b)),'Prior batches must finish with independent evidence');
+  if(finalTail&&!['bootstrap','tail-setup'].includes(batch))check(finalTailSetupReady(state),'Fresh tail setup requires independent reconciliation');
   state.running_batch=batch;
   const t=new Transport(runtime,state,{prepared,admissionSnapshot:initialAdmission?.snapshot}),mark=fixtures.run_marker;atomic(HTTP_FILE,state);
   function save(){t.save();state.request_count=t.calls;atomic(HTTP_FILE,state);reconcile(state,{native,fixtures,carry});atomic(HTTP_FILE,state);atomic(RESULT_FILE,publicReport(state));}
@@ -277,6 +288,30 @@ async function execute(batch){
 }
   function forgedForm(page,action,method='patch'){return{action:sameOrigin(action),method:'POST',fields:new Map([['authenticity_token',csrf(page)],['_method',method]])};}
   if(batch==='bootstrap')await bootstrapFreshSessions({state,fixtures,login,probe:async alias=>{expectStatus(await t.request(alias,alias.startsWith('admin_')?'/admin/events':'/member/dashboard'),200);},persist:()=>{t.save();atomic(HTTP_FILE,state);}});
+  if(batch==='tail-setup'){
+   check(finalTail&&!state.tail_setup,'Tail prerequisite setup is one-shot');
+   state.tail_setup={version:1,run_marker:mark,status:'INTENT',http:'NOT RUN',started_at:new Date().toISOString()};save();
+   try{
+    await fresh();
+    let page=await t.page('admin_a','/admin/discover');
+    let cards=forms(page.text).filter(x=>/^\/admin\/discover\/\d+$/.test(x.action.pathname));
+    if(!cards.length){const setup=forms(page.text).find(x=>x.action.pathname==='/admin/discover/setup');check(setup,'Actual Discover setup form absent');expectRedirect(await submit(t,'admin_a',setup),'/admin/discover');page=await t.page('admin_a','/admin/discover');cards=forms(page.text).filter(x=>/^\/admin\/discover\/\d+$/.test(x.action.pathname));}
+    check(cards.length===3,'Three actual Discover cards required');state.discover={id:Number(cards[0].action.pathname.split('/').at(-1)),position:1};
+    page=await t.page('admin_a','/admin/publications/new');
+    const title=mark+' browser boundary fixture';
+    let r=await submit(t,'admin_a',form(page,'/admin/publications'),{...fields('publication',{title,subtitle:'Synthetic boundary fixture',author:'Synthetic acceptance',issue_date:new Date().toISOString().slice(0,10),description:'Synthetic browser prerequisite only.'}),intent:'preview'},[file('publication[pdf]','publication'),file('publication[cover]','cover')]);
+    const location=recordLocation(r,/^\/admin\/publications\/([^/]+)\/preview$/);state.publication={slug:location.slug,title};state.created.publications.push(location.slug);
+    let preview=await t.request('admin_a',location.url);expectStatus(preview,200);state.publication.preview_links=links(preview.text).filter(x=>/\/files\/(pdf|cover)\//.test(x));check(state.publication.preview_links.length===2,'Boundary fixture preview files absent');
+    const route='/admin/publications/'+location.slug;
+    expectRedirect(await submit(t,'admin_a',form(preview,route+'/publish')),'/admin/publications');
+    const old=(await t.page('member_b','/member/publications/'+location.slug));expectStatus(old,200);const oldPdf=matchingLink(old.text,/\/files\/pdf\//).href;
+    page=await t.page('admin_a',route+'/edit');const replacement=benignPdf(mark+' browser boundary replacement');
+    r=await submit(t,'admin_a',form(page,route),{...fields('publication',{title}),intent:'preview'},[{field:'publication[pdf]',name:mark+'-boundary-replacement.pdf',type:'application/pdf',bytes:replacement}]);expectRedirect(r,route+'/preview');
+    preview=await t.request('admin_a',r.headers.location);expectStatus(preview,200);const publish=form(preview,route+'/publish');expectRedirect(await submit(t,'admin_a',publish),'/admin/publications');
+    const current=await t.page('member_b','/member/publications/'+location.slug);expectStatus(current,200);state.publication.member_pdf=matchingLink(current.text,/\/files\/pdf\//).href;check(state.publication.member_pdf!==oldPdf,'Boundary fixture PDF must be superseded');
+    const finished=new Date().toISOString();Object.assign(state.tail_setup,{status:'BLOCKED',http:'PASS',finished_at:finished,observed_after:finished,db:[{collection:'discover',where:{id:state.discover.id},count:1,equals:{position:1}},pubRule({draft_title:title,published_title:title,published_revision:Number(publish.fields.get('revision')),pdf_sha256:hash(replacement),cover_sha256:hash(png)})]});save();
+   }catch(error){Object.assign(state.tail_setup,{status:'FAIL',http:'FAIL',finished_at:new Date().toISOString()});state.halted=true;save();throw error;}
+  }
   if(batch==='identity'){
     await run('edge_denial',async c=>{for(const key of[null,'0'.repeat(64)]){const r=await t.request('edge','/member/dashboard',{key,omitCookie:true,accept:'application/json'});expectStatus(r,503);check(r.text==='ISP member service is not available yet.'&&String(r.headers['cache-control']).includes('no-store'),'Private edge denial must be generic and uncached');}const html=await t.request('edge','/member/dashboard',{key:null,omitCookie:true});expectRedirect(html,'/__isp_review');c.assertions.push('Missing and wrong API keys denied generically; HTML opens private review; Rails authentication not claimed');});
     await run('health',async c=>{for(const route of['/ready','/up'])expectStatus(await t.request('visitor',route,{startup:route==='/ready'}),200);c.assertions.push('Hosted process and dependency readiness returned 200');});
@@ -566,12 +601,27 @@ if (batch === 'critical-replace') {
     const replacement = Buffer.concat([
       png, Buffer.from('\n' + mark + ' replacement image\n')
     ]);
-    expectRedirect(await submit(t, 'admin_a', form(p, route), {}, [{
+    const editor = form(p, route);
+    const submittedVersion = editor.fields.get('discover_slide[lock_version]');
+    check(/^\d+$/.test(submittedVersion ?? '') &&
+      Number.isSafeInteger(row.lock_version) && row.lock_version >= 0 &&
+      Number(submittedVersion) === row.lock_version,
+      'Discover editor version differs from independent replacement baseline');
+    expectRedirect(await submit(t, 'admin_a', editor, {}, [{
       field: 'discover_slide[image]',
       name: mark + '-replacement-image.png',
       type: 'image/png',
       bytes: replacement
     }]), '/admin/discover');
+
+    // Attachment callbacks may advance the optimistic lock as well as the save.
+    // Bind the DB assertion to the actual saved editor token, not a fixed delta.
+    const savedEditor = form(await t.page('admin_a', '/admin/discover'), route);
+    const savedToken = savedEditor.fields.get('discover_slide[lock_version]');
+    const savedVersion = Number(savedToken);
+    check(/^\d+$/.test(savedToken ?? '') &&
+      Number.isSafeInteger(savedVersion) && savedVersion > row.lock_version,
+      'Saved Discover editor version did not advance');
 
     const home = await t.request('visitor', '/');
     const current = matchingLink(home.text,
@@ -587,11 +637,11 @@ if (batch === 'critical-replace') {
         title: state.discover.title,
         website_url: state.discover.url,
         position: 1,
-        lock_version: row.lock_version + 1
+        lock_version: savedVersion
       }
     });
     c.assertions.push(
-      'Actual replacement image serves exact new bytes; previous Discover key returns 404; persisted card version advanced once'
+      'Actual replacement image serves exact new bytes; previous Discover key returns 404; saved editor version advanced and matches the persisted card'
     );
   });
 
@@ -651,7 +701,7 @@ if (batch === 'critical-replace') {
   if(batch==='throttle'){
     await run('login_throttle',async c=>{const a=fixtures.actors.throttle,p=await t.page('throttle','/login'),f=form(p,'/session');const window=Math.floor(Date.now()/180000);check(Date.now()%180000<155000,'Too close to throttle window boundary; do not start this batch yet');for(let n=0;n<10;n++){check(Math.floor(Date.now()/180000)===window,'Throttle window changed; result inconclusive');expectStatus(await submit(t,'throttle',f,{email:a.email,password:'synthetic-wrong-password'}),422);}check(Math.floor(Date.now()/180000)===window,'Throttle window changed; result inconclusive');expectRedirect(await submit(t,'throttle',f,{email:a.email,password:'synthetic-wrong-password'}),'/login');c.db.push(actorRule('throttle',{active_session_count:0}),{collection:'throttle',where:{alias:'throttle',purpose:'login'},count:1,equals:{attempts:11,window_started_epoch:window*180}});c.assertions.push('First ten wrong credentials rejected generically; eleventh throttled in same shared account window without proxy spoofing');});
   }
-  for(const[id,[owner,area]]of Object.entries(INVENTORY))if(!BATCHES.includes(owner)&&!state.cases[id])state.cases[id]={id,area,status:'BLOCKED',http:'NOT RUN',assertions:[],reason:'Requires '+owner+' execution/evidence; this HTTP driver does not claim it'};
+  for(const[id,[owner,area]]of Object.entries(INVENTORY))if(!finalTail&&!BATCHES.includes(owner)&&!state.cases[id])state.cases[id]={id,area,status:'BLOCKED',http:'NOT RUN',assertions:[],reason:'Requires '+owner+' execution/evidence; this HTTP driver does not claim it'};
   if(!state.halted){state.completed_batches.push(batch);delete state.running_batch;}save();
   const report=publicReport(state);console.log(JSON.stringify({ok:!state.halted,batch,...(continuation?{bootstrap:state.bootstrap?.status,carried_pass_count:report.carried_pass_count,current_pass_count:report.current_pass_count}:{}),requests:state.request_count,cases:Object.fromEntries(report.cases.filter(c=>c.batch===batch).map(c=>[c.id,c.status])),next:state.halted?'Inspect private checkpoint; automatic retry refused':'Capture operator status, then run --reconcile before next batch'}));
   if(state.halted)process.exitCode=1;
@@ -669,5 +719,5 @@ function selftest(){
   check(benignPdf('synthetic').subarray(0,5).toString()==='%PDF-','Harmless PDF fixture malformed');
   console.log(JSON.stringify({ok:true,offline:true,batches:BATCHES,cases:Object.keys(INVENTORY).length,network_requests:0}));
 }
-async function main(){const args=process.argv.slice(2);if(args.length===1&&args[0]==='--selftest')return selftest();if(args.length===1&&args[0]==='--reconcile'){const state=json(HTTP_FILE);const native=CONTEXT.native?readPrivateAcceptance():null;if(native)assertPrivateAcceptanceCheckpoint(native,state,{active:false});reconcile(state,{native});atomic(HTTP_FILE,state);atomic(RESULT_FILE,publicReport(state));return console.log(JSON.stringify({ok:true,network_requests:0,pending_db:Object.values(state.cases).filter(c=>c.http==='PASS'&&c.db?.length&&c.status==='BLOCKED').map(c=>c.id),failed:Object.values(state.cases).filter(c=>c.status==='FAIL').map(c=>c.id)}));}if(args[0]==='--execute'&&args[1]==='--batch'&&args.length===3)return execute(args[2]);check(args.length===0||(args.length===1&&args[0]==='--plan'),'Use --plan, --selftest, --reconcile, or --execute --batch NAME');const continuation=CONTEXT.native&&process.env.ISP_ACCEPTANCE_CONTINUATION==='true';check(!process.env.ISP_ACCEPTANCE_CONTINUATION||continuation,'Explicit native continuation planning required');console.log(JSON.stringify({network_requests:0,origin:ORIGIN,batches:continuation?['bootstrap',...BATCHES.slice(1)]:BATCHES,...(continuation?{continuation:true,carried_case_ids:[...CARRIED_CASE_IDS],current_case_count:33}:{}),inventory:INVENTORY,observation:'After each batch, run the private fixture operator status command, then --reconcile. Never replay a started batch.',limits:{requests:350,concurrency:2,ordinary_ms:20000,files_ms:45000,cleanup_reserve_minutes:10}}));}
+async function main(){const args=process.argv.slice(2);if(args.length===1&&args[0]==='--selftest')return selftest();if(args.length===1&&args[0]==='--reconcile'){const state=json(HTTP_FILE);const native=CONTEXT.native?readPrivateAcceptance():null;if(native)assertPrivateAcceptanceCheckpoint(native,state,{active:false});reconcile(state,{native});atomic(HTTP_FILE,state);atomic(RESULT_FILE,publicReport(state));return console.log(JSON.stringify({ok:true,network_requests:0,pending_db:Object.values(state.cases).filter(c=>c.http==='PASS'&&c.db?.length&&c.status==='BLOCKED').map(c=>c.id),failed:Object.values(state.cases).filter(c=>c.status==='FAIL').map(c=>c.id)}));}if(args[0]==='--execute'&&args[1]==='--batch'&&args.length===3)return execute(args[2]);check(args.length===0||(args.length===1&&args[0]==='--plan'),'Use --plan, --selftest, --reconcile, or --execute --batch NAME');const continuation=CONTEXT.native&&process.env.ISP_ACCEPTANCE_CONTINUATION==='true',finalTail=continuation&&readPrivateAcceptance().prepared.final_tail===true;check(!process.env.ISP_ACCEPTANCE_CONTINUATION||continuation,'Explicit native continuation planning required');console.log(JSON.stringify({network_requests:0,origin:ORIGIN,batches:finalTail?[...FINAL_TAIL_BATCHES]:continuation?['bootstrap',...BATCHES.slice(1)]:BATCHES,...(continuation?{continuation:true,...(finalTail?{final_tail:true}:{}),carried_case_ids:[...(finalTail?FINAL_TAIL_CARRIED_CASE_IDS:CARRIED_CASE_IDS)],current_case_count:finalTail?2:33}:{}),inventory:INVENTORY,observation:'After each batch, run the private fixture operator status command, then --reconcile. Never replay a started batch.',limits:{requests:350,concurrency:2,ordinary_ms:20000,files_ms:45000,cleanup_reserve_minutes:10}}));}
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(()=>{console.error('Hosted acceptance refused or interrupted. Inspect the private prerequisites/checkpoint; no secrets were printed.');process.exitCode=1;});
