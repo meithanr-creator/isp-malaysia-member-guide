@@ -53,6 +53,7 @@ function harness(env, options = {}, store = new Map()) {
     },
     async start(settings) {
       events.push("start"); ctx.starts++;
+      if(options.expireDuringStartup){instance.expired=true;throw new Error('synthetic confirmed lease expiry');}
       if(options.startFailure)throw new Error('private startup failure');
       assert.ok(store.has(DEADLINE), "deadline must persist before startup");
       assert.ok(schedules.length, "shutdown must be armed before startup");
@@ -266,11 +267,9 @@ test('diagnostic admission and dispatch failures stop backend work; response tel
  }
 });
 test('startup readiness and lease failures remain distinct and undispatched',async()=>{
- for(const [options,expected]of [[{startFailure:true},'startup'],[{appReadyStatus:503},'application_readiness'],[{waitForAbort:true},'lease']]){
+ for(const [options,expected]of [[{startFailure:true},'startup'],[{appReadyStatus:503},'application_readiness'],[{expireDuringStartup:true},'lease']]){
   const h=harness(environment(),options);
-  if(expected==='lease')h.instance.armedDeadline=Date.now()+20;
   const pending=h.instance.fetch(mutation());
-  if(expected==='lease')await new Promise(resolve=>setTimeout(resolve,60));
   const response=await pending;assert.equal(response.status,503);await response.text();
   const rows=h.store.get('isp:staging:diagnostics:v1');
   assert.equal(rows.length,1);assert.equal(rows[0].stage,expected);assert.equal(rows[0].dispatched,false);assert.equal(rows[0].response_received,false);

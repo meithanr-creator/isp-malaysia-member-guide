@@ -42,7 +42,7 @@ export function validateWatchdogHandoff(marker,runtimeBytes,planBytes,prepared) 
 }
 export async function stopStaging(plan,api,pause=sleep,{
  context=leaseContext(plan.lease_id===LEASE2?LEASE2:LEGACY_LEASE),prepared=null,
- clock=monotonic,timing=cleanupTiming(plan,{monotonicNow:clock()}),onProgress=()=>{}
+ clock=monotonic,timing=cleanupTiming(plan,{monotonicNow:clock()}),onProgress=()=>{},setTimer=setTimeout,clearTimer=clearTimeout
 }={}) {
  validatePlan(plan);
  if((plan.lease_id!==undefined&&plan.lease_id!==LEASE2)||context.fresh!==(plan.lease_id===LEASE2))throw Error('ISP watchdog lease mismatch');
@@ -63,15 +63,23 @@ export async function stopStaging(plan,api,pause=sleep,{
  const progress=phase=>onProgress({...receipt('FAIL','shutdown_unconfirmed'),phase});
  async function bounded(operation,limit,timeoutError) {
   if(remaining()<=0)throw new CleanupBudgetExhausted();
-  const controller=new AbortController();let timer;
-  const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{
-   controller.abort();reject(remaining()<=0?new CleanupBudgetExhausted():timeoutError);
-  },Math.max(1,Math.ceil(Math.min(limit,remaining()))));});
+  const controller=new AbortController();let timer,settled=false;
+  const operationDeadline=Math.min(timing.deadline,clock()+limit);
+  const timeout=new Promise((_,reject)=>{
+   const expire=()=>{
+    if(settled)return;
+    const left=operationDeadline-clock();
+    // Timers may wake early; the same absolute deadline still controls every wait.
+    if(left>0){timer=setTimer(expire,Math.max(1,Math.ceil(left)));return;}
+    controller.abort();reject(remaining()<=0?new CleanupBudgetExhausted():timeoutError);
+   };
+   timer=setTimer(expire,Math.max(1,Math.ceil(operationDeadline-clock())));
+  });
   try {
    const value=await Promise.race([Promise.resolve().then(()=>operation(controller.signal)),timeout]);
    if(remaining()<=0)throw new CleanupBudgetExhausted();
    return value;
-  } finally {clearTimeout(timer);controller.abort();}
+  } finally {settled=true;clearTimer(timer);controller.abort();}
  }
  async function request(path,method='GET',body,allow404=false) {
   const timeoutMs=Math.min(REQUEST_LIMIT_MS,remaining());

@@ -291,3 +291,11 @@ test('fractional monotonic deadline validates its exact construction without can
  assert.equal(result.status,'FAIL');assert.equal(result.budget_exhausted,true);assert.equal(calls,0);
  await assert.rejects(stopStaging(p,async()=>{},undefined,{timing:{...timing,deadline:timing.deadline+1},clock:()=>timing.deadline+2}),/deadline invalid/);
 });
+test('an early timer wakeup cannot prematurely exhaust the same absolute cleanup budget',async()=>{
+ const p=plan(),time=fakeTime(p,30),scheduled=[];let signal,calls=0;
+ const run=stopStaging(p,async(path,method,body,allow404,options)=>{calls++;signal=options.signal;return new Promise(()=>{});},time.pause,{timing:time.timing,clock:time.clock,setTimer:(fn,ms)=>{const timer={fn,ms};scheduled.push(timer);return timer;},clearTimer:()=>{}});
+ await Promise.resolve();assert.equal(calls,1);assert.equal(scheduled.length,1);assert.equal(scheduled[0].ms,30);
+ time.advance(29);scheduled.shift().fn();assert.equal(signal.aborted,false);assert.equal(scheduled.length,1);assert.equal(scheduled[0].ms,1);
+ time.advance(1);scheduled.shift().fn();const result=await run;
+ assert.equal(signal.aborted,true);assert.equal(result.status,'FAIL');assert.equal(result.budget_exhausted,true);assert.equal(result.cleanup_budget_ms,30);assert.equal(calls,1);assert.equal(scheduled.length,0);
+});
