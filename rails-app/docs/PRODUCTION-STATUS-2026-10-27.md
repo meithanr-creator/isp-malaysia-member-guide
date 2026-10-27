@@ -1,3 +1,27 @@
+# Current four-step checkpoint — 28 October 2026
+
+This checkpoint supersedes older current-status tables below. Evidence observed on 27 October at 17:11–17:37 UTC (28 October, 01:11–01:37 Malaysia time).
+
+| Step | Status | Evidence and next condition |
+| --- | --- | --- |
+| 1. Reviewed source and checks | COMPLETE for the tested baseline | Pinned Rails image unchanged; harness source 7b73d04f1aaa548bfa14ab3a8c6d35638884f05a passed all seven required checks. A new narrow storage/diagnostics correction will need its own review and relevant checks. |
+| 2. Hosted critical acceptance | PARTIAL: 9 of 42 selected HTTP cases PASS | Actual full dependency readiness passed. Nine identity/platform cases are closed and carried. First event-create request returned 422; remaining selected cases and virtual mobile journeys were not completed. |
+| 3. Close only observed gaps | IN PROGRESS | Preserve the failed attempt; diagnose event/upload rejection, improve private error capture and retire synthetic accounts while retaining two upload-recovery tombstones. Do not repeat the nine passed areas unless a specific dependency changes. |
+| 4. Final release and controlled launch | OPEN / NO-GO | Remaining critical workflows/mobile, incomplete recovery scope, verified identity email, first administrator and approved member/content/operational decisions, ongoing budget, final Astra review and domain/TLS cutover remain. |
+
+Seven assessment areas remain in step 2: events/registration; publications/member downloads; Discover editing; consultation; membership-list import/review; remaining security edge cases; full virtual iPhone/Android journeys. There are 33 unclosed selected HTTP cases (including the rejected event case) plus the browser journeys. The broader 63-case inventory is preserved; this focused phase does not claim all 63 or a full production test.
+
+Actual run: Rails, Neon/schema, private-storage availability and scanner readiness passed by 17:11:58Z. The nine closed cases are edge_denial, health, visitor_denial, credential_rejection, member_login, admin_enrollment, profile_forgery, role_boundaries and response_headers. Independent database observations reconcile the cases that require them.
+
+The event request returned 422 and created no event, attachment or administrative audit. Two files passed ClamAV scanning; their exact upload ledgers remain fenced as tombstones. The original request recorded compensating object-absence observations, and a separate read-only exact-key HEAD returned 404 for both at 17:37:17Z. Those facts do not establish why the original submission failed or authorize deleting the durable recovery records. Its response HTML was not retained and the native gateway omitted correlated Rails error metadata, so the historical cause remains unproved.
+
+The application was stopped and the exact Cloudflare native application deleted by 17:12:33Z. Ingress and previews were closed; independent shutdown evidence passed. Normal fixture cleanup refused the retained tombstones, as designed; it did not complete. No mobile browser journey started. Preserve all original private manifests/checkpoints and failed cleanup receipts on D.
+
+Guardrails remain: Rails; Cloudflare + Neon; all working files/evidence/credentials on D; cumulative US$5 incremental ceiling; no paid upgrade, real members, identity email delivery, DNS cutover or public launch. Shop/Jobs remain frozen DEMO and Academy/Forum excluded. US$4.50 carried commitment plus US$0.50 reserved allowance is a conservative budget bound, not a statement of actual charges. No new runtime or access renewal while the narrow diagnosis/retirement review is open.
+
+Public evidence: audit/private-acceptance/hosted-acceptance.json, readiness-result.json, hosted-attempt-summary.json and event-owned-object-absence.json. Astra directs scope, source review and the release decision.
+
+---
 # Current milestone — Rails and Neon verified on Cloudflare
 
 Observed27October2026 at23:19:43 Malaysia time. The corrected private probe returned Rails /up HTTP200 and /app-ready HTTP200. The latter returns its exact success body only after a PostgreSQL SELECT1 and pending-migration check. The existing approved Neon URL and certificate verification remain unchanged.

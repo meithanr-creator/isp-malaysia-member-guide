@@ -1,6 +1,6 @@
 import {DurableObject} from 'cloudflare:workers';
 import {runtimeConfiguration,requestForRails,privateResponse,unavailable,edgeClientIp,EDGE_IP_HEADER} from '../src/runtime.js';
-import {validUuid,TRACE_HEADER} from '../src/diagnostics.js';
+import {validUuid,TRACE_HEADER,className} from '../src/diagnostics.js';
 import {browserAccessEndpoint,validBrowserCookie,headersWithoutReviewCookie} from '../staging/browser-access.js';
 import {cleanTrace} from '../staging/diagnostics.js';
 export {ISPStartup,ISPNeonProof} from '../startup/index.js';
@@ -22,7 +22,10 @@ export function acceptanceRuntime(env){
  if(!['postgres:','postgresql:'].includes(db.protocol)||![NEON,NEON.replace('.','-pooler.')].includes(db.hostname)||!db.username||!db.password||db.pathname!=='/neondb'||!['','5432'].includes(db.port)||db.hash||ssl.length!==1||ssl[0]!=='verify-full')return null;
  if([...db.searchParams].some(([k,v])=>k!=='sslmode'&&(k!=='channel_binding'||v!=='require'))||db.searchParams.getAll('channel_binding').length>1)return null;
  if(raw.STORAGE_BUCKET!=='isp-staging-private'||raw.STORAGE_ENDPOINT!=='https://a9720867333b64a4f8ee70cdfd673eb9.r2.cloudflarestorage.com'||raw.AWS_REGION!=='auto'||raw.STORAGE_FORCE_PATH_STYLE!=='true'||Object.keys(raw).some(k=>k.startsWith('SMTP_')&&raw[k]))return null;
- return runtimeConfiguration({...raw,ISP_CONTAINER_ENABLED:'true'});
+ if(raw.AWS_REQUEST_CHECKSUM_CALCULATION!=='when_required')return null;
+ const config=runtimeConfiguration({...raw,ISP_CONTAINER_ENABLED:'true'});
+ if(config)config.containerEnv.AWS_REQUEST_CHECKSUM_CALCULATION='when_required';
+ return config;
  }catch{return null;}
 }
 function control(request){const u=new URL(request.url);if(u.pathname===PREFIX+'status'&&request.method==='GET'&&!u.search)return 'status';if(u.pathname===PREFIX+'stop'&&request.method==='POST'&&!u.search)return 'stop';return null;}
@@ -97,7 +100,7 @@ export class ISPPrivateAcceptance extends DurableObject {
  const headers=headersWithoutReviewCookie(request);headers.delete('x-isp-staging-key');headers.delete('x-isp-startup-key');headers.delete('content-length');const clientIp=headers.get(EDGE_IP_HEADER);
  const clean=new Request(request,{headers,body:meterUpload,signal:controller.signal,duplex:'half'}),backend=requestForRails(clean,HOST,clientIp);backend.headers.set(TRACE_HEADER,id);
  await this.record(id,{stage:u.pathname==='/ready'?'application_readiness':'backend_http',dispatched:true});await this.live();if(controller.signal.aborted)throw failure();
- const response=await bounded(()=>this.ctx.container.getTcpPort(3000).fetch(backend),Math.max(1,Math.min(600000,window.end-Date.now())));await this.record(id,{outcome:'response',response_received:true,status:response.status});
+ const response=await bounded(()=>this.ctx.container.getTcpPort(3000).fetch(backend),Math.max(1,Math.min(600000,window.end-Date.now())));const correlated=response.headers.get(TRACE_HEADER)===id;await this.record(id,{outcome:'response',response_received:true,status:response.status,operation_id:correlated&&validUuid(response.headers.get('x-isp-diagnostic-operation'))?response.headers.get('x-isp-diagnostic-operation'):null,exception_class:correlated?className(response.headers.get('x-isp-diagnostic-exception')):null});
  if(response.status>=500&&writing)await this.stop('transport');const safe=privateResponse(response,id);if(!safe.body){release();return safe;}output=safe.body.getReader();let ended=false;
  const body=new ReadableStream({start(c){outputController=c;},pull:async c=>{try{if(controller.signal.aborted)throw failure();const part=await output.read();if(part.done){ended=true;c.close();release();return;}await this.countBytes(part.value.byteLength);if(controller.signal.aborted)throw failure();c.enqueue(part.value);}catch{ended=true;void output.cancel().catch(()=>{});c.error(failure());if(!['GET','HEAD','OPTIONS'].includes(request.method))await this.stop('transport');release();}},cancel:async()=>{if(!ended)await output.cancel().catch(()=>{});if(!['GET','HEAD','OPTIONS'].includes(request.method))await this.stop('transport');release();}});
  return new Response(body,safe);

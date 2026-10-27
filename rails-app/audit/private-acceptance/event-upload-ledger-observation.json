@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "observed_at": "2026-10-27T17:26:31Z",
+  "read_only": true,
+  "network_object_reads": 0,
+  "exact_captured_blobs": [
+    {
+      "id": 2,
+      "filename": "qa-20261027-913674d20bad-event-image.png",
+      "content_type": "image/png",
+      "byte_size": 68,
+      "attachments": 0,
+      "key_sha256": "a7d59a64f7f1197881f6277acfe7b6ea489bfdc4f735a381cac363183a852c16",
+      "scan": {
+        "scan_status": "clean",
+        "scan_engine": "ClamAV",
+        "scan_signature_version": "ClamAV 1.4.6/28166",
+        "scanned_at": "2026-10-27T17:12:28Z",
+        "scan_sha256": "aeef01bacac7043a28e7fc7addd0d045dede38562298ea1952263fdd4f08ee8f"
+      },
+      "ledger": {
+        "version": 1,
+        "id": "a9ab3941-9489-4764-8a09-6a765c0666ae",
+        "slot": "image_0",
+        "prepared_at": "2026-10-27T17:12:28.106679Z",
+        "state": "tombstone",
+        "last_attempt_at": "2026-10-27T17:12:28.346416Z",
+        "last_result": "absence_observed",
+        "last_absent_at": "2026-10-27T17:12:28.623656Z"
+      }
+    },
+    {
+      "id": 3,
+      "filename": "qa-20261027-913674d20bad-brochure.pdf",
+      "content_type": "application/pdf",
+      "byte_size": 627,
+      "attachments": 0,
+      "key_sha256": "076648b022a30931c4e9eec81b67676ee768b1ce13d07c045a52e91f3c4598e7",
+      "scan": {
+        "scan_status": "clean",
+        "scan_engine": "ClamAV",
+        "scan_signature_version": "ClamAV 1.4.6/28166",
+        "scanned_at": "2026-10-27T17:12:28Z",
+        "scan_sha256": "b071d0b3e6b326c34ba966f6104824ce698f0a9f6e7514444b5ec9957d3714a6"
+      },
+      "ledger": {
+        "version": 1,
+        "id": "a9ab3941-9489-4764-8a09-6a765c0666ae",
+        "slot": "brochure",
+        "prepared_at": "2026-10-27T17:12:28.138003Z",
+        "state": "tombstone",
+        "last_attempt_at": "2026-10-27T17:12:28.650404Z",
+        "last_result": "absence_observed",
+        "last_absent_at": "2026-10-27T17:12:28.914327Z"
+      }
+    }
+  ],
+  "event_count": 0,
+  "administrative_audit_count": 0
+}

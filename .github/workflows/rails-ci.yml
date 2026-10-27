@@ -48,6 +48,8 @@ jobs:
         run: bundle exec rails db:create db:migrate
       - name: Run application and security tests
         run: bundle exec rails test
+      - name: Verify private R2 checksum compatibility without network
+        run: bundle exec ruby script/r2-checksum-offline.test.rb
       - name: Prove recovery inventory queries against real PostgreSQL
         if: matrix.database == 'postgresql'
         run: bundle exec ruby script/recovery-inventory-ci.rb
@@ -178,7 +180,7 @@ jobs:
           ISP_STAGING_LEASE=rails-staging-2 node script/hosted-acceptance.mjs --plan
           ISP_STAGING_LEASE=rails-staging-3 node script/hosted-acceptance.mjs --selftest
           ISP_STAGING_LEASE=rails-staging-3 node script/hosted-acceptance.mjs --plan
-          node --test script/hosted-diagnostics.test.mjs
+          node --test script/hosted-diagnostics.test.mjs script/private-failed-response.test.mjs
       - name: Prove the exact staging Worker bundle and operator source
         run: |
           node --input-type=module -e "const {buildBundleProof}=await import('./script/native-boot4.mjs'); console.log(JSON.stringify((await buildBundleProof(process.cwd())).proof));"

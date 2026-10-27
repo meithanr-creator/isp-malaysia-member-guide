@@ -40,8 +40,20 @@ export function safeDiagnostic(value,id,deadline){
   const clean=cleanTrace(value,deadline);
   return clean&&value.id===id&&value.deadline===deadline&&Object.keys(value).length===Object.keys(clean).length&&Object.entries(clean).every(([key,item])=>value[key]===item)?clean:null;
 }
+export function privateFailureArtifact(result){
+  check(result?.trace?.method==='POST'&&result.trace.path?.startsWith('/admin/')&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(result.trace.id),'Correlated admin failure required');
+  check(Number.isInteger(result.status)&&result.status>=400&&result.status<=599&&Buffer.isBuffer(result.bytes)&&result.bytes.length<=1024*1024,'Bounded failure response required');
+  const digest=hash(result.bytes);check(result.sha256===digest,'Failure response digest mismatch');
+  const file='failed-admin-post-'+result.trace.id+'.bin';
+  return {file,bytes:result.bytes,proof:{file,bytes:result.bytes.length,sha256:digest,status:result.status}};
+}
+function retainPrivateFailedResponse(result){
+  const artifact=privateFailureArtifact(result),target=safePath(path.join(PRIVATE,artifact.file));let fd;
+  try{fd=fs.openSync(target,'wx',0o600);fs.writeFileSync(fd,artifact.bytes);fs.fsyncSync(fd);}finally{if(fd!==undefined)fs.closeSync(fd);}
+  return artifact.proof;
+}
 export class Transport{
-  constructor(runtime,state,{prepared,admissionSnapshot,admit,byteCap=CONTEXT.native?128*1024*1024:Infinity,requestImpl=https.request,persistState=value=>atomic(HTTP_FILE,value)}={}){this.admit=admit??(limit=>verifyLeaseWatchdog(runtime,prepared,admissionSnapshot,limit));this.requestImpl=requestImpl;this.persistState=persistState;this.runtime=runtime;this.state=state;this.calls=state.request_count??0;this.byteCap=byteCap;this.bytes=state.transferred_bytes??0;check((byteCap===Infinity||Number.isSafeInteger(byteCap)&&byteCap>0)&&Number.isSafeInteger(this.bytes)&&this.bytes>=0&&this.bytes<=byteCap,'Bounded transfer checkpoint required');this.active=0;this.waiters=[];this.traces=[];this.jars=new Map();this.stopAt=Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-600000;if(CONTEXT.native)this.stopAt=Math.min(this.stopAt,Date.parse(runtime.ISP_STAGING_START_AT)+25*60000);check(Number.isFinite(this.stopAt)&&this.stopAt>Date.now(),'Unexpired fixed cleanup reserve required');check(Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-Date.parse(state.execution_started)<=55*60000,'Rehearsal may last at most 55 minutes');check(/^[a-f0-9]{64}$/.test(runtime.ISP_STAGING_KEY),'Private rehearsal key required');}
+  constructor(runtime,state,{prepared,admissionSnapshot,admit,byteCap=CONTEXT.native?128*1024*1024:Infinity,requestImpl=https.request,persistState=value=>atomic(HTTP_FILE,value),persistFailureEvidence=retainPrivateFailedResponse}={}){this.persistFailureEvidence=persistFailureEvidence;this.admit=admit??(limit=>verifyLeaseWatchdog(runtime,prepared,admissionSnapshot,limit));this.requestImpl=requestImpl;this.persistState=persistState;this.runtime=runtime;this.state=state;this.calls=state.request_count??0;this.byteCap=byteCap;this.bytes=state.transferred_bytes??0;check((byteCap===Infinity||Number.isSafeInteger(byteCap)&&byteCap>0)&&Number.isSafeInteger(this.bytes)&&this.bytes>=0&&this.bytes<=byteCap,'Bounded transfer checkpoint required');this.active=0;this.waiters=[];this.traces=[];this.jars=new Map();this.stopAt=Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-600000;if(CONTEXT.native)this.stopAt=Math.min(this.stopAt,Date.parse(runtime.ISP_STAGING_START_AT)+25*60000);check(Number.isFinite(this.stopAt)&&this.stopAt>Date.now(),'Unexpired fixed cleanup reserve required');check(Date.parse(runtime.ISP_STAGING_EXPIRES_AT)-Date.parse(state.execution_started)<=55*60000,'Rehearsal may last at most 55 minutes');check(/^[a-f0-9]{64}$/.test(runtime.ISP_STAGING_KEY),'Private rehearsal key required');}
   jar(alias){if(!this.jars.has(alias))this.jars.set(alias,new CookieJar(this.state.jars?.[alias]));return this.jars.get(alias);}
   async request(alias,target,{method='GET',body,upload=false,startup=false,key=this.runtime.ISP_STAGING_KEY,omitCookie=false,accept="text/html,application/json;q=0.9"}={}){
     const url=sameOrigin(target),limit=startup?120000:upload?45000:20000;
@@ -54,29 +66,34 @@ export class Transport{
     this.active++;this.calls++;this.state.request_count=this.calls;
     const started=Date.now(),jar=this.jar(alias),trace={id:crypto.randomUUID(),alias,method,path:url.pathname.replace(/\/(?:files\/[^/]+|event-files\/[^/]+|discover-images\/[^/]+)\/[^/]+/,'/protected-file/:key'),status:null,duration_ms:null};
     this.traces.push(trace);this.state.request_journal??=[];this.state.request_journal.push(trace);
-    this.persistState(this.state); // UUID is durable BEFORE any request bytes are sent.
-    let result,failure;
+    let result,failure,dispatchStarted=false;
     try{
+      try{this.persistState(this.state);}catch{throw new Blocked('Private request intent could not be recorded; no request was dispatched');} // Durable UUID precedes dispatch.
       result=await new Promise((resolve,reject)=>{
         const headers={'Accept':accept,'Origin':ORIGIN,'Referer':ORIGIN+'/','User-Agent':'ISP-hosted-acceptance/1','x-isp-trace':trace.id};
         if(key!==null)headers['x-isp-staging-key']=key;
         if(!omitCookie&&jar.header(url))headers.Cookie=jar.header(url);
         if(body){headers['Content-Type']=body.type;headers['Content-Length']=body.bytes.length;}
-        const req=this.requestImpl(url,{method,headers,rejectUnauthorized:true,...(CONTEXT.native?{family:4}:{}),signal:AbortSignal.timeout(limit)},res=>{
+        dispatchStarted=true;const req=this.requestImpl(url,{method,headers,rejectUnauthorized:true,...(CONTEXT.native?{family:4}:{}),signal:AbortSignal.timeout(limit)},res=>{
           jar.accept(res.headers['set-cookie'],url);const chunks=[],digest=crypto.createHash('sha256');let size=0;
           res.on('data',chunk=>{size+=chunk.length;if(this.byteCap!==Infinity){this.bytes+=chunk.length;this.state.transferred_bytes=this.bytes;if(this.bytes>this.byteCap){res.destroy(Error('Aggregate transfer budget reached'));return;}}if(size>30*1024*1024){res.destroy(Error('Response size limit'));return;}digest.update(chunk);chunks.push(chunk);});
           res.on('error',()=>reject(new Blocked('Response failed; inspect state before continuing')));
           res.on('end',()=>{const bytes=Buffer.concat(chunks);trace.status=res.statusCode;
             if(key===this.runtime.ISP_STAGING_KEY&&!url.pathname.startsWith('/__isp_diagnostics/')&&res.headers['x-isp-trace']!==trace.id){reject(new Blocked('Trusted request correlation unavailable; inspect state before continuing'));return;}
-            resolve({url,status:res.statusCode,headers:res.headers,text:bytes.toString('utf8'),bytes,sha256:digest.digest('hex'),trace});
+            const response={url,status:res.statusCode,headers:res.headers,text:bytes.toString('utf8'),bytes,sha256:digest.digest('hex'),trace};
+            if(key===this.runtime.ISP_STAGING_KEY&&method==='POST'&&url.pathname.startsWith('/admin/')&&res.statusCode>=400){
+              try{trace.private_response_evidence=this.persistFailureEvidence(response);this.persistState(this.state);}
+              catch{trace.private_response_capture='failed';reject(new Blocked('Private failure evidence could not be retained; inspect state before continuing'));return;}
+            }
+            resolve(response);
           });
         });
         req.on('error',()=>reject(new Blocked('HTTPS request failed or timed out; mutation outcome requires DB inspection')));
         if(body)req.write(body.bytes);req.end();
       });
-    }catch(error){failure=error;}
-    finally{trace.duration_ms=Date.now()-started;this.persistState(this.state);this.active--;this.waiters.shift()?.();}
-    if(key===this.runtime.ISP_STAGING_KEY&&!url.pathname.startsWith('/__isp_diagnostics/')&&
+    }catch(error){failure=error instanceof Blocked?error:new Blocked('Private request evidence is incomplete; inspect state before continuing');}
+    finally{trace.duration_ms=Date.now()-started;this.active--;this.waiters.shift()?.();try{this.persistState(this.state);}catch{trace.checkpoint_incomplete=true;failure??=new Blocked('Private request checkpoint could not be recorded; inspect state before continuing');}}
+    if(dispatchStarted&&key===this.runtime.ISP_STAGING_KEY&&!url.pathname.startsWith('/__isp_diagnostics/')&&
        (failure||result?.status>=500||(method!=='GET'&&url.pathname.startsWith('/admin/')&&result?.status>=400))){
       await this.captureDiagnostic(trace);
     }
@@ -92,7 +109,7 @@ export class Transport{
         if(clean){trace.diagnostic=clean;trace.diagnostic_status='observed';}
       }
     }catch{} // Unknown or missing evidence NEVER authorizes replay.
-    this.persistState(this.state);
+    try{this.persistState(this.state);}catch{trace.diagnostic_checkpoint_incomplete=true;}
   }  async page(alias,target){let r=await this.request(alias,target);for(let i=0;i<4&&[301,302,303,307,308].includes(r.status);i++){check(r.headers.location,'Redirect location absent');r=await this.request(alias,sameOrigin(r.headers.location));}return r;}
   save(){this.state.jars={...this.state.jars,...Object.fromEntries([...this.jars].map(([alias,jar])=>[alias,jar.save()]))};}
 }
@@ -169,7 +186,7 @@ function reconcile(state){
  let raw;try{const file=safePath(OBS_FILE);check(fs.statSync(file).size<=16777216,'Observation byte bound');raw=fs.readFileSync(file);}catch(error){if(error.code==='ENOENT')return;throw error;}
  reconcileObservationCases({state,raw,inventory:INVENTORY,seal:retainObservation,rulesMatch:observationRulesMatch,leaseId:CONTEXT.leaseId});
 }
-function publicReport(state){const cases=Object.entries(INVENTORY).map(([id,[batch,area]])=>{const c=state.cases[id]??{id,area,status:'NOT RUN',http:'NOT RUN',assertions:[]};return{id,area,batch,status:c.status,http:c.http,started_at:c.started_at,finished_at:c.finished_at,assertions:c.assertions,requests:c.requests,db_observed_at:c.db_observed_at,observation_sha256:c.observation_sha256,reason:c.reason};});return{version:1,lease_id:state.lease_id,prepared_release_sha256:state.prepared_release_sha256,rails_source:state.rails_source,image_digest:state.image_digest,application_id:state.application_id,namespace_id:state.namespace_id,run_marker:state.run_marker,candidate:state.candidate,deployment_id:state.deployment_id,origin:ORIGIN,generated_at:new Date().toISOString(),requests:state.request_count??0,areas:Object.fromEntries([...new Set(cases.map(c=>c.area))].map(area=>{const rows=cases.filter(c=>c.area===area);return[area,rows.some(c=>c.status==='FAIL')?'FAIL':rows.every(c=>c.status==='PASS')?'PASS':'BLOCKED'];})),cases};}
+export function publicReport(state){const cases=Object.entries(INVENTORY).map(([id,[batch,area]])=>{const c=state.cases[id]??{id,area,status:'NOT RUN',http:'NOT RUN',assertions:[]};return{id,area,batch,status:c.status,http:c.http,started_at:c.started_at,finished_at:c.finished_at,assertions:c.assertions,requests:c.requests?.map(({private_response_evidence,private_response_capture,...safe})=>safe),db_observed_at:c.db_observed_at,observation_sha256:c.observation_sha256,reason:c.reason};});return{version:1,lease_id:state.lease_id,prepared_release_sha256:state.prepared_release_sha256,rails_source:state.rails_source,image_digest:state.image_digest,application_id:state.application_id,namespace_id:state.namespace_id,run_marker:state.run_marker,candidate:state.candidate,deployment_id:state.deployment_id,origin:ORIGIN,generated_at:new Date().toISOString(),requests:state.request_count??0,areas:Object.fromEntries([...new Set(cases.map(c=>c.area))].map(area=>{const rows=cases.filter(c=>c.area===area);return[area,rows.some(c=>c.status==='FAIL')?'FAIL':rows.every(c=>c.status==='PASS')?'PASS':'BLOCKED'];})),cases};}
 async function execute(batch){
   if(!CONTEXT.native){assertLeaseMutationAllowed(CONTEXT);assertWritableLease(CONTEXT);}
   check(!process.env.NODE_TLS_REJECT_UNAUTHORIZED||process.env.NODE_TLS_REJECT_UNAUTHORIZED==='1','Insecure ambient TLS setting refused');
