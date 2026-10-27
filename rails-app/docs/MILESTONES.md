@@ -1,3 +1,12 @@
+# Live Windows census correction — 27 October 2026
+
+The actual machine census exposed multiline commands from unrelated tools that the earlier native fixtures did not cover. The anchored parser now retains newline characters in command tails while preserving exact process identity and controller-wrapper rejection. Astra reviewed the single-literal correction. The actual corrected census completed successfully: 594 process rows, zero matching ISP controllers, no provider requests and no release admission. Native Windows regressions passed 33 assertions, including LF/CRLF commands, tabs and controller wrappers.
+
+The original legacy shutdown record is unchanged. Exact new-commit CI and a refreshed source/helper/package/grant binding are required before inactive deployment. Earlier source 8c77a3 and its CI remain historical evidence, not authorization to use the superseded parser. No lease3 application mutation or runtime has occurred; hosted acceptance remains 0/63 and production NO-GO.
+
+---
+
+
 # Current milestone checkpoint — 27 October 2026
 
 | Milestone | Current evidence | Remaining gate |
