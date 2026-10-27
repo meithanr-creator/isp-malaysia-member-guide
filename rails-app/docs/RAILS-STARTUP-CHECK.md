@@ -21,3 +21,7 @@ The first startup transport returned HTTP404 / Cloudflare1042 before any control
 A continuation must preserve the earlier attempt, verify app404 and empty namespace, and wait at most60seconds for the exact anonymous denial response before one keyed startup request. Each admitted continuation has one fixed ten-minute cutoff chosen before configuration. Routing wait never restarts or extends that cutoff, and at least475seconds must remain after route readiness for Rails, the optional Neon check and cleanup. Conservative carried commitments are US$2.50, with US$1 reserved for the continuation, totalingUS$3.50 withinUS$5; actual billing is not asserted.
 
 Neon documentation was checked: the supplied Pages/Workers examples use JavaScript drivers, while the official Rails guide uses the standard PostgreSQL connection URL. This Rails startup check retains its existing approved Neon connection and certificate verification.
+
+## Observed result
+
+Source8fbb8bc2942679de434773f8b808bee3e7ef274e / CI40523081050 succeeded. On27October2026 at22:43:54 Malaysia time, actual Rails /up returned200. The separate /app-ready URL returned403, so Neon readiness remains unproved and its cause unconfirmed. The Worker stopped its container; parent and independent watch confirmed application absence and closed ingress by22:44:02. Astra accepted only the Rails startup milestone. Public receipt: audit/staging-3/rails-startup-proof.json.

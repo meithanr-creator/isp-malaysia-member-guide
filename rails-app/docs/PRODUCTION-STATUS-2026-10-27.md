@@ -1,6 +1,38 @@
-# Current scope: hosting chunk 1
+# Current milestone — Rails starts on Cloudflare
 
-See HOSTING-CHUNK-1.md for the current small boot/readiness/shutdown scope and expired-access status. Lease3 was rejected and stopped; no lease4 runtime has started. Earlier status paragraphs below are historical. Production remains NO-GO.
+Observed27October2026 at22:43:54 Malaysia time. The existing pinned Rails image returned /up HTTP200 on Cloudflare. The container stopped immediately, and both parent and independent watch confirmed the exact application absent and ingress/previews closed. Astra independently reviewed the receipts and accepted this startup milestone only.
+
+Source8fbb8bc2942679de434773f8b808bee3e7ef274e passed CI push40523081050. The private Worker route was required to serve its exact denial response before the single keyed startup request. All files remain on D. Conservative carried commitments plus reservations totalUS$3.50 within the cumulativeUS$5 ceiling; actual billing is not asserted.
+
+| Gate | Status | Evidence / remaining condition |
+| --- | --- | --- |
+| Rails startup on Cloudflare | PASS | Actual /up200 and independent verified shutdown; audit/staging-3/rails-startup-proof.json |
+| Hosted Neon/database readiness | UNPROVED | /app-ready returned403; identify the denial before another DB-readiness assessment |
+| Full hosting readiness | INCOMPLETE | Database/schema, private-file/scanner and recovery evidence remain |
+| Hosted member/admin/mobile acceptance | OPEN | 0/63 full acceptance cases closed by this startup proof |
+| Production launch | NO-GO | Remaining hosting/workflow/mail/operations/domain gates and final director decision |
+
+The database integration remains standard Rails PostgreSQL using the existing approved Neon URL with certificate verification. The supplied Pages/Workers JavaScript examples were reviewed and do not require replacing the Rails database driver.
+
+Earlier checkpoints below are historical. This record does not claim production readiness or prove the cause of the403.
+
+---
+
+# Current hosting checkpoint — 27 October 2026
+
+Cloudflare accepted and verified the native inactive deployment, then activation. The approved private test stopped after one of six checks: anonymous /up returned HTTP503 with no-store. The wrong-key probe has an intent but no response; its dispatch and failure cause are unknown. Authenticated Rails, database/schema and private-storage readiness were not reached.
+
+Both parent and independent watch confirmed shutdown by 21:48:51 Malaysia time. A subsequent read-only provider check independently returned HTTP404 for the exact test application with ingress and previews disabled. This is successful shutdown, not a completed hosting-readiness test. See audit/staging-3/native4-hosted-attempt.json and docs/HOSTING-CHUNK-1.md.
+
+| Milestone | Current evidence | Remaining gate |
+| --- | --- | --- |
+| P0 Scope and guardrails | Rails; files on D; original US$5 ceiling; one approved window; demo scope frozen | Continue enforcement |
+| P1 Reviewed source and CI | a6f841bb35fe2db7421b5450a5ba46ce6547d7d5 passed all seven required checks | Review and test any diagnostic correction before another release |
+| P2 Hosting and recovery | Native image preparation, inactive deployment, activation and verified shutdown PASS; one denial check PASS | Complete Rails readiness and denial checks; retain useful failure evidence; full recovery remains open |
+| P3 Hosted workflows and virtual mobile | 0/63 full acceptance cases closed | Member/admin workflows, uploads, access controls, mobile and recovery |
+| P4 Controlled launch | NO-GO | Remaining P2/P3 gates, identity mail, official member/admin/content, support/retention/cost ownership, domain/TLS and final director review |
+
+Earlier paragraphs below are historical and do not override this checkpoint.
 
 ---
 
