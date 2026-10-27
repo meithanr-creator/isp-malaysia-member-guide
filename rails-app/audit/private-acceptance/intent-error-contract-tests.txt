@@ -1,0 +1,36 @@
+✔ actual admission accepts strict lease3 tuple and exact raw handoff with a live watchdog (5.4626ms)
+✔ hosted mode requires exact host, production and all disabled mail/demo flags (0.5698ms)
+✔ admission refuses retired context and sealed runtime/application/namespace mismatches (1.6527ms)
+✔ runtime and raw handoff replacement fail before PID admission (0.9683ms)
+✔ active receipt must pin current distinct version/deployment and enabled ingress (1.8868ms)
+✔ dead stale future disarmed or mismatched watchdog cannot admit work (2.2834ms)
+✔ fixed runtime reserve and required remaining duration are strict (0.7642ms)
+✔ accepted snapshot pins byte identity of runtime plan active receipt and watchdog PID (1.4059ms)
+✔ parent snapshot digest rejects coordinated valid record replacement and invalid digest (0.9604ms)
+✔ immutable proof hashes formatted original bytes including BOM and Unicode (17.6254ms)
+✔ reconciliation seals exact raw bytes before a case can become PASS (3.1522ms)
+✔ reconciliation parses raw independently and cannot accept a separate forged observation (0.3145ms)
+✔ existing different immutable capture and storage failure preserve BLOCKED disposition (0.5023ms)
+✔ incorrect seal hash length or file identity cannot promote a case (1.2352ms)
+✔ FAIL or PASS cases retain their original evidence and cannot be rebound to a later capture (0.4069ms)
+✔ malformed stale foreign or future raw observations cannot close cases (14.5036ms)
+✔ admission rejects malformed oversized or nonobject raw records before PID probing (0.6543ms)
+✔ HTTP performs no dispatch persistence journal or counters when actual admission fails (0.8732ms)
+✔ admitted HTTP persists its UUID intent before dispatch and uses the exact request duration (1.7038ms)
+✔ queued HTTP loses admission without any new dispatch persistence or intent after waiting (1.4384ms)
+✔ failed durable HTTP intent prevents request bytes from being dispatched (0.7139ms)
+✔ failure artifact binds exact bytes to a controlled UUID with bounded private-only metadata (2.1437ms)
+✔ foreign identifiers, non-admin/read/success responses, oversized or altered bytes are rejected (0.5245ms)
+✔ one failed admin POST retains evidence before assertion handling and public output omits private artifact references (3.379ms)
+✔ exclusive-create/write/sync failure stops the request without replay or exposing private error details (1.3283ms)
+✔ failure-evidence checkpoint refusal never repeats POST and releases its transport slot (0.493ms)
+✔ persistent checkpoint failure preserves the sanitized primary error and marks private evidence incomplete (0.7366ms)
+✔ initial intent checkpoint failure dispatches nothing and releases its concurrency slot (0.373ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 222.8515

@@ -133,5 +133,5 @@ test('queued HTTP loses admission without any new dispatch persistence or intent
 test('failed durable HTTP intent prevents request bytes from being dispatched',async()=>{
  const f=fixture(Date.now()),state=httpState(f),http=httpHarness();let persists=0;
  const transport=new Transport(f.runtime,state,{admit:limit=>assertActiveStagingAdmission(input(f,{now:Date.now(),minimumRemainingMs:limit})),requestImpl:http.requestImpl,persistState:()=>{persists++;throw Error('synthetic intent capture unavailable');}});
- await assert.rejects(transport.request('member','/member/dashboard'),/synthetic intent capture unavailable/);assert.equal(persists,1);assert.equal(http.pending.length,0);assert.equal(http.events.length,0);
+ await assert.rejects(transport.request('member','/member/dashboard'),error=>/no request was dispatched/.test(error.message)&&!error.message.includes('synthetic intent capture unavailable'));assert.equal(persists,2);assert.equal(http.pending.length,0);assert.equal(http.events.length,0);assert.equal(transport.active,0);
 });
