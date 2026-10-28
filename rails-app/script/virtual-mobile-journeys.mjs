@@ -111,23 +111,34 @@ export function assertJourneyHarness(h){
  for(const key of JOURNEY_CALLBACKS)ensure(typeof h[key]==='function','Rendered journey callback missing: '+key);
  return h;
 }
+export async function activateSkipLink(page,{timeoutMs=5000}={}){
+ ensure(Number.isSafeInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=5000,'Bounded skip-link focus wait required');
+ await page.getByRole('link',{name:'Skip to content',exact:true}).focus();await page.keyboard.press('Enter');
+ // Turbo completes same-page fragment navigation asynchronously. Observe the
+ // browser's real focus result; never set focus on the destination for it.
+ await page.waitForFunction(()=>{const main=document.querySelector('main#main');return !!main&&document.activeElement===main&&location.hash==='#main';},undefined,{timeout:timeoutMs});
+}
 export async function runRenderedJourneys(h){
  assertJourneyHarness(h);
  const {page,context,fixtures,http,name,profile}=h,mark=fixtures.run_marker,label=mark+' '+name,png=cleanPng(),pdf=benignPdf(label+' publication'),eventPdf=benignPdf(label+' event');let admin,guest,event,pub;
+ const resumed=h.continuation?.profiles?.[name],carriedGate=resumed?.cases?.private_gate,resumeSkip=!!carriedGate;
+ if(resumeSkip)ensure(h.continuation.version===1&&name==='iphone-webkit'&&carriedGate.status==='PASS_CARRIED'&&carriedGate.original_status==='PASS'&&/^[a-f0-9]{64}$/.test(carriedGate.original_case_sha256??'')&&resumed.resume_case==='landing_menu_keyboard'&&resumed.resume_at==='skip_link_focus'&&resumed.failed_case_carried===false&&h.gate,'Exact carried gate and operational review entry required');
  const payload=(kind,buffer,mime)=>({name:mark+'-'+name+'-'+kind,mimeType:mime,buffer});
- await h.scenario('private_gate',30000,8,async()=>{
+ if(!resumeSkip)await h.scenario('private_gate',30000,8,async()=>{
   const r=await page.goto(ORIGIN+'/__isp_review');h.check(r?.status()===200,'Private review form renders');await page.getByLabel('Review access code',{exact:true}).fill(h.runtime.ISP_STAGING_KEY);
   await h.submit('review_access',page,page.getByRole('button',{name:'Open private review',exact:true}));await page.waitForURL(ORIGIN+'/');await page.locator('.welcome-hero').waitFor();
   const gate=(await context.cookies(ORIGIN)).find(c=>c.name==='__Host-isp_acceptance');h.check(gate?.secure&&gate.httpOnly&&gate.sameSite==='Strict'&&!gate.value.includes(h.runtime.ISP_STAGING_KEY)&&gate.expires*1000<=Date.parse(h.runtime.ISP_STAGING_EXPIRES_AT)+1000,'Rendered secure fixed-expiry review cookie accepted');h.gate=gate;
  });
  await h.scenario('landing_menu_keyboard',30000,5,async()=>{
+  if(!resumeSkip){
   await h.evaluate(page,()=>document.fonts.ready);h.check(await page.locator('img[alt="Official ISP crest"]').count()===1,'Official crest rendered');
   const menu=page.getByLabel('Explore ISP menu',{exact:true});await menu.tap();await page.getByRole('navigation',{name:'Explore ISP',exact:true}).waitFor();const box=await menu.boundingBox();h.check(box&&box.width>=44&&box.height>=44&&box.x>h.viewport.width/2,'Top-right menu provides a44px touch target');
   h.check((await page.getByRole('link',{name:/ISP shop/}).innerText()).includes('DEMO')&&(await page.getByRole('link',{name:/Plantation jobs/}).innerText()).includes('DEMO'),'Frozen demo references labelled; never opened');
   h.check(await page.getByRole('link',{name:/ISP Academy|Community forum/}).count()===0,'Removed areas absent');
   await menu.press('Escape');h.check(await menu.getAttribute('aria-expanded')==='false'&&await menu.evaluate(el=>el===document.activeElement),'Escape closes menu and restores focus');
   await menu.press('Enter');h.check(await menu.getAttribute('aria-expanded')==='true','Keyboard opens navigation');await menu.press('Escape');
-  await page.getByRole('link',{name:'Skip to content',exact:true}).focus();await page.keyboard.press('Enter');h.check(await h.evaluate(page,()=>document.activeElement?.id==='main'),'Skip link moves keyboard focus to main');await h.audit(page);await h.shot(page,'landing');
+  }
+  await activateSkipLink(page);h.check(await h.evaluate(page,()=>document.activeElement?.id==='main'),'Skip link moves keyboard focus to main');await h.audit(page);await h.shot(page,'landing');
  });
  await h.scenario('member_login',45000,18,async()=>{
   await h.go(page,'/login','.account-login');await page.getByLabel('Email address',{exact:true}).fill(fixtures.actors.member_b.email);await page.getByLabel('Password',{exact:true}).fill(fixtures.actors.member_b.password);await h.submit('member_login',page,page.getByRole('button',{name:'Sign in',exact:false}));await page.waitForURL(ORIGIN+'/member/dashboard');await page.locator('.member-home').waitFor();await h.audit(page);await h.shot(page,'dashboard');

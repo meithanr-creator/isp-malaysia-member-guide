@@ -171,3 +171,6 @@ export class ISPPrivateAcceptanceMobileQueued6 extends ISPPrivateAcceptanceMobil
  get transferLimit(){return QUEUED_MOBILE_LIMITS.bytes;}
  responseByteLimit(request,response){return queuedResponseByteLimit(request,response);}
 }
+
+// A stopped Queued6 namespace is permanent; the reviewed continuation is fresh.
+export class ISPPrivateAcceptanceMobileQueued6Continuation extends ISPPrivateAcceptanceMobileQueued6 {}

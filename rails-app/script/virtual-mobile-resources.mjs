@@ -890,7 +890,7 @@ export const RESOURCE_SOURCES=Object.freeze([
   },
   {
     "path": "script/virtual-mobile-journeys.mjs",
-    "sha256": "ebe927ac7b5805de200568d7f633b64053a70a9092b68360eaa1ae25f1692306"
+    "sha256": "0f273c84fb9a41c45643dbec13f0ae3944285bfdd6eee273ca6739c2dd5df787"
   },
   {
     "path": "app/assets/images/.keep",
@@ -1457,7 +1457,7 @@ export const RESOURCE_SOURCES=Object.freeze([
     "sha256": "da345c546654957150c9f570662bdc3b8fefab7bf96e0d1c14b9bfe97c95e218"
   }
 ]);
-export const MOBILE_RESOURCE_MODEL=Object.freeze({version:1,image_digest:'sha256:152480a896060eae82a380dc54f651e199ff1585cd5dd805d0d51b9f3a587d2a',image_archive_sha256:'bd2d0874fcae805f15319e5d0f9a951de8df5852c9611f889ea5bb743a11e525',image_catalog_sha256:'30e66b2b8c3b51e479420751713a140e3e9bb088a59eabd6c261491d0423b4bf',catalog_sha256:'ddb7330bc6319f778d370f5521bebd5a1dd90813b70296feb06302658a2dd947',source_sha256:'78427e0586ba30e45ac4bd5b7dcf743e8429d5ce6ea0ad0c5ffd1efdb7db54c7',static_files:88,static_bytes:4767852,static_overhead_bytes:1024,copies_per_document:2,dynamic_files_per_document:10,dynamic_file_bytes:1048576,html_bytes:262144,auxiliary_requests_per_document:4,auxiliary_bytes:16384,documents_per_profile:45,resource_attempts_per_profile:90,prefetch_attempts:2,local_blob_attempts:4,offline_attempts:1,readiness_requests:1,upload_bytes:26214400,setup_requests:350,setup_bytes:134217728,startup_requests:720,control_requests:128,cases:[
+export const MOBILE_RESOURCE_MODEL=Object.freeze({version:1,image_digest:'sha256:152480a896060eae82a380dc54f651e199ff1585cd5dd805d0d51b9f3a587d2a',image_archive_sha256:'bd2d0874fcae805f15319e5d0f9a951de8df5852c9611f889ea5bb743a11e525',image_catalog_sha256:'30e66b2b8c3b51e479420751713a140e3e9bb088a59eabd6c261491d0423b4bf',catalog_sha256:'ddb7330bc6319f778d370f5521bebd5a1dd90813b70296feb06302658a2dd947',source_sha256:'07369c17ef6f049c0adf9b35fa423061222384eb26af2c764f6f2f249e3614f7',static_files:88,static_bytes:4767852,static_overhead_bytes:1024,copies_per_document:2,dynamic_files_per_document:10,dynamic_file_bytes:1048576,html_bytes:262144,auxiliary_requests_per_document:4,auxiliary_bytes:16384,documents_per_profile:46,resource_attempts_per_profile:92,prefetch_attempts:2,local_blob_attempts:4,offline_attempts:1,readiness_requests:1,upload_bytes:26214400,setup_requests:350,setup_bytes:134217728,startup_requests:720,control_requests:128,cases:[
   {
     "id": "private_gate",
     "documents": 2,
@@ -1467,7 +1467,7 @@ export const MOBILE_RESOURCE_MODEL=Object.freeze({version:1,image_digest:'sha256
   },
   {
     "id": "landing_menu_keyboard",
-    "documents": 0,
+    "documents": 1,
     "writes": 0,
     "api": 0,
     "files": 0
@@ -1578,7 +1578,7 @@ export const MOBILE_RESOURCE_MODEL=Object.freeze({version:1,image_digest:'sha256
     "files": 0
   }
 ]});
-export const RESOURCE_MODEL_SHA256='bf1776088e193156e243cca78cb0354c8836d72ad1bdd12e6e3e9425dcb6c3df';
+export const RESOURCE_MODEL_SHA256='2095aa8abf725ef2349a49ff89b7e934aeaf891cd8808f397d0dd50cd5248e85';
 const m=MOBILE_RESOURCE_MODEL;
 export const DOCUMENT_DEMAND=Object.freeze({requests:1+m.static_files*m.copies_per_document+m.dynamic_files_per_document*m.copies_per_document+m.auxiliary_requests_per_document,bytes:(m.static_bytes+m.static_files*m.static_overhead_bytes)*m.copies_per_document+m.dynamic_files_per_document*m.copies_per_document*m.dynamic_file_bytes+m.html_bytes+m.auxiliary_requests_per_document*m.auxiliary_bytes});
 export const CASE_RESOURCE_DEMAND=Object.freeze(Object.fromEntries(m.cases.map(c=>[c.id,Object.freeze({...c,requests:c.documents*DOCUMENT_DEMAND.requests+c.writes+c.api+c.files+(c.id==='offline_privacy'?m.offline_attempts:0)+(c.id==='discover_edit'||c.id==='event_edit_preview_publish'?2:0)+(c.id==='event_edit_preview_publish'||c.id==='publication_edit_preview_publish'?1:0),bytes:c.documents*DOCUMENT_DEMAND.bytes+c.writes*(m.upload_bytes+m.auxiliary_bytes)+c.api*m.html_bytes+c.files*m.dynamic_file_bytes+(c.id==='event_edit_preview_publish'||c.id==='publication_edit_preview_publish'?m.html_bytes:0)})])));

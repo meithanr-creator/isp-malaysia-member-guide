@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "source_commit": "8300a7b742f9d07d19fbb39efb9b484772b86013",
+  "packet_sha256": "115a42b434d63b415316521d6fd93f77f75fd1b1ae1d725ad5da1433b293759b",
+  "status": "FAIL",
+  "failure_case": "landing_menu_keyboard",
+  "failed_assertion": "Skip link moves keyboard focus to main",
+  "iphone_cases": {
+    "private_gate": "PASS",
+    "landing_menu_keyboard": "FAIL",
+    "member_login": "NOT_RUN",
+    "member_profile": "NOT_RUN",
+    "consultation": "NOT_RUN",
+    "administrator_mfa": "NOT_RUN",
+    "discover_edit": "NOT_RUN",
+    "event_edit_preview_publish": "NOT_RUN",
+    "publication_edit_preview_publish": "NOT_RUN",
+    "interest_repeat": "NOT_RUN",
+    "protected_pdf_auth_hash": "NOT_RUN",
+    "carousel_keyboard_accessibility": "NOT_RUN",
+    "pwa": "NOT_RUN",
+    "offline_privacy": "NOT_RUN",
+    "responsive": "NOT_RUN",
+    "logout_back": "NOT_RUN",
+    "administrator_logout": "NOT_RUN"
+  },
+  "android": "NOT_RUN",
+  "carried_http_passes": 42,
+  "replayed_accepted_http_cases": 0,
+  "shutdown": "PASS",
+  "application_absent": true,
+  "ingress_closed": true,
+  "browser_processes": "PASS",
+  "fixture_disposition": {
+    "status": "CLEAN_TO_PROTECTED_BASELINE",
+    "retained_protected_blob_count": 2,
+    "protected_blob_rows_sha256": "ade7fc2601adff2d43055ad939d988f16e4c734b271dfb7ebe9c8413f102cd4a",
+    "global_empty_baseline": false
+  },
+  "started_at": "2026-10-28T12:24:20.154Z",
+  "stopped_at": "2026-10-28T12:27:39.154Z",
+  "actual_interval_seconds": 199,
+  "retained_charged_interval_seconds": 213,
+  "retained_full_transfer_allowance_bytes": 4294967296,
+  "retained_other_allowance_usd": 0.05,
+  "private_evidence_sha256": {
+    "packet.json": "115a42b434d63b415316521d6fd93f77f75fd1b1ae1d725ad5da1433b293759b",
+    "run-intent.json": "1f0ad4099fa949e7c0a1193893d93e4da84003a55bfcf50de59fe17fc7ff175c",
+    "result.json": "92a4b08dd1fe8d16709bc85f0854089db1478dc534683a5c75b527c435834a36",
+    "acceptance-mobile.json": "18d19d48d715465e4ce95dd9560b555c9634b084b44f96c1e30265aaea75e3d8",
+    "functional-phase-summary.json": "27c0e7a755c4427f113269ab1955fa211504ec0d2088ea572e6fc734bcfe15f6",
+    "virtual-mobile-iphone-webkit-process.json": "6bb1452024277ec6b7594a15865bd5e508de856b5ee64416481cbba68dc075c0"
+  },
+  "fixture_preparation_repair": {
+    "exact_expired_counters_removed": 8,
+    "failed_preparation_preserved": true,
+    "active_counters_removed": 0
+  },
+  "production_release_approved": false
+}
