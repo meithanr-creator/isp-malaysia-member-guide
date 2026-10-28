@@ -6,7 +6,7 @@ import {pathToFileURL} from 'node:url';
 import {connectLinuxWebKit,closeLinuxWebKitConnection} from './linux-webkit-connection.mjs';
 import {OFFLINE_DASHBOARD_URL,classifyRequestFailure,acceptableOfflineNavigationError,privateRequestFailureFact,retainPrivateFailureFact,freezeFailureBeforeCleanup} from './virtual-mobile-failures.mjs';
 import {LEASE2,LEASE3,leaseContext,readPreparedRelease,preparedTuple,assertActiveRelease,assertWatchdogTuple,assertWritableLease,assertLeaseMutationAllowed} from './staging-lease-context.mjs';
-import {ORIGIN,LIMITS,PROFILES,REQUIRED_CASES,CoverageDeferred,ensure,sha256,encode,argumentsFor,profileWindow,admitCase,safeURL,dependencies,submitOnce,totp,verifyFile,uiComplete,databaseMatches,databaseProof,processReceiptMatches,aggregateStatus,runRenderedJourneys} from './virtual-mobile-journeys.mjs';
+import {ORIGIN,LIMITS,PROFILES,REQUIRED_CASES,CoverageDeferred,ensure,sha256,encode,argumentsFor,profileWindow,admitCase,safeURL,dependencies,submitOnce,totp,verifyFile,uiComplete,databaseMatches,databaseProof,processReceiptMatches,aggregateStatus,runRenderedJourneys,afterInitiatedRender} from './virtual-mobile-journeys.mjs';
 import {privateContext,readPrivateAcceptance,assertPrivateAcceptanceAdmission} from './private-acceptance-context.mjs';
 import {queuedContinuationSelection} from './private-acceptance-mobile.mjs';
 import {readHistoricalIdentityCarry} from './private-acceptance-carry.mjs';
@@ -101,7 +101,7 @@ export async function executeProfile(name,input){
  }
  async function api(ctx,url){admit();if(queued)ensure(++result.resources.api<=15,'Exact API attempt envelope exceeded');result.requests++;return operation(()=>ctx.request.get(safeURL(url).href,{maxRedirects:0,timeout:remaining()}));}
  async function go(p,url,selector){admit();const target=safeURL(url);const turbo=new URL(p.url()).origin===ORIGIN&&await evaluate(p,()=>!!window.Turbo?.visit);
-  if(turbo)await evaluate(p,u=>window.Turbo.visit(u),target.href);else{const r=await p.goto(target.href,{timeout:remaining()});check(r?.status()===200,'Rendered same-origin page loads');}
+  if(turbo)await afterInitiatedRender(p,{url:target.href,timeoutMs:remaining()},()=>evaluate(p,u=>window.Turbo.visit(u),target.href));else{const r=await p.goto(target.href,{timeout:remaining()});check(r?.status()===200,'Rendered same-origin page loads');}
   await p.waitForURL(u=>u.pathname===target.pathname,{timeout:remaining()});await p.locator(selector).first().waitFor({timeout:remaining()});
  }
  async function submit(id,p,button,{upload=false}={}){
