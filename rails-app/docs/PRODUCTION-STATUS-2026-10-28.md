@@ -1,5 +1,34 @@
 # ISP production checkpoint — 28 October 2026
 
+## Latest implementation update — 2026-10-28T16:00:45.916Z
+
+The exact source-provenance correction is applied after Astra review and normal approval. All271 actual entry files pass;4 new admission tests and1 affected provenance test pass. Application readback confirms the reviewed patch exactly, allowing only CRLF/LF line-ending representation. The cleanup amendment has Astra local GO and2 focused passes. No hosted run or mobile business case was executed after these fixes. Evidence: offline-mobile-entry-preflight-proof.json9948f77e; application-readback.jsonae097605; local-process-cleanup-amendment.jsonbf2d28a3.
+
+Astra proposed four member flows per engine (eight executions) plus privacy guards, bounded atUS$5.99081088. That short-run integration is NOT implemented or approved for hosting: the existing runner intentionally requires the full17-case contract. New scope would require changes to its admission, journal, reconciliation and streaming caps. Those changes are held to avoid another preparation cycle. The corrected existing full-run bound isUS$6.13986368, above theUS$6 ceiling. No budget override has occurred.
+
+The newly selected library index now has focused actual-Rails/offline-browser evidence on both engines:4 contracts each, exact publication link, touch target/layout and browser absence. One initial Chromium load timeout remains recorded. This does not prove hosted publication access or complete a member flow.
+
+
+## Latest checkpoint — 15:48 UTC
+
+All project files, tools, private configuration and evidence remain on drive D. The cumulative test ceiling is US$6. Shop and Plantation Jobs are frozen demo references; Academy and Forum are excluded. No demo functionality is tested. Production remains NO-GO.
+
+1. **Source and director review — reopened for the test tools.** Published candidate08486557ea945f724dfa3f39bb7ab139a10308e8 retains the accepted unchanged application/image boundaries. The mobile resource check still pins the previous journey file. Its exact historical source was retrieved and hash-verified; provenance correction is under Sol implementation/Astra review. No source-integrity waiver is accepted.
+2. **Critical hosted acceptance — incomplete.** Carry42 accepted hosted HTTP cases and the accepted iPhone review-gate/homepage checks. The latest run executed zero mobile cases. The remaining32 count is individual browser checks (15iPhone,17Android), not32 application features. Astra is reviewing duplicated checks against the limited production scope before defining the smallest remaining phone run. No unrun check is counted as passed.
+3. **Gap corrections — partly closed.** Full Windows and dedicated drive-D Linux process census now passes: no owned processes remain. Astra accepted the narrow Linux census timeout correction; original failed receipts remain immutable. The new filesystem-only entry preflight rejects the stale fingerprint before any provider call; its4 focused tests pass. The fingerprint correction and its exact source review remain open.
+4. **Release — pending.** Hosted phone acceptance, matching recovery/rollback evidence, identity-mail delivery, operating responsibilities, first administrator/member/content approval, ongoing hosting budget and deferred domain activation remain open. No public launch is authorized by a local test pass.
+
+The latest hosted attempt ran138seconds and stopped safely with application absent, ingress closed and fixtures restored to the protected baseline. Original hosted result remains FAIL; a separate later local process amendment supplies complete process-absence evidence. The distinct immutable outcome is audit/private-acceptance/queued6-final-carry-hosted-result.json (SHAd9b81907130e791793c14064625ba2d29cd70983d4345beab87ef14a6cced3b2).
+
+All prior full transfer and other allowances remain retained. Completed-run conservative bound:US$5.80605088. Another unchanged32-minute/full-transfer run would bring the bound toUS$6.13986368, exceedingUS$6. No further paid attempt is authorized under that plan. Any smaller plan needs an evidence-backed scope/resource bound and Astra review; no provider billing-lag refund or silent release of old allowances is permitted.
+
+Current work is local only. No new token entry, real member data, outbound identity mail, DNS change, paid upgrade or demo expansion is required for these corrections. Current CI is deliberately skipped with unchanged baseline carry, not a fresh CI pass.
+
+## Prior checkpoints — historical
+
+The entries below record earlier states and estimates; the latest checkpoint above governs current status.
+
+
 All project files, tools, private configuration, fixtures and evidence are on drive D. The approved cumulative test ceiling is US$6. Shop and Plantation Jobs remain frozen DEMO references; Academy and Forum are excluded. Production remains NO-GO.
 
 | Step | Current status | Exact remaining condition |

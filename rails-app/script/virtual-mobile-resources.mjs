@@ -875,7 +875,7 @@ export const IMAGE_RESOURCE_CATALOG=Object.freeze([
     "sha256": "2f15987e4606501202b9d337085439339e53a374e3d194847192c12f85ba78f8"
   }
 ]);
-export const RESOURCE_SOURCES=Object.freeze([
+export const RESOURCE_MODEL_SOURCES=Object.freeze([
   {
     "path": "config/importmap.rb",
     "sha256": "148fdf21d156d2d1274627caa734d3e2d05ce23ae60e6a371fae054933ca30be"
@@ -1457,6 +1457,11 @@ export const RESOURCE_SOURCES=Object.freeze([
     "sha256": "da345c546654957150c9f570662bdc3b8fefab7bf96e0d1c14b9bfe97c95e218"
   }
 ]);
+
+// Explicit source provenance refresh; original sealed model tuple is retained.
+export const RESOURCE_SOURCE_REFRESH=Object.freeze({path:'script/virtual-mobile-journeys.mjs',model_sha256:'0f273c84fb9a41c45643dbec13f0ae3944285bfdd6eee273ca6739c2dd5df787',current_sha256:'e0b66d8a5d30f0ad012560b10a4798a84ed8745862f9583ac3b65621a384e4d1'});
+export const RESOURCE_SOURCES=Object.freeze(RESOURCE_MODEL_SOURCES.map(entry=>entry.path===RESOURCE_SOURCE_REFRESH.path?Object.freeze({...entry,sha256:RESOURCE_SOURCE_REFRESH.current_sha256}):entry));
+export const RESOURCE_SOURCES_SHA256='70fac42f94c8eb6a234753db678e0708dc7fce5b5eec1674d758b60183e23cff';
 export const MOBILE_RESOURCE_MODEL=Object.freeze({version:1,image_digest:'sha256:152480a896060eae82a380dc54f651e199ff1585cd5dd805d0d51b9f3a587d2a',image_archive_sha256:'bd2d0874fcae805f15319e5d0f9a951de8df5852c9611f889ea5bb743a11e525',image_catalog_sha256:'30e66b2b8c3b51e479420751713a140e3e9bb088a59eabd6c261491d0423b4bf',catalog_sha256:'ddb7330bc6319f778d370f5521bebd5a1dd90813b70296feb06302658a2dd947',source_sha256:'07369c17ef6f049c0adf9b35fa423061222384eb26af2c764f6f2f249e3614f7',static_files:88,static_bytes:4767852,static_overhead_bytes:1024,copies_per_document:2,dynamic_files_per_document:10,dynamic_file_bytes:1048576,html_bytes:262144,auxiliary_requests_per_document:4,auxiliary_bytes:16384,documents_per_profile:46,resource_attempts_per_profile:92,prefetch_attempts:2,local_blob_attempts:4,offline_attempts:1,readiness_requests:1,upload_bytes:26214400,setup_requests:350,setup_bytes:134217728,startup_requests:720,control_requests:128,cases:[
   {
     "id": "private_gate",

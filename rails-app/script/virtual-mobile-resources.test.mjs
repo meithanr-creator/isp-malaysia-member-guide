@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {QUEUED_MOBILE_MODE,QUEUED_MOBILE_LIMITS,MOBILE_RESOURCE_MODEL as m,RESOURCE_MODEL_SHA256,RESOURCE_CATALOG,IMAGE_RESOURCE_CATALOG,RESOURCE_SOURCES,CASE_RESOURCE_DEMAND,PROFILE_RESOURCE_DEMAND,GLOBAL_RESOURCE_DEMAND,profileRequestLimit,remainingCaseRequests,assertQueuedResourcePacket,assertQueuedFixtureEnvelope,resourceAttempt,queuedResponseByteLimit,settleResourceBodies} from './virtual-mobile-resources.mjs';
+import {QUEUED_MOBILE_MODE,QUEUED_MOBILE_LIMITS,MOBILE_RESOURCE_MODEL as m,RESOURCE_MODEL_SHA256,RESOURCE_CATALOG,IMAGE_RESOURCE_CATALOG,RESOURCE_SOURCES,RESOURCE_MODEL_SOURCES,RESOURCE_SOURCES_SHA256,CASE_RESOURCE_DEMAND,PROFILE_RESOURCE_DEMAND,GLOBAL_RESOURCE_DEMAND,profileRequestLimit,remainingCaseRequests,assertQueuedResourcePacket,assertQueuedFixtureEnvelope,resourceAttempt,queuedResponseByteLimit,settleResourceBodies} from './virtual-mobile-resources.mjs';
 import {REQUIRED_CASES,admitCase} from './virtual-mobile-journeys.mjs';
 const sha=v=>createHash('sha256').update(v).digest('hex');
 const packet=()=>({execution_mode:QUEUED_MOBILE_MODE,max_gateway_requests:22000,max_profile_requests:10240,max_transfer_bytes:4294967296,resource_model_sha256:RESOURCE_MODEL_SHA256});
 const ledger=()=>({requests:0,documents:0,paths:{},dynamic:0,auxiliary:0});
 const fact=(path,extra={})=>({url:'https://fixture.invalid'+path,method:'GET',...extra});
 test('resource model binds packaged catalog and source provenance without ignored CI build output',()=>{
- assert.equal(RESOURCE_CATALOG.length,m.static_files);assert.equal(RESOURCE_CATALOG.reduce((n,e)=>n+e.bytes,0),m.static_bytes);assert.equal(sha(JSON.stringify(RESOURCE_CATALOG)),m.catalog_sha256);assert.equal(sha(JSON.stringify(RESOURCE_SOURCES)),m.source_sha256);assert.equal(sha(JSON.stringify(m)),RESOURCE_MODEL_SHA256);
+ assert.equal(RESOURCE_CATALOG.length,m.static_files);assert.equal(RESOURCE_CATALOG.reduce((n,e)=>n+e.bytes,0),m.static_bytes);assert.equal(sha(JSON.stringify(RESOURCE_CATALOG)),m.catalog_sha256);assert.equal(sha(JSON.stringify(RESOURCE_MODEL_SOURCES)),m.source_sha256);assert.equal(sha(JSON.stringify(RESOURCE_SOURCES)),RESOURCE_SOURCES_SHA256);assert.equal(sha(JSON.stringify(m)),RESOURCE_MODEL_SHA256);
 });
 test('resource demand accounts for all seventeen actions and remains below fixed hard ceilings',()=>{
  assert.deepEqual(m.cases.map(c=>c.id),REQUIRED_CASES);assert.equal(m.cases.reduce((n,c)=>n+c.documents,0),46);assert.equal(m.cases.reduce((n,c)=>n+c.writes,0),17);assert.equal(m.cases.reduce((n,c)=>n+c.api,0),15);assert.equal(m.cases.reduce((n,c)=>n+c.files,0),4);

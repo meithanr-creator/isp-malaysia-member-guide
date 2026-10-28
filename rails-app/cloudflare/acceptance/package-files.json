@@ -26,6 +26,7 @@
   "script/private-acceptance-tail.mjs",
   "script/private-acceptance.mjs",
   "script/private-mobile-cleanup.mjs",
+  "script/private-mobile-entry-preflight.mjs",
   "script/run-hosted-mobile-acceptance.mjs",
   "script/run-private-mobile.mjs",
   "script/staging-credential-provider.mjs",
