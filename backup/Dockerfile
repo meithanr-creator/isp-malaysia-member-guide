@@ -17,4 +17,5 @@ ARG ISP_SOURCE_VERSION
 ENV ISP_SOURCE_VERSION=${ISP_SOURCE_VERSION}
 RUN node -e "if(!/^[a-f0-9]{40}$/.test(process.env.ISP_SOURCE_VERSION||''))process.exit(1)"
 USER node
+RUN node source-closure.mjs --contract /app/source
 CMD ["node","job.mjs","--run"]

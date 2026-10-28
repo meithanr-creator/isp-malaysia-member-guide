@@ -98,3 +98,8 @@
 !docs/CONTROLLED-RESTORE-PROOF.md
 !backup/sdk-contract.mjs
 !scanner/test_receiver_http.py
+!scanner/job_entry.py
+!scanner/test_job_entry.py
+!infra/scanner-dispatch-workflow.yaml
+!infra/scanner-workflow-role.yaml
+!infra/scanner-job-launcher-role.yaml

@@ -1,15 +1,20 @@
 {
   "projectId": "isp-planter-app",
   "region": "asia-southeast1",
-  "status": "RECEIVER_SOURCE_GO_COMBINED_BUILD_COST_REVIEW_PENDING",
+  "status": "EXACT_DURABLE_SOURCE_FROZEN_DIRECTOR_FINAL_REVIEW",
   "sourceCheckpointRequired": true,
   "sourceFiles": {
     "requirements.txt": "b875e9c9a96b4386cec68937475e40aa0d1bdc5eca626ff70fa0f4822baaad06",
     "validate_file.py": "63dda60aecfece351bc7e0eba0deb69ae169f79b0668184b0d020a9d4689299a",
     "policy.py": "8cda0ffd49359e189934be54b69c2e1edbd1eef7bfe1c476698db5746776916f",
     "scanner.py": "ce7f4ddc64721c4f61c010a76ae3d627ac9d658ccd64ac345c8add9b47756f82",
-    "Dockerfile": "b82b672b18f59d16e8dfe63f6ebaa242a6f8f59a072355d3daa02222949c1264",
-    "mirror.py": "cd8347051f647291e36aced24964cd50e65368f03e233e516fe117195e9e48d1"
+    "Dockerfile": "deab976cebfaaf96361d01e386ff61619aa4ae3c155edcbefce92754f09e945e",
+    "mirror.py": "cd8347051f647291e36aced24964cd50e65368f03e233e516fe117195e9e48d1",
+    "job_entry.py": "2bc8ca6775d06f83be2aac6db5ee3378f844420a52d00ac85e6092b5cefb4093",
+    "infra/scanner-dispatch-workflow.yaml": "995bd6f8dcb30d5c19af61fa1a404d882015d81dd592d22f424015a2bcef7605",
+    "scripts/new-workflow-proof.mjs": "3c395c98b3f7140991d3f52c5b9cfab75c437ee9e5f40942b92bbf59b0075896",
+    "scanner/test_job_entry.py": "6b380601e18cc7f0268bb8150081bd14e23d4ad71ba10da84bf7f89b9246a2c5",
+    "scanner/test_job_cleanup.mjs": "b497f5fa025ccc725c2efba8b4d52adb13f55f12dfa3cf0ab513c9b41feb3eb4"
   },
   "resources": {
     "artifactRepository": "isp-support",
@@ -19,17 +24,20 @@
     "eventarcTrigger": "isp-attachment-finalized",
     "scannerIdentity": "isp-upload-scanner@isp-planter-app.iam.gserviceaccount.com",
     "updaterIdentity": "isp-clamav-updater@isp-planter-app.iam.gserviceaccount.com",
-    "eventIdentity": "isp-scan-eventarc@isp-planter-app.iam.gserviceaccount.com"
+    "eventIdentity": "isp-scan-eventarc@isp-planter-app.iam.gserviceaccount.com",
+    "scannerJob": "isp-attachment-scan",
+    "workflow": "isp-attachment-dispatch",
+    "workflowIdentity": "isp-scan-workflow@isp-planter-app.iam.gserviceaccount.com"
   },
   "trial": {
-    "maximumBuilds": 2,
+    "maximumBuilds": 3,
     "buildTimeoutSeconds": 1200,
     "buildMachineType": "e2-standard-2",
     "maximumSeedExecutions": 1,
     "seedTaskTimeoutSeconds": 1200,
     "seedTasks": 1,
     "seedMaxRetries": 0,
-    "maximumAttachmentScans": 4,
+    "maximumAttachmentScans": 5,
     "scannerRequestTimeoutSeconds": 480,
     "scannerInternalDeadlineSeconds": 420,
     "scannerFinishReserveSeconds": 40,
@@ -42,39 +50,59 @@
     "eventDeliveryAttempts": 1,
     "automaticOperatorRetry": false,
     "scheduleEnabledDuringTrial": false,
-    "maxFinalizedAttachments": 4,
+    "maxFinalizedAttachments": 5,
     "cleanPublicationAttachments": 2,
     "unsafeFormatAttachments": 1,
     "seedInternalAntivirusSelfTest": "standard harmless encoded EICAR generated only in updater-container tmp; actual named detection required before manifest activation; no local fixture",
     "buildOwnedCancellationGraceSeconds": 120,
     "remainingFinalizedAttachments": 3,
-    "previouslyFinalizedFailedAttachments": 1,
+    "previouslyFinalizedFailedAttachments": 2,
     "acknowledgementDeadlineSeconds": 600,
     "nextBuildImages": [
-      "scanner receiver correction",
-      "backup current-source archive; logic unchanged"
+      "durable scanner job entry; core engine/mirror unchanged",
+      "backup explicit reader and current-source archive"
     ],
-    "noSignatureReseed": true
+    "noSignatureReseed": true,
+    "previousScannerBuilds": 2,
+    "oldHttpRequestsConservativelyCounted": 4,
+    "newJobExecutionsMaximum": 3,
+    "jobTasks": 1,
+    "jobParallelism": 1,
+    "jobMaxRetries": 0,
+    "jobTimeoutSeconds": 480,
+    "workflowExecutionsMaximum": 64,
+    "workflowStepExecutionsMaximum": 2000,
+    "workflowPostAttempts": 1,
+    "workflowAutomaticRetry": false,
+    "workflowNamedStepsMaximum": 25,
+    "staticallyBoundInternalSteps": 1600,
+    "workflowStepBoundBasis": "No loops/retries;25 named steps including mutually exclusive exits/exceptions multiplied by64 admitted workflow executions=1600, below2000 reserved. Three finalized fixtures plus all source-defined metadata/cleanup updates stay inside64; no real member traffic.",
+    "jobContainerName": "scanner",
+    "jobCommand": [
+      "python"
+    ],
+    "jobArgs": [
+      "/app/job_entry.py"
+    ]
   },
   "cost": {
     "kind": "conservative_allowance_not_invoice_or_hard_cap",
     "trialAllowanceUsd": 1.5,
-    "buildAllowanceUsd": 0.138229,
+    "buildAllowanceUsd": 0.146047,
     "scanCpuRamIncludingStartupAndShutdownReserveUsd": 0.16,
     "seedCpuRamIncludingStartupAndShutdownReserveUsd": 0.05,
     "artifactAndSignatureStorageAllowanceUsd": 0.5,
     "operationsEventsLoggingTransferAllowanceUsd": 0.25,
-    "unallocatedTrialReserveUsd": 0.401771,
+    "unallocatedTrialReserveUsd": 0.313953,
     "includedWithinCumulativeTenDollarLedger": true,
-    "requestCpuPerSecondUsd": 3.36E-05,
-    "requestGiBPerSecondUsd": 3.5E-06,
-    "jobCpuPerSecondUsd": 2.16E-05,
-    "jobGiBPerSecondUsd": 2.4E-06,
+    "requestCpuPerSecondUsd": 0.0000336,
+    "requestGiBPerSecondUsd": 0.0000035,
+    "jobCpuPerSecondUsd": 0.0000216,
+    "jobGiBPerSecondUsd": 0.0000024,
     "pricingEvidence": "audit/cloud-run-pricing-20261029.html",
     "buildCancellationAllowanceWithinUnallocatedUsd": 0.012,
     "buildPricePerMinuteUsd": 0.006,
     "buildTimeoutComputeUsd": 0.12,
-    "threeScannerRequestsComputeUsd": 0.068544,
     "singleSeedComputeUsd": 0.03744,
     "storageBounds": {
       "admission": "Root records actual artifact and source sizes before seed; records mirror bytes after one seed; refuse next phase if caps exceeded. Retain only owned trial objects; root removes owned trial image/source/mirror state by day7 unless separately admitted to operations. Include configured soft-delete retention, never assume deleted bytes are immediately free.",
@@ -93,14 +121,22 @@
     ],
     "previousBuildObservedRoundedUpUsd": 0.006229,
     "nextCombinedBuildAndCancellationUsd": 0.132,
-    "requestCpuRamBound": "Conservatively reserve two old480-second requests plus three new480-second requests=2400seconds at1CPU/4GiB (.11424USD), plus startup/shutdown inside .16; do not infer cancellation from old5-second disconnect logs."
+    "requestCpuRamBound": "Four prior HTTP requests reserved at full480s each=0.091392USD, inside retained0.16; no refund assumed from5s disconnect. Three newJobs480s at1CPU4GiB=0.044928USD plus startup/shutdown reserve inside0.06.",
+    "priorObservedBuildComputeRoundedUpUsd": 0.014047,
+    "newJobsIncludingStartupShutdownReserveUsd": 0.06,
+    "workflowFirestoreControlReserveUsd": 0.02,
+    "newWorkflowStepBound": "Maximum64 executions and2000 internal/HTTP/control steps; reserve0.02USD in addition to retained operations allowance. One launchPOST per authoritative CAS dispatch, no retries. Operator stops only owned new trigger before exceedance; no member traffic during proof.",
+    "reconciliation": "0.146047 build +0.16 retained HTTP +0.06 newJobs +0.02 workflow control +0.05 seed +0.50 storage +0.25 operations +0.313953 unallocated =1.50 USD. Conservative allowances, not invoice.",
+    "threeScannerJobsComputeUsd": 0.044928,
+    "workflowStepReserveUsd": 0.02,
+    "firestoreControlChargedWithinRetainedOperationsUsd": 0.25
   },
   "proof": [
     "Two actual allowed-format clean publication files: one cover and one PDF, exact immutable generation/hash and signed fresh database evidence",
     "One inert non-PDF body reserved as PDF rejected by actual scanner strict format validation; rejected bytes cannot publish/download, including administrator",
     "Inside the single seed/update container only, standard harmless EICAR actual engine self-test must detect exactly1 scanned/1 infected with named signature before activating candidate mirror. Store PASS/engine/daily-version/time only; delete fixture",
     "No clean attestation on errors, missing/stale definitions, format/hash/limit failures",
-    "Only six new workflow areas and file publication/download; accepted Auth/profile/MFA checks carry without replay"
+    "Only private-file publication/download/unsafe-format proof; five accepted business areas and Auth/profile/MFA carry without replay"
   ],
   "admission": [
     "Director review of this exact source/image/identity/cost tuple",
@@ -113,8 +149,12 @@
     "One build only with1200s server timeout; operator watches only its owned build and cancels that build if still running at the bound, allowing120s cancellation reserve within unallocated amount; no subsequent paid phase while build state is uncertain",
     "Linux amd64 image only; public metadata shows Alpine3.24.3 base and compatible musllinux Pillow/grpcio wheels. Explicit CRC32C_PURE_PYTHON=1 uses supported slower Python checksum implementation rather than adding native compilers",
     "One seed execution only, no schedule/retry/extra CDN probe; actual fresh signed mirror and internal antivirus self-test receipt must exist before attachment finalization",
-    "Maximum3 finalized attachments total for this released proof; failed/ambiguous attachment attempts consume the allowance and are never silently replaced",
-    "Observe actual built image bytes <=2GiB before admitting seed; mirror+updater+retained state <=2GiB including object versions,7days retained trial plus at most7days soft delete under0.50USD allowance; stop for review if observed size/retention exceeds bound"
+    "Observe actual built image bytes <=2GiB before admitting seed; mirror+updater+retained state <=2GiB including object versions,7days retained trial plus at most7days soft delete under0.50USD allowance; stop for review if observed size/retention exceeds bound",
+    "Two finalized attachments have already failed; next proof may finalize at most3 new attachments, five cumulative. Carry five business PASS and mirror self-test without rerunning.",
+    "Disable old HTTP Eventarc destination before new finalization. Workflow writes immutable dispatch with updateTime CAS before one non-retried jobs.run; duplicate/self-update exits; ambiguous POST remains HOLD and is never automatically repeated.",
+    "New scannerJob one task/parallel1/retries0/480s/1CPU4GiB. No public invoker, no permanent service capacity, no signature reseed or schedule. Exact source/image/IAM plus shared backup image archive contract reviewed before runtime.",
+    "Cleanup cannot be COMPLETE until exact owned Job execution is terminal (or cancellation terminal verified). A missing/ambiguous dispatch operation stays UNKNOWN/HOLD; no new attempt is admitted. Final release binds new entry/workflow/control source hashes and static Workflow step bound.",
+    "Actual Job provider readback must show container scanner, command python, args /app/job_entry.py, exact reviewed image digest, one task/parallel1/retries0/480s/1CPU4GiB and attached scanner identity; image intentionally retains its old HTTP default entrypoint."
   ],
   "scannerFirestoreIam": {
     "permissions": [
@@ -137,10 +177,27 @@
       "suspension_restoration"
     ],
     "priorRelease": "dd29f2ceb0a6315943f15649e5f4891c8e2aea440b9bfa2dbeb58cd6c5e00f95",
-    "previousAttemptCleanup": "COMPLETE",
+    "previousAttemptCleanup": "COMPLETE_BOTH_ATTEMPTS",
     "signatureSeedCarried": true,
-    "finalizedAttachmentsAcrossAllAttemptsMaximum": 4,
+    "finalizedAttachmentsAcrossAllAttemptsMaximum": 5,
     "newFinalizedAttachmentsMaximum": 3,
-    "retryOrRuntimeNotYetAdmitted": true
+    "retryOrRuntimeNotYetAdmitted": true,
+    "previousRelease": "5b3396b6c6e1662401eb3a72109fad0e219d54c94280797835321dc99ef355fb",
+    "newTransport": "Eventarc to Workflow to one durable Cloud Run Job"
+  },
+  "workflowFirestoreIam": {
+    "permissions": [
+      "datastore.entities.get",
+      "datastore.entities.update"
+    ],
+    "condition": "resource.name == 'projects/isp-planter-app/databases/(default)'",
+    "boundary": "Authoritative GET and dispatch CAS only; collection/immutable tuple source-enforced."
+  },
+  "workflowJobIam": {
+    "permissions": [
+      "run.jobs.run",
+      "run.jobs.runWithOverrides"
+    ],
+    "resource": "projects/isp-planter-app/locations/asia-southeast1/jobs/isp-attachment-scan"
   }
 }

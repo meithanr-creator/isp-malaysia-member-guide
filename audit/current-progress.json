@@ -1,5 +1,6 @@
 {
-  "at": "2026-10-28T21:51:59.1475700+00:00",
+  "updatedAt": "2026-10-28T23:04:52.760Z",
+  "sourceCommit": "da67f80a5a1055a7f9ef0e12cff1e8d5e563a951",
   "hosting": "COMPLETE",
   "loginTechnical": "COMPLETE_OWNER_MFA_DEFERRED",
   "workflowPasses": [
@@ -9,14 +10,30 @@
     "consultation",
     "suspension_restoration"
   ],
-  "workflowRemaining": "private_files",
-  "workflowCleanup": "COMPLETE",
-  "workflowRelease": "dd29f2ceb0a6315943f15649e5f4891c8e2aea440b9bfa2dbeb58cd6c5e00f95",
-  "backupFailedExecution": "isp-drive-backup-sj5ln",
-  "backupExportNeverStarted": true,
-  "backupAuthSnapshotCarried": true,
-  "correctiveBackupSource": "5f4da8b1542bff7b2911acedf9b79f23856676b3",
-  "budgetReservationUsd": 9.92624768,
-  "budgetCeilingUsd": 10,
+  "privateFiles": "FAIL_DELIVERY_STILL5SECONDS_AFTER_VALID_RECEIVED_SELECTED",
+  "workflowAttempts": 2,
+  "workflowCleanupRequired": false,
+  "workflowCleanupState": "COMPLETE",
+  "newRuntimeNotAuthorized": true,
+  "backupAuthSnapshot": "COVERED_AND_PRESERVED",
+  "backupExport": {
+    "complete": true,
+    "operation": "projects/isp-planter-app/databases/(default)/operations/ASA4NWVlYmFhMjdkMGQtYTg0YS1mMWI0LWZhNTUtMzNmYmFmMDEkGnNlbmlsZXBpcAkKMxI",
+    "requestedAt": "2026-10-28T21:26:13.548Z",
+    "completedAt": "2026-10-28T22:29:05.543Z",
+    "outputUriPrefix": "gs://isp-planter-app-backup-staging-606528057827/firestore/2026-10-28/2026-10-28-c4b3e821-4d08-454a-88dd-871197fcd9b9",
+    "collectionGroups": "all"
+  },
+  "backupInventoryCaptured": true,
+  "backupSourceArchive": "EXPLICIT_READER_SOURCE_GO_ACTUAL_IMAGE_CONTRACT_PENDING",
+  "backupManifestComplete": false,
+  "backupAttempt": "isp-drive-backup-gp68k",
+  "namedRestoreDatabase": "isp-restore-proof-20261028-7a7eab8b",
+  "namedDatabaseDenyClientsVerified": true,
+  "restoreExecuted": false,
+  "backupDateOverride": "2026-10-28_REMOVE_AFTER_SUCCESS_BEFORE_SCHEDULE",
+  "proposedNext": "Astra selected documented Eventarc→Workflow→durable Job; Sol implements only new dispatch/entry. Independent explicit-reader and completed-stage migration source work continues; no runtime admission yet.",
+  "retainedBudgetUsd": 9.92624768,
+  "ceilingUsd": 10,
   "invoiceClaimed": false
 }

@@ -12,10 +12,18 @@
   "commit": "ROOT_FILLS_REVIEWED_40_HEX_COMMIT",
   "reviewedFixturePlanSha256": "ROOT_FILLS_PRIVATE_JOURNAL_PLAN_HASH",
   "expiresAt": "ROOT_FILLS_SHORT_RELEASE_EXPIRY_ISO",
-  "maxSeconds": 1800,
+  "maxSeconds": 2400,
   "cleanupSeconds": 180,
-  "areas": ["enrollment_registry", "events_interest", "discover", "consultation", "suspension_restoration", "private_files"],
-  "acceptPassedAreas": {},
+  "areas": [
+    "private_files"
+  ],
+  "acceptPassedAreas": {
+    "enrollment_registry": "ROOT_FILLS_EARLIER_ACCEPTED_RELEASE_SHA256",
+    "events_interest": "ROOT_FILLS_EARLIER_ACCEPTED_RELEASE_SHA256",
+    "discover": "ROOT_FILLS_EARLIER_ACCEPTED_RELEASE_SHA256",
+    "consultation": "ROOT_FILLS_EARLIER_ACCEPTED_RELEASE_SHA256",
+    "suspension_restoration": "ROOT_FILLS_EARLIER_ACCEPTED_RELEASE_SHA256"
+  },
   "resolvedMutations": [],
   "discoverBaselineSha256": null,
   "firebase": {
@@ -26,16 +34,25 @@
   },
   "scanner": {
     "ready": false,
-    "serviceRevision": "ROOT_FILLS_ACTUAL_REVISION",
+    "route": "workflow-job",
+    "jobName": "projects/isp-planter-app/locations/asia-southeast1/jobs/isp-attachment-scan",
+    "workflowName": "projects/isp-planter-app/locations/asia-southeast1/workflows/isp-attachment-dispatch",
+    "workflowRevision": "ROOT_FILLS_OBSERVED_REVIEWED_WORKFLOW_REVISION",
+    "jobConfigSha256": "ROOT_FILLS_REVIEWED_PROVIDER_JOB_CONFIG_SHA256",
+    "legacyHttpTriggerDisabled": false,
     "imageDigest": "sha256:ROOT_FILLS_ACTUAL_IMAGE_DIGEST",
     "manifestSha256": "ROOT_FILLS_ACTUAL_SIGNATURE_MANIFEST_HASH",
     "dailyVersion": 0,
     "observedAt": "ROOT_FILLS_ACTUAL_OBSERVATION_TIME",
-    "antivirusSelfTest": {"state": "pending", "engineVersion": "1.4.6", "dailyVersion": 0}
+    "antivirusSelfTest": {
+      "state": "pending",
+      "engineVersion": "1.4.6",
+      "dailyVersion": 0
+    }
   },
   "cost": {
     "approved": false,
-    "maxAdditionalUsd": 1.50,
+    "maxAdditionalUsd": 1.5,
     "ledgerSha256": "ROOT_FILLS_CURRENT_PRIVATE_LEDGER_HASH"
   },
   "sourceSha256": {
@@ -54,6 +71,8 @@
     "scanner/validate_file.py": "ROOT_FILLS_64_HEX_SHA256",
     "scanner/Dockerfile": "ROOT_FILLS_64_HEX_SHA256",
     "scanner/requirements.txt": "ROOT_FILLS_64_HEX_SHA256",
-    "scripts/new-workflow-proof.mjs": "ROOT_FILLS_64_HEX_SHA256"
+    "scripts/new-workflow-proof.mjs": "ROOT_FILLS_64_HEX_SHA256",
+    "scanner/job_entry.py": "ROOT_FILLS_64_HEX_SHA256",
+    "infra/scanner-dispatch-workflow.yaml": "ROOT_FILLS_64_HEX_SHA256"
   }
 }

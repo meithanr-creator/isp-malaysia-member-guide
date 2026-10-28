@@ -1,5 +1,3 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   PROJECT, DATABASE, SOURCE_BUCKET, STAGING_BUCKET, BACKUP_SERVICE_ACCOUNT, OWNER, FOLDER, DRIVE_SCOPE, APP_TAG, MAX_USERS, MAX_OBJECTS,
@@ -8,7 +6,7 @@ import {
 } from './manifest.mjs';
 
 import { startProcessWatchdog } from './watchdog.mjs';
-import { assertSourcePath, assertSourceClosure } from './source-closure.mjs';
+import { readSourceArchive } from './source-closure.mjs';
 
 export async function loadBackupSdk() {
   const [{ GoogleAuth, OAuth2Client }, { Storage }, { default: firestore }, { initializeApp, applicationDefault }, { getAuth }] = await Promise.all([import('google-auth-library'), import('@google-cloud/storage'), import('@google-cloud/firestore'), import('firebase-admin/app'), import('firebase-admin/auth')]);
@@ -50,23 +48,7 @@ async function stageBytes(stage, category, bytes) {
   const [metadata] = await file.getMetadata(); requireThat(metadata.metadata?.sha256 === digest && Number(metadata.size) === bytes.length, 'STAGED_GENERATION_MISMATCH');
   return { ...describe(file, metadata), category };
 }
-async function sourceArchive() {
-  const root = '/app/source', files = [];
-  async function walk(directory) {
-    for (const entry of (await fs.readdir(directory, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))) {
-      requireThat(!entry.isSymbolicLink(), 'SOURCE_SYMLINK_REFUSED');
-      const target = path.join(directory, entry.name);
-      if (entry.isDirectory()) await walk(target);
-      else if (entry.isFile()) {
-        const relative = path.relative(root, target).replaceAll('\\', '/');
-        requireThat(!relative.split('/').some(part => part.startsWith('.env') || part === '.git' || part === 'node_modules'), 'PRIVATE_SOURCE_FILE_REFUSED');
-        assertSourcePath(relative);
-        const bytes = await fs.readFile(target); files.push({ path: relative, sha256: sha256(bytes), bytesBase64: bytes.toString('base64') });
-      }
-    }
-  }
-  await walk(root); assertSourceClosure(files.map(file => file.path)); return { sourceVersion: process.env.ISP_SOURCE_VERSION, coverage: 'Exact nonsecret frontend, Functions, scanner and backup rebuild inputs; operator-supplied environment and live console configuration excluded.', files };
-}
+async function sourceArchive() { return readSourceArchive('/app/source', process.env.ISP_SOURCE_VERSION); }
 class DriveCopy {
   constructor(oauth, stage, storage) { this.oauth = oauth; this.stage = stage; this.storage = storage; }
   async request(url, options = {}) {

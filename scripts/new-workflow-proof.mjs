@@ -13,7 +13,7 @@ const PROJECT = 'isp-planter-app', REGION = 'asia-southeast1';
 const BUCKET = `${PROJECT}.firebasestorage.app`;
 const AREAS = ['enrollment_registry', 'events_interest', 'discover', 'consultation', 'suspension_restoration', 'private_files'];
 const LABEL = 'TEST - transient proof only; not a real ISP event or publication';
-const SOURCE_FILES = ['functions/src/index.ts', 'functions/src/runtime.ts', 'functions/src/content.ts', 'functions/src/download.ts', 'functions/src/enrollment.ts', 'functions/src/registry.ts', 'functions/src/validation.ts', 'firestore.rules', 'storage.rules', 'scanner/scanner.py', 'scanner/mirror.py', 'scanner/policy.py', 'scanner/validate_file.py', 'scanner/Dockerfile', 'scanner/requirements.txt', 'scripts/new-workflow-proof.mjs'];
+const SOURCE_FILES = ['functions/src/index.ts', 'functions/src/runtime.ts', 'functions/src/content.ts', 'functions/src/download.ts', 'functions/src/enrollment.ts', 'functions/src/registry.ts', 'functions/src/validation.ts', 'firestore.rules', 'storage.rules', 'scanner/scanner.py', 'scanner/mirror.py', 'scanner/policy.py', 'scanner/validate_file.py', 'scanner/Dockerfile', 'scanner/requirements.txt', 'scanner/job_entry.py', 'infra/scanner-dispatch-workflow.yaml', 'scripts/new-workflow-proof.mjs'];
 const args = process.argv.slice(2);
 const mode = args.find(value => ['--plan', '--prepare', '--execute', '--cleanup', '--worker', '--cleanup-worker'].includes(value)) ?? '--plan';
 assert.equal(args.filter(value => value.startsWith('--') && !value.includes('=')).length, mode === '--plan' && !args.length ? 0 : 1, 'Choose one explicit mode.');
@@ -74,7 +74,7 @@ export function executionBudget(maxSeconds, cleanupSeconds) {
   return { total, main: total - recovery, work: total - 2 * recovery, recovery };
 }
 export const unresolvedMutations = attempt => (attempt?.mutations ?? []).filter(item => item.state === 'in-flight' || item.state === 'unknown');
-export const cleanupCanComplete = attempt => unresolvedMutations(attempt).length === 0;
+export const cleanupCanComplete = attempt => unresolvedMutations(attempt).length === 0 && Object.values(attempt?.scanJobs ?? {}).every(item => item.terminal === true);
 function terminalMutationRejection(name, error) {
   const known = {
     'call:activateMyMembership': ['functions/permission-denied', 'functions/failed-precondition'],
@@ -113,6 +113,77 @@ export function markInterruptedMutations(journal) {
     attempt.cleanupState = 'UNKNOWN'; attempt.cleanupComplete = false; journal.cleanupRequired = true;
   }
   for (const area of AREAS) if (journal.results[area].status === 'RUNNING') journal.results[area] = { ...journal.results[area], status: 'UNKNOWN' };
+}
+export const SCAN_JOB = `projects/${PROJECT}/locations/${REGION}/jobs/isp-attachment-scan`;
+export const SCAN_WORKFLOW = `projects/${PROJECT}/locations/${REGION}/workflows/isp-attachment-dispatch`;
+export function ownedScanResource(name, kind) {
+  const patterns = {
+    workflow: new RegExp(`^${SCAN_WORKFLOW}/executions/[A-Za-z0-9_-]{1,128}$`),
+    operation: new RegExp(`^projects/${PROJECT}/locations/${REGION}/operations/[A-Za-z0-9_-]{1,256}$`),
+    execution: new RegExp(`^${SCAN_JOB}/executions/isp-attachment-scan-[a-z0-9-]{1,80}$`),
+  };
+  check(typeof name === 'string' && patterns[kind]?.test(name), 'scan_resource_not_owned'); return name;
+}
+export function scanCancellationMarker(marker, fenceId) {
+  return marker ? { ...marker, cancelled: true, cleanupFenceId: fenceId } : { id: `cleanup-${fenceId}`, cleanupOnly: true, cancelled: true, cleanupFenceId: fenceId, launchOutcome: 'not_launched' };
+}
+export async function reconcileOwnedScanDispatch({ binding, marker, api, persist, deadlineMs, readMarker = async () => marker, sleep = pause, clock = Date.now }) {
+  check(marker.id === binding.dispatchId && marker.jobName === SCAN_JOB && marker.generation === binding.generation && marker.sha256 === binding.sha256 && marker.cancelled === true, 'scan_dispatch_cleanup_binding_changed');
+  const workflowName = ownedScanResource(marker.workflowExecution, 'workflow');
+  check(workflowName === `${SCAN_WORKFLOW}/executions/${binding.dispatchId}`, 'scan_workflow_dispatch_mismatch');
+  const state = { dispatchId: binding.dispatchId, workflowExecution: workflowName, terminal: false };
+  const request = async (method, kind, name) => { check(clock() + 10000 < deadlineMs, 'scan_terminal_observation_deadline'); return api(method, kind, ownedScanResource(name, kind)); };
+  let workflow = await request('GET', 'workflow', workflowName);
+  check(workflow.name === workflowName && workflow.workflowRevisionId === binding.workflowRevision, 'scan_workflow_revision_changed');
+  if (['ACTIVE', 'QUEUED'].includes(workflow.state)) {
+    await request('POST', 'workflow', workflowName);
+    do { await sleep(2000); workflow = await request('GET', 'workflow', workflowName); } while (['ACTIVE', 'QUEUED'].includes(workflow.state));
+  }
+  check(['SUCCEEDED', 'FAILED', 'CANCELLED'].includes(workflow.state), 'scan_workflow_terminal_unknown');
+  state.workflowState = workflow.state; await persist(state);
+  let result = {};
+  if (workflow.result) { try { result = JSON.parse(workflow.result); } catch { check(false, 'scan_workflow_result_invalid'); } }
+  let operationName = '', executionName = '';
+  for (;;) {
+    const fresh = await readMarker();
+    check(fresh?.id === binding.dispatchId && fresh.jobName === SCAN_JOB && fresh.generation === binding.generation && fresh.sha256 === binding.sha256 && fresh.cancelled === true, 'scan_dispatch_refresh_binding_changed');
+    if (fresh.operationName && result.operationName) check(ownedScanResource(fresh.operationName, 'operation') === ownedScanResource(result.operationName, 'operation'), 'scan_operation_receipts_differ');
+    if (fresh.executionName && result.executionName) check(ownedScanResource(fresh.executionName, 'execution') === ownedScanResource(result.executionName, 'execution'), 'scan_execution_receipts_differ');
+    operationName = fresh.operationName || result.operationName || operationName;
+    executionName = fresh.executionName || result.executionName || executionName;
+    if (operationName) {
+      operationName = ownedScanResource(operationName, 'operation'); state.operationName = operationName; await persist(state);
+      const operation = await request('GET', 'operation', operationName);
+      check(operation.name === operationName, 'scan_operation_identity_changed');
+      const candidate = operation.response?.name || operation.metadata?.name;
+      if (candidate && candidate.startsWith(`${SCAN_JOB}/executions/`)) {
+        const fromOperation = ownedScanResource(candidate, 'execution');
+        if (executionName) check(ownedScanResource(executionName, 'execution') === fromOperation, 'scan_operation_execution_mismatch');
+        executionName = fromOperation;
+      }
+    }
+    if (executionName) break;
+    if (workflow.state === 'SUCCEEDED' && result.launchStatus === 'not_launched' && !operationName) {
+      state.terminal = true; state.noLaunch = true; await persist(state); return state;
+    }
+    // A queued Job can publish its identity after the initial read. Absence never proves no launch.
+    check(clock() + 12000 < deadlineMs, 'scan_launch_outcome_unknown'); await sleep(2000);
+  }
+  executionName = ownedScanResource(executionName, 'execution'); state.executionName = executionName; await persist(state);
+  const readExecution = async () => {
+    const execution = await request('GET', 'execution', executionName);
+    const container = execution.template?.containers?.find(item => item.name === 'scanner');
+    const environment = Object.fromEntries((container?.env ?? []).map(item => [item.name, item.value]));
+    check(execution.name === executionName && environment.ISP_ATTACHMENT_ID === binding.attachmentId && environment.ISP_ATTACHMENT_GENERATION === binding.generation && environment.ISP_ATTACHMENT_SHA256 === binding.sha256 && environment.ISP_SCAN_DISPATCH_ID === binding.dispatchId && container.image?.endsWith(`@${binding.imageDigest}`), 'scan_execution_binding_changed');
+    return execution;
+  };
+  let execution = await readExecution();
+  if (!execution.completionTime) {
+    await request('POST', 'execution', executionName);
+    do { await sleep(2000); execution = await readExecution(); } while (!execution.completionTime);
+  }
+  check(Number.isFinite(Date.parse(execution.completionTime)) && (execution.runningCount ?? 0) === 0, 'scan_execution_terminal_unknown');
+  state.terminal = true; state.executionCompletedAt = execution.completionTime; await persist(state); return state;
 }
 function planFixture(prefix) {
   const row = role => ({ name: `TEST ${role} ${prefix}`, email: `${prefix}-${role}@example.invalid`, memberReference: `000-${prefix}-${role}` });
@@ -161,7 +232,8 @@ async function sealedInputs() {
   check(commit === release.commit, 'source_commit_changed');
   for (const path of SOURCE_FILES) check(release.sourceSha256?.[path]?.toLowerCase() === digest(await readFile(resolve(ROOT, path))), 'reviewed_source_hash_changed');
   const scanner = release.scanner;
-  check(scanner?.ready === true && /^[a-z0-9-]+$/.test(scanner.serviceRevision ?? '') && /^sha256:[a-f0-9]{64}$/.test(scanner.imageDigest ?? '') && /^[a-f0-9]{64}$/.test(scanner.manifestSha256 ?? ''), 'explicit_scanner_ready_tuple_required');
+  check(scanner?.ready === true && scanner.route === 'workflow-job' && scanner.jobName === SCAN_JOB && scanner.workflowName === SCAN_WORKFLOW && typeof scanner.workflowRevision === 'string' && scanner.workflowRevision.length > 0 && scanner.legacyHttpTriggerDisabled === true && /^[a-f0-9]{64}$/.test(scanner.jobConfigSha256 ?? '') && /^sha256:[a-f0-9]{64}$/.test(scanner.imageDigest ?? '') && /^[a-f0-9]{64}$/.test(scanner.manifestSha256 ?? ''), 'explicit_scanner_ready_tuple_required');
+  check(release.maxSeconds === 2400 && release.cleanupSeconds === 180, 'job_route_requires_2400_total_180_cleanup');
   check(Number.isSafeInteger(scanner.dailyVersion) && scanner.dailyVersion > 0 && scanner.antivirusSelfTest?.state === 'passed' && scanner.antivirusSelfTest.dailyVersion === scanner.dailyVersion && scanner.antivirusSelfTest.engineVersion === '1.4.6', 'real_mirror_antivirus_self_test_required');
   check(Date.now() - Date.parse(scanner.observedAt) >= 0 && Date.now() - Date.parse(scanner.observedAt) < 24 * 60 * 60 * 1000, 'scanner_readiness_receipt_stale');
   check(release.cost?.approved === true && release.cost.maxAdditionalUsd > 0 && release.cost.maxAdditionalUsd <= 1.50 && /^[a-f0-9]{64}$/.test(release.cost.ledgerSha256 ?? ''), 'root_cost_ledger_allowance_required');
@@ -616,13 +688,51 @@ async function worker(cleanupOnly) {
     }
     attempt.objects = [...new Map(attempt.objects.map(object => [`${object.path}:${object.generation}`, object])).values()]; await save();
   }
+  let scanCleanupEndsAt = 0;
+  async function scanControlApi(method, kind, name) {
+    const credential = backend.options.credential, token = await credential.getAccessToken();
+    const host = kind === 'workflow' ? 'https://workflowexecutions.googleapis.com/v1/' : 'https://run.googleapis.com/v2/';
+    const suffix = method === 'POST' ? ':cancel' : '';
+    const action = async () => {
+      const response = await fetch(host + name + suffix, { method, headers: { Authorization: `Bearer ${token.access_token}`, 'X-Goog-User-Project': PROJECT, 'Content-Type': 'application/json' }, ...(method === 'POST' ? { body: '{}' } : {}), redirect: 'error', signal: AbortSignal.timeout(10000) });
+      if (method === 'POST' && response.status === 409) { await response.body?.cancel(); return { terminalRejection: true }; }
+      check(response.ok, 'scan_control_request_failed'); return response.json();
+    };
+    return method === 'POST' ? mutate(`cleanup-scan-${kind}-cancel`, { name }, action) : action();
+  }
+  async function quiesceOwnedScanJobs() {
+    attempt.scanJobs ??= {};
+    if (!attempt.adminUid) return;
+    const attachments = await bounded(adb.collection('contentAttachments').where('ownerUid', '==', attempt.adminUid), 3);
+    const ids = new Set([...attachments.map(item => item.id), ...attempt.attachments.map(item => item.attachmentId)]);
+    for (const attachmentId of ids) {
+      const ref = adb.doc(`contentAttachments/${attachmentId}`), fenceId = attempt.scanJobs[attachmentId]?.fenceId ?? randomUUID();
+      let fenced;
+      await mutate('cleanup-scan-fence', { attachmentId, fenceId }, () => adb.runTransaction(async transaction => {
+        const snapshot = await transaction.get(ref), data = snapshot.data();
+        if (!data) { check(attempt.scanJobs[attachmentId]?.terminal === true, 'missing_scan_marker_terminal_unknown'); return; }
+        check(data.ownerUid === attempt.adminUid && data.kind === 'publication' && [journal.plan.publicationId, journal.plan.unsafeId].includes(data.parentId), 'scan_fence_attachment_not_owned');
+        const marker = scanCancellationMarker(data.scanDispatch, fenceId);
+
+        transaction.update(ref, { scanDispatch: marker }); fenced = { data, marker };
+      }, { maxAttempts: 1 }));
+      if (!fenced) continue;
+      const { data, marker } = fenced;
+      attempt.scanJobs[attachmentId] = { ...(attempt.scanJobs[attachmentId] ?? {}), fenceId, dispatchId: marker.id, terminal: false }; await save();
+      try {
+        if (marker.cleanupOnly === true) { attempt.scanJobs[attachmentId].terminal = true; attempt.scanJobs[attachmentId].noLaunch = true; await save(); continue; }
+        await reconcileOwnedScanDispatch({ binding: { attachmentId, dispatchId: marker.id, generation: data.generation, sha256: data.sha256, workflowRevision: release.scanner.workflowRevision, imageDigest: release.scanner.imageDigest }, marker, api: scanControlApi, deadlineMs: scanCleanupEndsAt, readMarker: async () => (await ref.get()).get('scanDispatch'), persist: async state => { attempt.scanJobs[attachmentId] = { ...attempt.scanJobs[attachmentId], ...state }; await save(); } });
+      } catch (error) { attempt.cleanupState = 'UNKNOWN'; attempt.scanJobs[attachmentId].terminal = false; attempt.scanJobs[attachmentId].code = safeCode(error); await save(); throw error; }
+    }
+  }
   async function cleanup() {
     cleanupAttempted = true;
     if (!attempt || attempt.cleanupComplete && cleanupCanComplete(attempt)) { journal.cleanupRequired = false; await save(); return; }
-    attempt.cleanupStartedAt = new Date().toISOString(); await save();
+    attempt.cleanupStartedAt = new Date().toISOString(); scanCleanupEndsAt = Date.now() + release.cleanupSeconds * 1000; await save();
     // Recover a client-created UID after an ambiguous response only by its pre-journaled unique synthetic email.
     for (const record of attempt.users) await ownedIdentity(record);
     await inventoryOwned();
+    await quiesceOwnedScanJobs();
     if (attempt.baseline) {
       await assertOnlyOwnedMembers();
       check(attempt.docs.length + 3 <= 400, 'atomic_cleanup_document_limit_exceeded');
@@ -649,7 +759,11 @@ async function worker(cleanupOnly) {
           else if (path.startsWith('registryBindings/')) check(ownedUids().has(data.uid) && ownAddress(data.email) && ownReference(data.memberReference), 'foreign_binding_cleanup_refused');
           else if (path.startsWith('memberRegistryPreviews/')) check(data.actorUid === attempt.adminUid && attempt.previews.includes(snapshot.id), 'foreign_preview_cleanup_refused');
           else if (path.startsWith('memberRegistryVersions/')) check(path.split('/').length === 2 ? data.actorUid === attempt.adminUid && attempt.versions.includes(snapshot.id) : ownAddress(data.email) && ownReference(data.memberReference) && attempt.versions.includes(path.split('/')[1]), 'foreign_version_cleanup_refused');
-          else if (path.startsWith('contentAttachments/')) check(data.ownerUid === attempt.adminUid && [journal.plan.publicationId, journal.plan.unsafeId].includes(data.parentId), 'foreign_attachment_cleanup_refused');
+          else if (path.startsWith('contentAttachments/')) {
+            check(data.ownerUid === attempt.adminUid && [journal.plan.publicationId, journal.plan.unsafeId].includes(data.parentId), 'foreign_attachment_cleanup_refused');
+            const receipt = attempt.scanJobs[snapshot.id];
+            check(receipt?.terminal === true && data.scanDispatch?.cancelled === true && data.scanDispatch?.id === receipt.dispatchId && data.scanDispatch?.cleanupFenceId === receipt.fenceId, 'scan_terminal_barrier_required_before_delete');
+          }
           else if (path.startsWith('consultations/')) check(ownedUids().has(data.ownerUid) && String(data.subject).startsWith('TEST'), 'foreign_consultation_cleanup_refused');
           else if (path.startsWith('eventInterests/')) check(ownedUids().has(data.ownerUid) && data.eventId === journal.plan.eventId, 'foreign_interest_cleanup_refused');
           else check([journal.plan.eventId, journal.plan.publicationId, journal.plan.unsafeId].includes(snapshot.id) && (data.createdBy === attempt.adminUid || String(data.data?.title).includes(journal.plan.prefix) && String(data.data?.title).startsWith('TEST')), 'foreign_content_cleanup_refused');

@@ -1,0 +1,159 @@
+# Eventarc CloudEvent metadata only; protobuf data is deliberately never decoded here.
+# Fixed owned job/container; one CAS winner, one raw jobs.run POST, no retry blocks.
+main:
+  params: [event]
+  steps:
+    - init:
+        assign:
+          - dispatchId: '${sys.get_env("GOOGLE_CLOUD_WORKFLOW_EXECUTION_ID")}'
+          - workflowName: projects/isp-planter-app/locations/asia-southeast1/workflows/isp-attachment-dispatch
+          - jobName: projects/isp-planter-app/locations/asia-southeast1/jobs/isp-attachment-scan
+          - subject: '${map.get(event, "subject")}'
+    - validateEvent:
+        switch:
+          - condition: '${map.get(event, "specversion") != "1.0" or map.get(event, "type") != "google.cloud.firestore.document.v1.updated" or map.get(event, "source") != "//firestore.googleapis.com/projects/isp-planter-app/databases/(default)" or get_type(subject) != "string"}'
+            steps:
+              - selectedExit1:
+                  return: {launchStatus: not_launched, reason: event_not_selected}
+    - validateSubject:
+        switch:
+          - condition: '${not text.match_regex(subject, "^documents/contentAttachments/[A-Za-z0-9_-]{1,80}$") or not text.match_regex(dispatchId, "^[A-Za-z0-9_-]{1,128}$")}'
+            steps:
+              - selectedExit2:
+                  return: {launchStatus: not_launched, reason: invalid_subject}
+    - locate:
+        assign:
+          - attachmentId: '${text.split(subject, "/")[2]}'
+          - documentUrl: '${"https://firestore.googleapis.com/v1/projects/isp-planter-app/databases/(default)/documents/contentAttachments/" + attachmentId}'
+          - workflowExecution: '${workflowName + "/executions/" + dispatchId}'
+    - readAttachment:
+        try:
+          call: http.get
+          args:
+            url: '${documentUrl}'
+            auth: {type: OAuth2}
+            timeout: 10
+          result: document
+        except:
+          as: failure
+          steps:
+            - readHold:
+                return: {launchStatus: not_launched, reason: attachment_read_failed}
+    - inspect:
+        assign:
+          - fields: '${document.body.fields}'
+          - generation: '${map.get(document.body.fields, ["generation", "stringValue"])}'
+          - fileHash: '${map.get(document.body.fields, ["sha256", "stringValue"])}'
+    - requireReady:
+        switch:
+          - condition: '${map.get(fields, "finalizedAt") == null or map.get(fields, ["scanStatus", "stringValue"]) != "pending" or map.get(fields, "scanAttempt") != null or map.get(fields, "scanDispatch") != null or get_type(generation) != "string" or get_type(fileHash) != "string"}'
+            steps:
+              - selectedExit3:
+                  return: {launchStatus: not_launched, reason: stale_or_already_dispatched}
+    - validateBinding:
+        switch:
+          - condition: '${not text.match_regex(generation, "^[0-9]+$") or not text.match_regex(fileHash, "^[a-f0-9]{64}$")}'
+            steps:
+              - selectedExit4:
+                  return: {launchStatus: not_launched, reason: invalid_binding}
+    - claimDispatch:
+        try:
+          call: http.patch
+          args:
+            url: '${documentUrl}'
+            auth: {type: OAuth2}
+            timeout: 10
+            query:
+              updateMask.fieldPaths: scanDispatch
+              currentDocument.updateTime: '${document.body.updateTime}'
+            body:
+              fields:
+                scanDispatch:
+                  mapValue:
+                    fields:
+                      id: {stringValue: '${dispatchId}'}
+                      workflowExecution: {stringValue: '${workflowExecution}'}
+                      jobName: {stringValue: '${jobName}'}
+                      generation: {stringValue: '${generation}'}
+                      sha256: {stringValue: '${fileHash}'}
+                      launchOutcome: {stringValue: intent}
+                      cancelled: {booleanValue: false}
+                      createdAt: {timestampValue: '${time.format(sys.now())}'}
+          result: claimed
+        except:
+          as: failure
+          steps:
+            - claimHold:
+                return: {launchStatus: not_launched, reason: claim_conflict_or_unknown}
+    - readLaunchFence:
+        try:
+          call: http.get
+          args:
+            url: '${documentUrl}'
+            auth: {type: OAuth2}
+            timeout: 10
+          result: fence
+        except:
+          as: failure
+          steps:
+            - fenceHold:
+                return: {launchStatus: not_launched, reason: fence_read_failed}
+    - requireFence:
+        switch:
+          - condition: '${map.get(fence.body.fields, ["scanDispatch", "mapValue", "fields", "id", "stringValue"]) != dispatchId or map.get(fence.body.fields, ["scanDispatch", "mapValue", "fields", "cancelled", "booleanValue"]) != false or map.get(fence.body.fields, ["scanStatus", "stringValue"]) != "pending" or map.get(fence.body.fields, "scanAttempt") != null or map.get(fence.body.fields, ["generation", "stringValue"]) != generation or map.get(fence.body.fields, ["sha256", "stringValue"]) != fileHash}'
+            steps:
+              - selectedExit5:
+                  return: {launchStatus: not_launched, reason: cancelled_or_changed}
+    - launchOnce:
+        try:
+          call: http.post
+          args:
+            url: '${"https://run.googleapis.com/v2/" + jobName + ":run"}'
+            auth: {type: OAuth2}
+            timeout: 30
+            body:
+              overrides:
+                taskCount: 1
+                timeout: 480s
+                containerOverrides:
+                  - name: scanner
+                    env:
+                      - {name: ISP_ATTACHMENT_ID, value: '${attachmentId}'}
+                      - {name: ISP_ATTACHMENT_GENERATION, value: '${generation}'}
+                      - {name: ISP_ATTACHMENT_SHA256, value: '${fileHash}'}
+                      - {name: ISP_SCAN_DISPATCH_ID, value: '${dispatchId}'}
+          result: launched
+        except:
+          as: failure
+          steps:
+            - launchUnknown:
+                return: {launchStatus: unknown, attachmentId: '${attachmentId}', dispatchId: '${dispatchId}', reason: launch_response_unknown}
+    - captureReceipt:
+        assign:
+          - operationName: '${map.get(launched.body, "name")}'
+          - executionName: '${default(map.get(launched.body, ["metadata", "name"]), "")}'
+    - persistReceipt:
+        try:
+          call: http.patch
+          args:
+            url: '${documentUrl}'
+            auth: {type: OAuth2}
+            timeout: 10
+            query:
+              updateMask.fieldPaths: [scanDispatch.operationName, scanDispatch.launchOutcome]
+              currentDocument.exists: true
+            body:
+              fields:
+                scanDispatch:
+                  mapValue:
+                    fields:
+                      operationName: {stringValue: '${operationName}'}
+                      launchOutcome: {stringValue: accepted}
+          result: receipt
+        except:
+          as: failure
+          steps:
+            - receiptHold:
+                return: {launchStatus: unknown, attachmentId: '${attachmentId}', dispatchId: '${dispatchId}', operationName: '${operationName}', executionName: '${executionName}', reason: receipt_not_persisted}
+    - done:
+        return: {launchStatus: accepted, attachmentId: '${attachmentId}', dispatchId: '${dispatchId}', operationName: '${operationName}', executionName: '${executionName}'}

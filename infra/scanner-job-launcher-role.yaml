@@ -1,0 +1,6 @@
+title: ISP Exact Scan Job Launcher
+description: Launch the exact ISP scanner job with immutable tuple overrides.
+stage: GA
+includedPermissions:
+- run.jobs.run
+- run.jobs.runWithOverrides

@@ -1,0 +1,6 @@
+title: ISP Scan Workflow Read and Dispatch
+description: Read and CAS dispatch only within the default ISP database.
+stage: GA
+includedPermissions:
+- datastore.entities.get
+- datastore.entities.update

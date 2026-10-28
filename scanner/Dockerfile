@@ -6,7 +6,7 @@ ENV PATH="/opt/isp-venv/bin:$PATH" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 
 WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
-COPY policy.py validate_file.py scanner.py mirror.py /app/
+COPY policy.py validate_file.py scanner.py mirror.py job_entry.py /app/
 RUN mkdir -p /tmp/isp-clamav-definitions /tmp/isp-cvdupdate && chown -R clamav:clamav /tmp/isp-clamav-definitions /tmp/isp-cvdupdate
 USER clamav
 EXPOSE 8080
