@@ -174,3 +174,6 @@ export class ISPPrivateAcceptanceMobileQueued6 extends ISPPrivateAcceptanceMobil
 
 // A stopped Queued6 namespace is permanent; the reviewed continuation is fresh.
 export class ISPPrivateAcceptanceMobileQueued6Continuation extends ISPPrivateAcceptanceMobileQueued6 {}
+
+// Further reviewed continuation has its own permanent stop latch and namespace.
+export class ISPPrivateAcceptanceMobileQueued6NextContinuation extends ISPPrivateAcceptanceMobileQueued6 {}

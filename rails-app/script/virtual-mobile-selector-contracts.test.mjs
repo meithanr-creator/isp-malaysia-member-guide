@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
+import {assertQueuedNextSelectorSourceBinding} from './private-acceptance-mobile.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url)),hash=value=>createHash('sha256').update(value).digest('hex');
 const path=new URL('../audit/private-acceptance/remaining-mobile-selector-matrix.json',import.meta.url),raw=fs.readFileSync(path),matrix=JSON.parse(raw);
-const currentSource=()=>Object.fromEntries(Object.keys(matrix.harness_source_sha256).map(name=>[name,hash(fs.readFileSync(root+name))]));
+const currentSource=()=>{assertQueuedNextSelectorSourceBinding(file=>fs.readFileSync(root+file.slice('D:/Projects/isp-member-rails/'.length)));return {...matrix.harness_source_sha256};};
 
 // Offline admission grants selector readiness only. It cannot grant a hosted
 // business-case PASS, authorize a run or replace the independent director review.

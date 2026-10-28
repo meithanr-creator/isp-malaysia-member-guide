@@ -1,0 +1,630 @@
+{
+  "version": 1,
+  "kind": "queued6_next_continuation_source_and_focused_contract_proof",
+  "status": "PASS_SOURCE_ONLY_PENDING_ASTRA_PACKET_REVIEW_AND_HOSTED_BACKEND_ACCEPTANCE",
+  "prior_published_selector_audit_commit": "8610c40e83e9eec587f6a6d543cccc45d10ecda6",
+  "failed_source_commit": "601356a77bdd676ad166be893320c8ee0a032911",
+  "failed_packet_sha256": "a2c9416ade2878b963a8174797dc5a49842b67d9a3fbd30a49594fa7b651af63",
+  "owned_source_sha256": {
+    "script/private-acceptance-mobile.mjs": "924216ed2793d38e04cc2af8ef1ded3a73e1242cc765c72f1c2d3c5a5866eca5",
+    "script/private-acceptance.mjs": "6abc6d23d040848dd2c48695fc3ba779001313ba0827fef0c72435f05af40ea3",
+    "script/private-acceptance-context.mjs": "abb11dffafa0b6463bc4ae1572ef32ed1a95c42ff590d11493c4b91a3b8a6bb5",
+    "cloudflare/acceptance/index.js": "2a15592da3fb7bcf158d3180cce79e056370b65cac1213ec5a176aed1120bcb1",
+    "script/virtual-mobile-journeys.mjs": "e0b66d8a5d30f0ad012560b10a4798a84ed8745862f9583ac3b65621a384e4d1",
+    "script/virtual-mobile-acceptance.mjs": "a686b350e8b58687c1522e2b67b2cf34f55cb2c025acb0be87bf27072f4106bf",
+    "script/virtual-mobile-selector-contracts.test.mjs": "2037ffd44c2845153d93b69f280fffa5fb661a99d4fb00c0f7413a5e9bf89c2d",
+    "script/private-acceptance-next-carry.test.mjs": "8217059ec426de7220d87a80f9a65e17ff0dd53f95f0a0a5a5eabebde89393d7"
+  },
+  "binding": {
+    "path": "audit/private-acceptance/queued6-next-selector-binding.json",
+    "sha256": "92fe4891e127ca3b133916fac59d3343909c04319b7c4d780404e4f655496e17",
+    "admission": "Portable source-only admission pins immutable matrix/proof/receipt, validates actual current committed sources and reverses exact selection deltas to original tested full hashes; product sources and revised selector test remain pinned. Strict runtime wrapper additionally verifies every compiled-asset byte.",
+    "matrix_sha256": "973b4520fc3aca4f58ba7c9dab669c08087c30c72243e539a9f1cf08a1197e38",
+    "proof_sha256": "c75ed37f68eba763f1808cce1bcb01b9da19e53b77e17fd8a5474e2d7825d295",
+    "original_selector_test_sha256": "4766e028b4f6a1fad85b41e94ac5bbf44031b5ec15b58ac354f77ac2aae5a0d6",
+    "selector_test_adaptation": {
+      "original_sha256": "4766e028b4f6a1fad85b41e94ac5bbf44031b5ec15b58ac354f77ac2aae5a0d6",
+      "revised_sha256": "2037ffd44c2845153d93b69f280fffa5fb661a99d4fb00c0f7413a5e9bf89c2d",
+      "preserved_original": "D:/Projects/isp-rails-tools/isp-mobile-qa/queued6-next-carry-tested-source/virtual-mobile-selector-contracts.test.mjs",
+      "current_source_adapter": {
+        "before": "const currentSource=()=>Object.fromEntries(Object.keys(matrix.harness_source_sha256).map(name=>[name,hash(fs.readFileSync(root+name))]));",
+        "after": "const currentSource=()=>{assertQueuedNextSelectorSourceBinding(file=>fs.readFileSync(root+file.slice('D:/Projects/isp-member-rails/'.length)));return {...matrix.harness_source_sha256};};"
+      },
+      "additional_import": "import {assertQueuedNextSelectorSourceBinding} from './private-acceptance-mobile.mjs';",
+      "negative_criteria_changed": false,
+      "portable_committed_source_only": true,
+      "runtime_additional_asset_checks_retained": true
+    }
+  },
+  "focused_new_contracts": {
+    "command": "D:/Projects/isp-rails-tools/node24/node.exe --test script/private-acceptance-next-carry.test.mjs",
+    "exit_code": 0,
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "duration_ms": 213.0882,
+    "cases": [
+      "frozen stopped raw records and immutable public result; each altered artifact and public result refused",
+      "fresh class/migration, source, exact carry selection, unchanged caps and packet review required",
+      "all prior full allowances retained; reduced intervals/caps and failed-case carry refused",
+      "exact D archive targets; foreign and sibling paths refused without moving source",
+      "iPhone first scenario member_login; Android first scenario private_gate; missing gate/extra case/failed case/wrong resume refused without executing browser callback",
+      "pinned reversible binding; current source, matrix, proof, binding, product source, asset and selector-test drift refused"
+    ],
+    "fixture_source": "Exact frozen private archive when present, otherwise stopped current source. Raw-byte evidence test is explicitly skipped if private records absent in ordinary checkout; budget fixture uses committed sanitized prior intervals. All six run locally."
+  },
+  "affected_source_admission_rechecks": {
+    "command": "D:/Projects/isp-rails-tools/node24/node.exe --test --test-name-pattern='exact tested source|source drift' script/virtual-mobile-selector-contracts.test.mjs",
+    "exit_code": 0,
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "duration_ms": 155.9253,
+    "classification": "affected existing source-admission contracts; not new browser or accepted-case evidence"
+  },
+  "stopped_source": {
+    "marker": "qa-20261028-6821e1126c98",
+    "namespace_id": "e88915c7047144ca960bcc1bba37e535",
+    "start_at": "2026-10-28T12:54:58.028Z",
+    "verified_absent_at": "2026-10-28T12:59:30.950Z",
+    "outer_elapsed_ms": 272922,
+    "observed_rounded_seconds": 273,
+    "rounded_seconds": 273,
+    "already_in_base_commitment": false,
+    "maximum_transfer_bytes": 4294967296,
+    "gateway_allowance_usd": 0.215,
+    "other_allowance_usd": 0.05,
+    "all_prior_allowances_retained": true,
+    "aggregate_mobile_pass": false,
+    "source_hosted_result_sha256": "f0985f2d48d796ae9f2f474c8baab74afbfb3d05b052cbb04c6087ffc0574f64",
+    "mobile_case_carry": {
+      "version": 2,
+      "source_run_marker": "qa-20261028-6821e1126c98",
+      "source_namespace_id": "e88915c7047144ca960bcc1bba37e535",
+      "source_packet_sha256": "a2c9416ade2878b963a8174797dc5a49842b67d9a3fbd30a49594fa7b651af63",
+      "source_mobile_sha256": "a2df54f6453999d3c8b8628c9e872e3a58fcf5fe8c3867064d2c651562ccde74",
+      "source_hosted_result_sha256": "f0985f2d48d796ae9f2f474c8baab74afbfb3d05b052cbb04c6087ffc0574f64",
+      "profiles": {
+        "iphone-webkit": {
+          "cases": {
+            "private_gate": {
+              "status": "PASS_CARRIED",
+              "original_case_sha256": "ca20baef5abfed81626f8a7e000734ff098c05a16f65c956ae15101492726ee0",
+              "original_status": "PASS",
+              "source_packet_sha256": "115a42b434d63b415316521d6fd93f77f75fd1b1ae1d725ad5da1433b293759b",
+              "source_mobile_sha256": "18d19d48d715465e4ce95dd9560b555c9634b084b44f96c1e30265aaea75e3d8"
+            },
+            "landing_menu_keyboard": {
+              "status": "PASS_CARRIED",
+              "original_status": "PASS",
+              "original_case_sha256": "6c3a1a3c8823bb4526a12bb98c6af28d3fd732a01d48f43013e883c6c484c271",
+              "source_packet_sha256": "a2c9416ade2878b963a8174797dc5a49842b67d9a3fbd30a49594fa7b651af63",
+              "source_mobile_sha256": "a2df54f6453999d3c8b8628c9e872e3a58fcf5fe8c3867064d2c651562ccde74",
+              "earlier_menu_source_packet_sha256": "115a42b434d63b415316521d6fd93f77f75fd1b1ae1d725ad5da1433b293759b",
+              "earlier_menu_source_mobile_sha256": "18d19d48d715465e4ce95dd9560b555c9634b084b44f96c1e30265aaea75e3d8"
+            }
+          },
+          "resume_case": "member_login",
+          "resume_at": "case_start",
+          "failed_case_carried": false,
+          "successful_check_labels": [
+            "Bounded full readiness succeeds before navigation",
+            "Private review form renders",
+            "Rendered mutation receives its expected redirect",
+            "Rendered secure fixed-expiry review cookie accepted",
+            "Official crest rendered",
+            "Top-right menu provides a44px touch target",
+            "Frozen demo references labelled; never opened",
+            "Removed areas absent",
+            "Escape closes menu and restores focus",
+            "Keyboard opens navigation",
+            "Skip link moves keyboard focus to main",
+            "Rendered structure has one main, language, field labels, image alternatives and no horizontal overflow"
+          ],
+          "not_run_case_count": 14
+        },
+        "android-chromium": {
+          "cases": {},
+          "not_run_case_count": 17
+        }
+      },
+      "aggregate_mobile_pass": false
+    },
+    "artifacts_sha256": {
+      "packet.json": "a2c9416ade2878b963a8174797dc5a49842b67d9a3fbd30a49594fa7b651af63",
+      "runtime.json": "9e9867285c5be66c1666fdcda5577d9a559c779dafa072b4d16a458c8ff97639",
+      "run-intent.json": "de6515d6828590ec82a9d0ccc0c35e1ae5d185be1621de28f384d3508842fd0a",
+      "result.json": "bfdf2ca8ba92fc02d60e711c77d412efddc13bbdae444d3618d1c5bf55fbb181",
+      "acceptance-http.json": "400b002b2f544d4c5258b7ee4c66b17ed473674dd08ee2abf2d8061c50052e3c",
+      "acceptance-mobile.json": "a2df54f6453999d3c8b8628c9e872e3a58fcf5fe8c3867064d2c651562ccde74",
+      "mobile-budget.json": "e99048e5e946479a9688b3ba2f9672978904c69f8380801b76c9cf474c02ff28",
+      "mobile-carry.json": "8f7591fba0ff6cfa8e599a3462de533bd419bdd0b57413fb88083ff9d9888160",
+      "browser-process-cleanup-stdout.txt": "3cdf26bfe26d8dffad4cf12e5fdf99e9fbe97405e04a4ed15e94918663d989d6",
+      "acceptance-fixtures.json": "ee89269d05af677e86674a2ed21bb66dbbc67433deaa1cad16db3a28cb539ffc",
+      "functional-phase-summary.json": "c4903d774dd9ec50e00275929cd4c98f8bca09f22e04707bb32cf02f46b5beef",
+      "iphone-webkit-failure.txt": "16f8950b265c15585b313698fb37083a0e6e8f06156547bd11bd44c7ac3af1ea"
+    }
+  },
+  "new_packet_contract": {
+    "queued_continuation": true,
+    "mobile_continuation_source_packet_sha256": "a2c9416ade2878b963a8174797dc5a49842b67d9a3fbd30a49594fa7b651af63",
+    "mobile_continuation_hosted_result_sha256": "f0985f2d48d796ae9f2f474c8baab74afbfb3d05b052cbb04c6087ffc0574f64",
+    "carried_mobile_case_ids": [
+      "iphone-webkit/private_gate",
+      "iphone-webkit/landing_menu_keyboard"
+    ],
+    "mobile_resume_case": "member_login",
+    "selector_binding_sha256": "92fe4891e127ca3b133916fac59d3343909c04319b7c4d780404e4f655496e17",
+    "execution_mode": "queued_mobile_budget6_v1",
+    "mobile_only": true,
+    "mobile_scope": "queued_mobile_only_after_critical_http",
+    "max_window_ms": 1920000,
+    "cleanup_reserve_ms": 600000,
+    "max_transfer_bytes": 4294967296,
+    "max_gateway_requests": 22000,
+    "max_profile_requests": 10240,
+    "gateway_class": "ISPPrivateAcceptanceMobileQueued6NextContinuation",
+    "migration_tag": "private-acceptance-mobile-queued6-next-continuation-v1",
+    "resource_model_sha256": "2095aa8abf725ef2349a49ff89b7e934aeaf891cd8808f397d0dd50cd5248e85",
+    "cumulative_budget_ceiling_usd": 6,
+    "reservation_reused": true
+  },
+  "carry_selection": {
+    "critical_http_carried": 42,
+    "critical_http_replayed": 0,
+    "iphone_carried": [
+      "private_gate",
+      "landing_menu_keyboard"
+    ],
+    "iphone_resume_case": "member_login",
+    "iphone_cases_to_execute": 15,
+    "android_carried": [],
+    "android_cases_to_execute": 17,
+    "operational_prerequisites": [
+      "readiness",
+      "fresh review cookie",
+      "fresh reconciled synthetic fixtures"
+    ],
+    "aggregate_mobile_pass": false
+  },
+  "budget": {
+    "version": 5,
+    "status": "CUMULATIVE_SIX_DOLLAR_QUEUED_NEXT_CONTINUATION_RECONCILED",
+    "execution_mode": "queued_mobile_budget6_v1",
+    "kind": "conservative_reserved_upper_bound_not_invoice",
+    "ceiling_usd": 6,
+    "prior_base_commitment_usd": 4.6,
+    "shared_reservation_usd": 1.4,
+    "increase_from_previous_ceiling_usd": 1,
+    "prior_intervals": [
+      {
+        "marker": "qa-20261027-913674d20bad",
+        "start_at": "2026-10-27T17:11:07.824Z",
+        "verified_absent_at": "2026-10-27T17:12:33.740Z",
+        "outer_elapsed_ms": 85916,
+        "rounded_seconds": 90,
+        "already_in_base_commitment": true,
+        "result_sha256": "8e24804872566b3d5cba421dea0adc42b34e9397cfc8429389f409195aaad7f1",
+        "runtime_sha256": "9c33cecab9807853b0cd38c9e94d2c13a65e2c24f472bbf8bbc584a76275add7"
+      },
+      {
+        "marker": "qa-20261027-af5c0c9a4c4f",
+        "start_at": "2026-10-27T19:38:07.641Z",
+        "verified_absent_at": "2026-10-27T19:42:17.866Z",
+        "outer_elapsed_ms": 250225,
+        "rounded_seconds": 251,
+        "already_in_base_commitment": false,
+        "result_sha256": "c44a343d1c04482eeb89506f64881f75568c600d8a30870ce45c17c7d4742230",
+        "runtime_sha256": "78c840c15a9c87d64e8047985619da48c6b4e8e2d0907deed74f66ca61d9feec"
+      },
+      {
+        "marker": "failed-tail-route-20261027T200106",
+        "start_at": "2026-10-27T20:01:06.432Z",
+        "verified_absent_at": "2026-10-27T20:01:39.432Z",
+        "outer_elapsed_ms": 33000,
+        "rounded_seconds": 33,
+        "already_in_base_commitment": false,
+        "result_sha256": "132a85daa4e34869d2d119de5c3fc8cb8cd48a3e07146fd742b59136922d0a97",
+        "runtime_sha256": "715f5c6043fbba7871b07c4e95dfad57e13128d68fb40d753ff2d34a01365ceb"
+      },
+      {
+        "marker": "qa-20261027-35370ae4d09d",
+        "start_at": "2026-10-27T20:13:49.034Z",
+        "verified_absent_at": "2026-10-27T20:15:44.587Z",
+        "outer_elapsed_ms": 115553,
+        "rounded_seconds": 116,
+        "already_in_base_commitment": false,
+        "result_sha256": "b485ab07a1d1aeb70ad9f1c07b3a9807ef611081fd9a7ffbbd6f14dfe50b66ef",
+        "runtime_sha256": "650d324327f08406770a30dba8329d07669d589a3764f8684fd8543fe1096ce1"
+      },
+      {
+        "marker": "mobile-no-launch-20261027T2036",
+        "start_at": "2026-10-27T20:34:54.401Z",
+        "verified_absent_at": "2026-10-27T20:36:51.079Z",
+        "outer_elapsed_ms": 116678,
+        "rounded_seconds": 117,
+        "already_in_base_commitment": false,
+        "result_sha256": "7aeb57d1c9abfa45aa520a1c591b3ee61f64c01377fc5f96f2788567038edfeb",
+        "runtime_sha256": "735a08977b300c78ac937a33c13ef1f0d78397fc64daa7a4dfeda5fe31edeabf",
+        "no_launch_adjudication_sha256": "4cf9dbebd3ea731d85c777ed72f9a28becba5e51ea9795120f87364bc8cf2d2b",
+        "all_prior_allowances_retained": true
+      },
+      {
+        "marker": "qa-20261027-66bdf4ffb9df",
+        "namespace_id": "4fd03b4889384a82b0012f73bc1a7e08",
+        "start_at": "2026-10-27T21:04:33.387Z",
+        "verified_absent_at": "2026-10-27T21:06:28.685Z",
+        "outer_elapsed_ms": 115298,
+        "rounded_seconds": 116,
+        "already_in_base_commitment": false,
+        "result_sha256": "cc49e32c7ff6c50cb1f599ab4ad0148faf3ce50e6885cd1ef3648f86b8dea91a",
+        "runtime_sha256": "be8767c238cdb5d18bf2abadc444a8fc1000df6bc18dd5ad89f3b714f66017c4",
+        "packet_sha256": "cee668229dee8929e256ca3a705ae83c38a44cdac1b730ba6c9de0236818316c",
+        "maximum_transfer_bytes": 67108864,
+        "all_prior_allowances_retained": true,
+        "mobile_pass_claimed": false,
+        "artifacts_sha256": {
+          "packet.json": "cee668229dee8929e256ca3a705ae83c38a44cdac1b730ba6c9de0236818316c",
+          "runtime.json": "be8767c238cdb5d18bf2abadc444a8fc1000df6bc18dd5ad89f3b714f66017c4",
+          "result.json": "cc49e32c7ff6c50cb1f599ab4ad0148faf3ce50e6885cd1ef3648f86b8dea91a",
+          "acceptance-http.json": "f931104dc72a0012a684390f34d8c22258afe5fe4abe4f3db7fcaa3129243de5",
+          "acceptance-mobile.json": "83f15a8e1aef782003c57b0e77eeda3b44a8d4860707f4320b26d03125feccc3",
+          "mobile-budget.json": "aea7772a19608408b2eabb9ca11d5cd84460807b40b6dd873aa4b00135c0fc84",
+          "mobile-carry.json": "6f87ee45bd57676481ccb2e6b22ed48d4aed2e022992de4faaffee89f166bda1",
+          "stopped-resource-counters.json": "f8549e1f9a757f2bf325adf64e3d1bf2381a71eb966bf7bd1f89def75b1c6f26",
+          "counter-status-closed.json": "1db6750cd25cddbfe6286bcba16e360bae6ebcb74f9801b83efabac0149d2af5",
+          "browser-process-cleanup-stdout.txt": "99e966225cf4651439fd2be5598eae63dfb0a67dc336fb3b2d72803881a662f4",
+          "acceptance-fixtures.json": "9c991384e2b4a3eb2ccc3c92fc15fc603ea967ca3edcda17c49776412507eb78"
+        },
+        "status_diagnostic": {
+          "status": "FAILED_NO_CONTAINER_START_RECORDED",
+          "counter_status": "UNAVAILABLE",
+          "spare_capacity_claimed": false,
+          "all_original_allowances_retained": true,
+          "elapsed_enabled_ms": 2133,
+          "artifact_sha256": "f8549e1f9a757f2bf325adf64e3d1bf2381a71eb966bf7bd1f89def75b1c6f26",
+          "closed_sha256": "1db6750cd25cddbfe6286bcba16e360bae6ebcb74f9801b83efabac0149d2af5"
+        }
+      },
+      {
+        "marker": "qa-20261028-3cacd23b8ec6",
+        "namespace_id": "f36fded941e84aada5b0559d72a1444e",
+        "start_at": "2026-10-28T12:24:20.154Z",
+        "verified_absent_at": "2026-10-28T12:27:39.154Z",
+        "outer_elapsed_ms": 199000,
+        "observed_rounded_seconds": 199,
+        "rounded_seconds": 213,
+        "charged_seconds_reason": "Retain the earlier approved213-second conservative allocation; exact run-intent interval is199seconds and no refund is taken.",
+        "already_in_base_commitment": false,
+        "maximum_transfer_bytes": 4294967296,
+        "gateway_allowance_usd": 0.215,
+        "other_allowance_usd": 0.05,
+        "all_prior_allowances_retained": true,
+        "aggregate_mobile_pass": false,
+        "source_hosted_result_sha256": "14fdf2f8d71f90d49d232283c82215412cea39f7a913faa49b8072d1ce93d4d1",
+        "mobile_case_carry": {
+          "version": 1,
+          "source_run_marker": "qa-20261028-3cacd23b8ec6",
+          "source_namespace_id": "f36fded941e84aada5b0559d72a1444e",
+          "source_packet_sha256": "115a42b434d63b415316521d6fd93f77f75fd1b1ae1d725ad5da1433b293759b",
+          "source_mobile_sha256": "18d19d48d715465e4ce95dd9560b555c9634b084b44f96c1e30265aaea75e3d8",
+          "source_hosted_result_sha256": "14fdf2f8d71f90d49d232283c82215412cea39f7a913faa49b8072d1ce93d4d1",
+          "profiles": {
+            "iphone-webkit": {
+              "cases": {
+                "private_gate": {
+                  "status": "PASS_CARRIED",
+                  "original_case_sha256": "ca20baef5abfed81626f8a7e000734ff098c05a16f65c956ae15101492726ee0",
+                  "original_status": "PASS"
+                }
+              },
+              "resume_case": "landing_menu_keyboard",
+              "resume_at": "skip_link_focus",
+              "failed_case_carried": false,
+              "successful_check_labels": [
+                "Bounded full readiness succeeds before navigation",
+                "Private review form renders",
+                "Rendered mutation receives its expected redirect",
+                "Rendered secure fixed-expiry review cookie accepted",
+                "Official crest rendered",
+                "Top-right menu provides a44px touch target",
+                "Frozen demo references labelled; never opened",
+                "Removed areas absent",
+                "Escape closes menu and restores focus",
+                "Keyboard opens navigation"
+              ],
+              "not_run_case_count": 15
+            },
+            "android-chromium": {
+              "cases": {},
+              "not_run_case_count": 17
+            }
+          },
+          "aggregate_mobile_pass": false
+        },
+        "artifacts_sha256": {
+          "packet.json": "115a42b434d63b415316521d6fd93f77f75fd1b1ae1d725ad5da1433b293759b",
+          "runtime.json": "d9a58d73b191ea1c5c1df66faf6c41949bdf1170b3f243b9726c8cb0e9e52a3b",
+          "run-intent.json": "1f0ad4099fa949e7c0a1193893d93e4da84003a55bfcf50de59fe17fc7ff175c",
+          "result.json": "92a4b08dd1fe8d16709bc85f0854089db1478dc534683a5c75b527c435834a36",
+          "acceptance-http.json": "465f142afdeb37c2384ccd9fc0c57d017babb6402cdff7e921ea6b2917779c79",
+          "acceptance-mobile.json": "18d19d48d715465e4ce95dd9560b555c9634b084b44f96c1e30265aaea75e3d8",
+          "mobile-budget.json": "e852fb320e483d461579327e63183230501fdf76b7968d06c7f88053a99a6567",
+          "mobile-carry.json": "251d4ec261546b850f388791a3ab5ffac52aedf94fcdeef08b6c3e96aae12c47",
+          "browser-process-cleanup-stdout.txt": "15e4a4d87577be59c8e2f33316d61bc957d42d08aa50f4f7a9da27c8c25a3e88",
+          "acceptance-fixtures.json": "787a822dd6cb02ebc914e72776b4439597c17f17a68aba2ea59b3e1994e9336c",
+          "functional-phase-summary.json": "27c0e7a755c4427f113269ab1955fa211504ec0d2088ea572e6fc734bcfe15f6",
+          "iphone-webkit-failure.txt": "1916c37fcfe2e9f42d3a79be8b66ee5a2d80a8b5b0a8b6be2b30afee60e1ed72"
+        }
+      },
+      {
+        "marker": "qa-20261028-6821e1126c98",
+        "namespace_id": "e88915c7047144ca960bcc1bba37e535",
+        "start_at": "2026-10-28T12:54:58.028Z",
+        "verified_absent_at": "2026-10-28T12:59:30.950Z",
+        "outer_elapsed_ms": 272922,
+        "observed_rounded_seconds": 273,
+        "rounded_seconds": 273,
+        "already_in_base_commitment": false,
+        "maximum_transfer_bytes": 4294967296,
+        "gateway_allowance_usd": 0.215,
+        "other_allowance_usd": 0.05,
+        "all_prior_allowances_retained": true,
+        "aggregate_mobile_pass": false,
+        "source_hosted_result_sha256": "f0985f2d48d796ae9f2f474c8baab74afbfb3d05b052cbb04c6087ffc0574f64",
+        "mobile_case_carry": {
+          "version": 2,
+          "source_run_marker": "qa-20261028-6821e1126c98",
+          "source_namespace_id": "e88915c7047144ca960bcc1bba37e535",
+          "source_packet_sha256": "a2c9416ade2878b963a8174797dc5a49842b67d9a3fbd30a49594fa7b651af63",
+          "source_mobile_sha256": "a2df54f6453999d3c8b8628c9e872e3a58fcf5fe8c3867064d2c651562ccde74",
+          "source_hosted_result_sha256": "f0985f2d48d796ae9f2f474c8baab74afbfb3d05b052cbb04c6087ffc0574f64",
+          "profiles": {
+            "iphone-webkit": {
+              "cases": {
+                "private_gate": {
+                  "status": "PASS_CARRIED",
+                  "original_case_sha256": "ca20baef5abfed81626f8a7e000734ff098c05a16f65c956ae15101492726ee0",
+                  "original_status": "PASS",
+                  "source_packet_sha256": "115a42b434d63b415316521d6fd93f77f75fd1b1ae1d725ad5da1433b293759b",
+                  "source_mobile_sha256": "18d19d48d715465e4ce95dd9560b555c9634b084b44f96c1e30265aaea75e3d8"
+                },
+                "landing_menu_keyboard": {
+                  "status": "PASS_CARRIED",
+                  "original_status": "PASS",
+                  "original_case_sha256": "6c3a1a3c8823bb4526a12bb98c6af28d3fd732a01d48f43013e883c6c484c271",
+                  "source_packet_sha256": "a2c9416ade2878b963a8174797dc5a49842b67d9a3fbd30a49594fa7b651af63",
+                  "source_mobile_sha256": "a2df54f6453999d3c8b8628c9e872e3a58fcf5fe8c3867064d2c651562ccde74",
+                  "earlier_menu_source_packet_sha256": "115a42b434d63b415316521d6fd93f77f75fd1b1ae1d725ad5da1433b293759b",
+                  "earlier_menu_source_mobile_sha256": "18d19d48d715465e4ce95dd9560b555c9634b084b44f96c1e30265aaea75e3d8"
+                }
+              },
+              "resume_case": "member_login",
+              "resume_at": "case_start",
+              "failed_case_carried": false,
+              "successful_check_labels": [
+                "Bounded full readiness succeeds before navigation",
+                "Private review form renders",
+                "Rendered mutation receives its expected redirect",
+                "Rendered secure fixed-expiry review cookie accepted",
+                "Official crest rendered",
+                "Top-right menu provides a44px touch target",
+                "Frozen demo references labelled; never opened",
+                "Removed areas absent",
+                "Escape closes menu and restores focus",
+                "Keyboard opens navigation",
+                "Skip link moves keyboard focus to main",
+                "Rendered structure has one main, language, field labels, image alternatives and no horizontal overflow"
+              ],
+              "not_run_case_count": 14
+            },
+            "android-chromium": {
+              "cases": {},
+              "not_run_case_count": 17
+            }
+          },
+          "aggregate_mobile_pass": false
+        },
+        "artifacts_sha256": {
+          "packet.json": "a2c9416ade2878b963a8174797dc5a49842b67d9a3fbd30a49594fa7b651af63",
+          "runtime.json": "9e9867285c5be66c1666fdcda5577d9a559c779dafa072b4d16a458c8ff97639",
+          "run-intent.json": "de6515d6828590ec82a9d0ccc0c35e1ae5d185be1621de28f384d3508842fd0a",
+          "result.json": "bfdf2ca8ba92fc02d60e711c77d412efddc13bbdae444d3618d1c5bf55fbb181",
+          "acceptance-http.json": "400b002b2f544d4c5258b7ee4c66b17ed473674dd08ee2abf2d8061c50052e3c",
+          "acceptance-mobile.json": "a2df54f6453999d3c8b8628c9e872e3a58fcf5fe8c3867064d2c651562ccde74",
+          "mobile-budget.json": "e99048e5e946479a9688b3ba2f9672978904c69f8380801b76c9cf474c02ff28",
+          "mobile-carry.json": "8f7591fba0ff6cfa8e599a3462de533bd419bdd0b57413fb88083ff9d9888160",
+          "browser-process-cleanup-stdout.txt": "3cdf26bfe26d8dffad4cf12e5fdf99e9fbe97405e04a4ed15e94918663d989d6",
+          "acceptance-fixtures.json": "ee89269d05af677e86674a2ed21bb66dbbc67433deaa1cad16db3a28cb539ffc",
+          "functional-phase-summary.json": "c4903d774dd9ec50e00275929cd4c98f8bca09f22e04707bb32cf02f46b5beef",
+          "iphone-webkit-failure.txt": "16f8950b265c15585b313698fb37083a0e6e8f06156547bd11bd44c7ac3af1ea"
+        }
+      }
+    ],
+    "new_window_max_seconds": 1920,
+    "prior_nonbase_rounded_seconds": 1119,
+    "cumulative_runtime_bound_seconds": 3129,
+    "cumulative_runtime_ceiling_seconds": 3300,
+    "cleanup_reserve_seconds": 600,
+    "compute_rate_usd_per_second": 0.00003584,
+    "compute_within_reservation_usd": 0.10891776,
+    "opaque_historical_gateway_allowance_usd": 0.0595,
+    "latest_failed_gateway_allowance_usd": 0.0035,
+    "new_gateway_allowance_usd": 0.215,
+    "all_gateway_egress_allowance_usd": 0.708,
+    "opaque_historical_other_allowance_usd": 0.25,
+    "latest_failed_other_allowance_usd": 0.05,
+    "new_other_allowance_usd": 0.05,
+    "all_other_allowance_usd": 0.44999999999999996,
+    "new_gateway_transfer_cap_bytes": 4294967296,
+    "new_gateway_request_cap": 22000,
+    "new_profile_request_cap": 10240,
+    "contingency_usd": 0.003,
+    "total_reservation_bound_usd": 1.2699177599999998,
+    "cumulative_bound_usd": 5.86991776,
+    "remaining_reserved_headroom_usd": 0.13008224000000013,
+    "allowance_coverage": [
+      {
+        "scope": "opaque historical commitments",
+        "markers": [
+          "qa-20261027-913674d20bad",
+          "qa-20261027-af5c0c9a4c4f",
+          "failed-tail-route-20261027T200106",
+          "qa-20261027-35370ae4d09d",
+          "mobile-no-launch-20261027T2036"
+        ],
+        "gateway_usd": 0.0595,
+        "other_usd": 0.25
+      },
+      {
+        "scope": "latest stopped failed mobile",
+        "markers": [
+          "qa-20261027-66bdf4ffb9df"
+        ],
+        "transfer_cap_bytes": 67108864,
+        "gateway_usd": 0.0035,
+        "other_usd": 0.05
+      },
+      {
+        "scope": "stopped Queued6 run full allowances retained",
+        "markers": [
+          "qa-20261028-3cacd23b8ec6"
+        ],
+        "transfer_cap_bytes": 4294967296,
+        "gateway_usd": 0.215,
+        "other_usd": 0.05
+      },
+      {
+        "scope": "stopped next Queued6 run full allowances retained",
+        "markers": [
+          "qa-20261028-6821e1126c98"
+        ],
+        "transfer_cap_bytes": 4294967296,
+        "gateway_usd": 0.215,
+        "other_usd": 0.05
+      },
+      {
+        "scope": "new explicit queued next continuation window",
+        "markers": [
+          "fresh_namespace_and_run_marker_required"
+        ],
+        "transfer_cap_bytes": 4294967296,
+        "gateway_usd": 0.215,
+        "other_usd": 0.05
+      }
+    ],
+    "possible_historical_overlap_retained": true,
+    "all_prior_allowances_retained": true,
+    "status_diagnostic": {
+      "status": "FAILED_NO_CONTAINER_START_RECORDED",
+      "counter_status": "UNAVAILABLE",
+      "spare_capacity_claimed": false,
+      "all_original_allowances_retained": true,
+      "elapsed_enabled_ms": 2133,
+      "artifact_sha256": "f8549e1f9a757f2bf325adf64e3d1bf2381a71eb966bf7bd1f89def75b1c6f26",
+      "closed_sha256": "1db6750cd25cddbfe6286bcba16e360bae6ebcb74f9801b83efabac0149d2af5"
+    },
+    "actual_invoice_asserted": false,
+    "paid_upgrades": false,
+    "queued_continuation": true,
+    "previous_queued_runtime_observed_seconds": 199,
+    "previous_queued_runtime_charged_seconds": 213,
+    "previous_queued_gateway_allowance_usd": 0.215,
+    "previous_queued_other_allowance_usd": 0.05,
+    "mobile_case_carry": {
+      "version": 2,
+      "source_run_marker": "qa-20261028-6821e1126c98",
+      "source_namespace_id": "e88915c7047144ca960bcc1bba37e535",
+      "source_packet_sha256": "a2c9416ade2878b963a8174797dc5a49842b67d9a3fbd30a49594fa7b651af63",
+      "source_mobile_sha256": "a2df54f6453999d3c8b8628c9e872e3a58fcf5fe8c3867064d2c651562ccde74",
+      "source_hosted_result_sha256": "f0985f2d48d796ae9f2f474c8baab74afbfb3d05b052cbb04c6087ffc0574f64",
+      "profiles": {
+        "iphone-webkit": {
+          "cases": {
+            "private_gate": {
+              "status": "PASS_CARRIED",
+              "original_case_sha256": "ca20baef5abfed81626f8a7e000734ff098c05a16f65c956ae15101492726ee0",
+              "original_status": "PASS",
+              "source_packet_sha256": "115a42b434d63b415316521d6fd93f77f75fd1b1ae1d725ad5da1433b293759b",
+              "source_mobile_sha256": "18d19d48d715465e4ce95dd9560b555c9634b084b44f96c1e30265aaea75e3d8"
+            },
+            "landing_menu_keyboard": {
+              "status": "PASS_CARRIED",
+              "original_status": "PASS",
+              "original_case_sha256": "6c3a1a3c8823bb4526a12bb98c6af28d3fd732a01d48f43013e883c6c484c271",
+              "source_packet_sha256": "a2c9416ade2878b963a8174797dc5a49842b67d9a3fbd30a49594fa7b651af63",
+              "source_mobile_sha256": "a2df54f6453999d3c8b8628c9e872e3a58fcf5fe8c3867064d2c651562ccde74",
+              "earlier_menu_source_packet_sha256": "115a42b434d63b415316521d6fd93f77f75fd1b1ae1d725ad5da1433b293759b",
+              "earlier_menu_source_mobile_sha256": "18d19d48d715465e4ce95dd9560b555c9634b084b44f96c1e30265aaea75e3d8"
+            }
+          },
+          "resume_case": "member_login",
+          "resume_at": "case_start",
+          "failed_case_carried": false,
+          "successful_check_labels": [
+            "Bounded full readiness succeeds before navigation",
+            "Private review form renders",
+            "Rendered mutation receives its expected redirect",
+            "Rendered secure fixed-expiry review cookie accepted",
+            "Official crest rendered",
+            "Top-right menu provides a44px touch target",
+            "Frozen demo references labelled; never opened",
+            "Removed areas absent",
+            "Escape closes menu and restores focus",
+            "Keyboard opens navigation",
+            "Skip link moves keyboard focus to main",
+            "Rendered structure has one main, language, field labels, image alternatives and no horizontal overflow"
+          ],
+          "not_run_case_count": 14
+        },
+        "android-chromium": {
+          "cases": {},
+          "not_run_case_count": 17
+        }
+      },
+      "aggregate_mobile_pass": false
+    },
+    "previous_queued_next_runtime_observed_seconds": 273,
+    "previous_queued_next_runtime_charged_seconds": 273,
+    "previous_queued_next_gateway_allowance_usd": 0.215,
+    "previous_queued_next_other_allowance_usd": 0.05
+  },
+  "unchanged_cold_model": {
+    "sha256": "2095aa8abf725ef2349a49ff89b7e934aeaf891cd8808f397d0dd50cd5248e85",
+    "documents_per_profile": 46,
+    "profile": {
+      "requests": 9290,
+      "bytes": 1881286352
+    },
+    "global": {
+      "requests": 21678,
+      "bytes": 3910684064
+    },
+    "full_caps_retained": true
+  },
+  "archive_prepare_plan": {
+    "source": "D:/Projects/isp-rails-tools/isp-staging-private/private-acceptance",
+    "destination": "D:/Projects/isp-rails-tools/isp-staging-private/private-acceptance-history/qa-20261028-6821e1126c98",
+    "archive_command": "D:/Projects/isp-rails-tools/node24/node.exe script/private-acceptance.mjs archive-queued-next-failed-source",
+    "archive_validation": "Strict exact raw and public SHA readback before and after rename; exact D targets and no symlink path",
+    "prepare_command": "D:/Projects/isp-rails-tools/node24/node.exe script/private-acceptance.mjs prepare-mobile-queued-next-continuation",
+    "activation_requires": "New exact packet, source publication, Astra review, fresh never-started namespace/class, full runtime and cleanup allowance, fresh private headroom and active approved key",
+    "archive_performed": false,
+    "prepare_performed": false
+  },
+  "provider_requests": 0,
+  "neon_requests": 0,
+  "r2_requests": 0,
+  "outbound_mail": 0,
+  "hosted_browser_requests": 0,
+  "accepted_case_replays": 0,
+  "application_source_changed": false,
+  "image_changed": false,
+  "production_release_approved": false,
+  "portability": {
+    "committed_source_admission": true,
+    "strict_runtime_compiled_asset_checks_retained": true,
+    "private_records_published": false,
+    "windows_archive_guard_simulation_uses_explicit_win32_paths": true
+  }
+}

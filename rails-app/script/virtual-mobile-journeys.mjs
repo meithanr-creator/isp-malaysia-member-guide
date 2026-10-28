@@ -134,15 +134,15 @@ export async function afterInitiatedRender(page,{url,formAction,timeoutMs=20000}
 export async function runRenderedJourneys(h){
  assertJourneyHarness(h);
  const {page,context,fixtures,http,name,profile}=h,mark=fixtures.run_marker,label=mark+' '+name,png=cleanPng(),pdf=benignPdf(label+' publication'),eventPdf=benignPdf(label+' event');let admin,guest,event,pub;
- const resumed=h.continuation?.profiles?.[name],carriedGate=resumed?.cases?.private_gate,resumeSkip=!!carriedGate;
- if(resumeSkip)ensure(h.continuation.version===1&&name==='iphone-webkit'&&carriedGate.status==='PASS_CARRIED'&&carriedGate.original_status==='PASS'&&/^[a-f0-9]{64}$/.test(carriedGate.original_case_sha256??'')&&resumed.resume_case==='landing_menu_keyboard'&&resumed.resume_at==='skip_link_focus'&&resumed.failed_case_carried===false&&h.gate,'Exact carried gate and operational review entry required');
+ const resumed=h.continuation?.profiles?.[name],carriedGate=resumed?.cases?.private_gate,carriedLanding=resumed?.cases?.landing_menu_keyboard,resumeLogin=!!carriedLanding,resumeSkip=!!carriedGate;if(resumeLogin)ensure(resumeSkip,'Carried landing requires the exact carried private gate');
+ if(resumeSkip)ensure(name==='iphone-webkit'&&carriedGate.status==='PASS_CARRIED'&&carriedGate.original_status==='PASS'&&/^[a-f0-9]{64}$/.test(carriedGate.original_case_sha256??'')&&resumed.failed_case_carried===false&&h.gate&&((!resumeLogin&&h.continuation.version===1&&resumed.resume_case==='landing_menu_keyboard'&&resumed.resume_at==='skip_link_focus')||(resumeLogin&&h.continuation.version===2&&resumed.resume_case==='member_login'&&resumed.resume_at==='case_start'&&carriedLanding.status==='PASS_CARRIED'&&carriedLanding.original_status==='PASS'&&/^[a-f0-9]{64}$/.test(carriedLanding.original_case_sha256??'')&&Object.keys(resumed.cases).sort().join(',')==='landing_menu_keyboard,private_gate')),'Exact carried gate and operational review entry required');
  const payload=(kind,buffer,mime)=>({name:mark+'-'+name+'-'+kind,mimeType:mime,buffer});
  if(!resumeSkip)await h.scenario('private_gate',30000,8,async()=>{
   const r=await page.goto(ORIGIN+'/__isp_review');h.check(r?.status()===200,'Private review form renders');await page.getByLabel('Review access code',{exact:true}).fill(h.runtime.ISP_STAGING_KEY);
   await h.submit('review_access',page,page.getByRole('button',{name:'Open private review',exact:true}));await page.waitForURL(ORIGIN+'/');await page.locator('.welcome-hero').waitFor();
   const gate=(await context.cookies(ORIGIN)).find(c=>c.name==='__Host-isp_acceptance');h.check(gate?.secure&&gate.httpOnly&&gate.sameSite==='Strict'&&!gate.value.includes(h.runtime.ISP_STAGING_KEY)&&gate.expires*1000<=Date.parse(h.runtime.ISP_STAGING_EXPIRES_AT)+1000,'Rendered secure fixed-expiry review cookie accepted');h.gate=gate;
  });
- await h.scenario('landing_menu_keyboard',30000,5,async()=>{
+ if(!resumeLogin)await h.scenario('landing_menu_keyboard',30000,5,async()=>{
   if(!resumeSkip){
   await h.evaluate(page,()=>document.fonts.ready);h.check(await page.locator('img[alt="Official ISP crest"]').count()===1,'Official crest rendered');
   const menu=page.getByLabel('Explore ISP menu',{exact:true});await menu.tap();await page.getByRole('navigation',{name:'Explore ISP',exact:true}).waitFor();const box=await menu.boundingBox();h.check(box&&box.width>=44&&box.height>=44&&box.x>h.viewport.width/2,'Top-right menu provides a44px touch target');

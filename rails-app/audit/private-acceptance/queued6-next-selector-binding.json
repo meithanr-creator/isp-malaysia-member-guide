@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "kind": "exact_case_selection_delta_over_frozen_offline_selector_proof",
+  "matrix_sha256": "973b4520fc3aca4f58ba7c9dab669c08087c30c72243e539a9f1cf08a1197e38",
+  "proof_sha256": "c75ed37f68eba763f1808cce1bcb01b9da19e53b77e17fd8a5474e2d7825d295",
+  "backend_acceptance_proved": false,
+  "scope": "Only case selection and carried-case journal initialization change; every selector, helper, timing contract and business action remains byte-identical to the tested source.",
+  "files": {
+    "script/virtual-mobile-journeys.mjs": {
+      "tested_source_copy": "D:/Projects/isp-rails-tools/isp-mobile-qa/queued6-next-carry-tested-source/virtual-mobile-journeys.mjs",
+      "tested_sha256": "2c99887be0a80b9479c0992d909a95502b26c531be0528d7d8ecadcbe875ba64",
+      "current_sha256": "e0b66d8a5d30f0ad012560b10a4798a84ed8745862f9583ac3b65621a384e4d1",
+      "patches": [
+        {
+          "before": "const resumed=h.continuation?.profiles?.[name],carriedGate=resumed?.cases?.private_gate,resumeSkip=!!carriedGate;",
+          "after": "const resumed=h.continuation?.profiles?.[name],carriedGate=resumed?.cases?.private_gate,carriedLanding=resumed?.cases?.landing_menu_keyboard,resumeLogin=!!carriedLanding,resumeSkip=!!carriedGate;if(resumeLogin)ensure(resumeSkip,'Carried landing requires the exact carried private gate');"
+        },
+        {
+          "before": "h.continuation.version===1&&name==='iphone-webkit'&&carriedGate.status==='PASS_CARRIED'&&carriedGate.original_status==='PASS'&&/^[a-f0-9]{64}$/.test(carriedGate.original_case_sha256??'')&&resumed.resume_case==='landing_menu_keyboard'&&resumed.resume_at==='skip_link_focus'&&resumed.failed_case_carried===false&&h.gate",
+          "after": "name==='iphone-webkit'&&carriedGate.status==='PASS_CARRIED'&&carriedGate.original_status==='PASS'&&/^[a-f0-9]{64}$/.test(carriedGate.original_case_sha256??'')&&resumed.failed_case_carried===false&&h.gate&&((!resumeLogin&&h.continuation.version===1&&resumed.resume_case==='landing_menu_keyboard'&&resumed.resume_at==='skip_link_focus')||(resumeLogin&&h.continuation.version===2&&resumed.resume_case==='member_login'&&resumed.resume_at==='case_start'&&carriedLanding.status==='PASS_CARRIED'&&carriedLanding.original_status==='PASS'&&/^[a-f0-9]{64}$/.test(carriedLanding.original_case_sha256??'')&&Object.keys(resumed.cases).sort().join(',')==='landing_menu_keyboard,private_gate'))"
+        },
+        {
+          "before": "await h.scenario('landing_menu_keyboard',30000,5,async()=>{",
+          "after": "if(!resumeLogin)await h.scenario('landing_menu_keyboard',30000,5,async()=>{"
+        }
+      ]
+    },
+    "script/virtual-mobile-acceptance.mjs": {
+      "tested_source_copy": "D:/Projects/isp-rails-tools/isp-mobile-qa/queued6-next-carry-tested-source/virtual-mobile-acceptance.mjs",
+      "tested_sha256": "bbca729cf418b8fb533be7a50e4bacec48981fda8c1ed72dcd564f6366e4091b",
+      "current_sha256": "a686b350e8b58687c1522e2b67b2cf34f55cb2c025acb0be87bf27072f4106bf",
+      "patches": [
+        {
+          "before": "if(carriedGate){result.cases.private_gate={...carriedGate,status:'PASS',evidence_origin:'carried',source_packet_sha256:continuation.source_packet_sha256,source_mobile_sha256:continuation.source_mobile_sha256};result.carried_checks=continuation.profiles[name].successful_check_labels;}",
+          "after": "if(carriedGate){for(const [id,carried]of Object.entries(continuation.profiles[name].cases))result.cases[id]={...carried,status:'PASS',evidence_origin:'carried',source_packet_sha256:carried.source_packet_sha256??continuation.source_packet_sha256,source_mobile_sha256:carried.source_mobile_sha256??continuation.source_mobile_sha256};result.carried_checks=continuation.profiles[name].successful_check_labels;}"
+        }
+      ]
+    }
+  }
+}
