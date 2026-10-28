@@ -1,0 +1,64 @@
+{
+  "projectId": "isp-planter-app",
+  "region": "asia-southeast1",
+  "status": "SOURCE_GO_BUILD_ADMITTED_RUNTIME_CONDITIONAL",
+  "allowanceUsd": 0.4,
+  "build": {
+    "maximumBuilds": 1,
+    "machineType": "e2-standard-2",
+    "timeoutSeconds": 1200,
+    "ownedCancellationReserveSeconds": 120,
+    "immutableImageRequired": true,
+    "imageBytesMaximum": 2147483648,
+    "sourceBytesMaximum": 10485760,
+    "secretsExcluded": true,
+    "dockerBuildKit": true
+  },
+  "runtime": {
+    "backupExecutions": 1,
+    "backupSeconds": 1800,
+    "restoreExecutions": 1,
+    "restoreSeconds": 600,
+    "cpu": 1,
+    "memoryMiB": 256,
+    "tasks": 1,
+    "parallelism": 1,
+    "maxRetries": 0,
+    "schedulesEnabled": false,
+    "identity": "isp-backup@isp-planter-app.iam.gserviceaccount.com",
+    "secret": "ISP_DRIVE_BACKUP:1",
+    "privateFolderId": "1gjZnAk2RxfTGL40UINhz-lZ6sRt2g2Rh"
+  },
+  "proof": {
+    "syntheticOnly": true,
+    "documentInventoryMaximum": 2000,
+    "authAccountsMaximum": 25,
+    "sourceObjectsMaximum": 200,
+    "sourceObjectTotalBytesMaximum": 67108864,
+    "exportPlusOwnedProbeBytesMaximum": 67108864,
+    "exportFilesMaximum": 92,
+    "databaseIdMustStartWith": "isp-restore-proof-",
+    "defaultDatabaseImportForbidden": true,
+    "authRestoreClaimed": false,
+    "temporaryImportIamRemovedAfterProof": true
+  },
+  "cost": {
+    "buildAndCancellationUsd": 0.132,
+    "backupAndRestoreComputeUsd": 0.05328,
+    "artifactStorageExportImportTransferOperationsReserveUsd": 0.21472,
+    "totalUsd": 0.4,
+    "includedInExistingTenDollarLedger": true,
+    "freeTierCreditsAssumed": false,
+    "paidInvoiceClaimed": false,
+    "trialRetentionDaysMaximum": 7,
+    "softDeleteAdditionalDaysMaximum": 7
+  },
+  "safeguards": [
+    "Private Drive grant/folder/owner, secret accessor, runtime identity and exact immutable image readback before execution.",
+    "Small actual inventory required before backup; refuse runtime if admission bounds fail.",
+    "No automatic retry or schedule; preserve ambiguous export/import intent and originals.",
+    "Read actual complete Drive manifest, all file hashes/counts/bytes before one isolated import.",
+    "Only explicitly owned synthetic probe/test database/prefix may be cleaned; real ISP/owner records and other projects untouched.",
+    "Current exports/ lifecycle is ineffective for firestore/ payloads; no age-only active-export cleanup. Bound trial retention through reviewed owned-artifact cleanup after verified Drive completion or explicit operations admission."
+  ]
+}

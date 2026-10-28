@@ -1,0 +1,5 @@
+title: ISP backup bucket metadata inspector
+description: Read bucket privacy and configuration for the two ISP backup source and staging buckets; grants no object access.
+stage: GA
+includedPermissions:
+  - storage.buckets.get
