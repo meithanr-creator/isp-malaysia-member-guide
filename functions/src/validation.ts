@@ -127,7 +127,7 @@ export function uploadLimit(type: Kind, role: string, mime: string): number {
   return fail('Unsupported attachment type.');
 }
 export const CSV_HEADERS = ['name','email','member_reference','status'];
-export interface RegistryRow { rowNumber:number; name:string; email:string; memberReference:string; status:string; action:'add'|'update'|'unchanged'|'invalid'; errors:string[]; accessSuspended?:boolean }
+export interface RegistryRow { rowNumber:number; name:string; email:string; memberReference:string; status:string; action:'add'|'update'|'unchanged'|'invalid'; errors:string[]; accessSuspended?:boolean; restoreSuspension?:boolean }
 export interface RegistryEntry {name:string;email:string;memberReference:string;status:string;accessSuspended:boolean}
 export function parseRegistryCsv(raw: unknown): RegistryRow[] {
   if (typeof raw !== 'string' || Buffer.byteLength(raw, 'utf8') > 2 * 1024 * 1024) fail('Choose a UTF-8 CSV no larger than 2 MiB.');
@@ -163,7 +163,7 @@ export function parseRegistryCsv(raw: unknown): RegistryRow[] {
     return {rowNumber:index+2,name:nameValue!,email:emailValue!.toLowerCase(),memberReference:referenceValue!,status:statusValue!,action:'invalid',errors:[]};
   });
 }
-export function classifyRegistry(rows: RegistryRow[], existing: RegistryEntry[], accounts: Map<string, {uid:string;admin:boolean;membershipReference:string|null}>) {
+export function classifyRegistry(rows: RegistryRow[], existing: RegistryEntry[], accounts: Map<string, {uid:string;admin:boolean;membershipReference:string|null;unlinkedAuthOnly?:boolean;identityConflict?:boolean}>, restoreSuspended=false) {
   const byEmail = new Map(existing.map(row => [row.email,row])), byReference = new Map(existing.map(row => [row.memberReference,row]));
   const emails = new Map<string,number>(), references = new Map<string,number>();
   for (const row of rows) { emails.set(row.email,(emails.get(row.email)??0)+1); references.set(row.memberReference,(references.get(row.memberReference)??0)+1); }
@@ -182,12 +182,15 @@ export function classifyRegistry(rows: RegistryRow[], existing: RegistryEntry[],
     if (referenceEntry && referenceEntry.email !== row.email) errors.push('Membership reference already belongs to a different email.');
     const account = accounts.get(row.email);
     if (account?.admin) errors.push('Administrator identities cannot be imported as members.');
-    else if (account && account.membershipReference !== row.memberReference) errors.push('Email already belongs to an account not linked to this membership.');
+    else if (account && (account.identityConflict===true || account.membershipReference !== row.memberReference && account.unlinkedAuthOnly!==true)) errors.push('Email or reference already belongs to a conflicting or unlinked account.');
     row.errors = errors;
-    row.action = errors.length ? 'invalid' : !referenceEntry ? 'add' : ['name','email','memberReference','status'].some(key => row[key as keyof RegistryRow] !== referenceEntry[key as keyof RegistryEntry]) ? 'update' : 'unchanged';
-    row.accessSuspended = referenceEntry?.accessSuspended === true || row.status === 'ineligible';
+    row.restoreSuspension = restoreSuspended && !errors.length && row.status === 'eligible' && referenceEntry?.accessSuspended === true;
+    row.action = errors.length ? 'invalid' : !referenceEntry ? 'add' : row.restoreSuspension || ['name','email','memberReference','status'].some(key => row[key as keyof RegistryRow] !== referenceEntry[key as keyof RegistryEntry]) ? 'update' : 'unchanged';
+    row.accessSuspended = !row.restoreSuspension && (referenceEntry?.accessSuspended === true || row.status === 'ineligible');
   }
   const errors = rows.flatMap(row => row.errors.map(error => `Row ${row.rowNumber}: ${error}`));
-  return {errors,counts:{total:rows.length,add:rows.filter(row=>row.action==='add').length,update:rows.filter(row=>row.action==='update').length,unchanged:rows.filter(row=>row.action==='unchanged').length,invalid:rows.filter(row=>row.action==='invalid').length,errors:errors.length,omitted:existing.filter(row=>!references.has(row.memberReference)).length,duplicates}};
+  return {errors,counts:{total:rows.length,add:rows.filter(row=>row.action==='add').length,update:rows.filter(row=>row.action==='update').length,unchanged:rows.filter(row=>row.action==='unchanged').length,invalid:rows.filter(row=>row.action==='invalid').length,errors:errors.length,omitted:existing.filter(row=>!references.has(row.memberReference)).length,duplicates,restoredSuspensions:rows.filter(row=>row.restoreSuspension).length}};
 }
+
+
 

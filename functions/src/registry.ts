@@ -5,34 +5,62 @@ import { admin, db, auth, bucket, now, expiry, iso, conflict, type Request } fro
 import { obj, text, id, integer, email, sha, parseRegistryCsv, classifyRegistry, type RegistryEntry, type RegistryRow } from './validation.js';
 
 const CHUNK=100;
-interface AccountState {accounts:Map<string,{uid:string;admin:boolean;membershipReference:string|null}>; fingerprint:string;memberRefs:DocumentReference[];memberStamps:Record<string,string>}
-interface PreviewPayload {rows:RegistryRow[];accountFingerprint:string;memberStamps:Record<string,string>}
+interface AccountFact {uid:string;admin:boolean;membershipReference:string|null;unlinkedAuthOnly?:boolean;identityConflict?:boolean}
+interface AccountState {accounts:Map<string,AccountFact>;fingerprint:string;memberRefs:DocumentReference[];memberStamps:Record<string,string>;bindingRefs:DocumentReference[];bindingStamps:Record<string,string>}
+interface PreviewPayload {rows:RegistryRow[];restoreSuspended:boolean;accountFingerprint:string;memberStamps:Record<string,string>;bindingStamps:Record<string,string>}
 function memberStamp(data:Record<string,any>|undefined) {return sha(JSON.stringify(data?{email:data.email??null,status:data.status??null,membershipReference:data.membershipReference??null,registryKey:data.registryKey??null}:null));}
+function bindingStamp(data:Record<string,any>|undefined) {return sha(JSON.stringify(data?{uid:data.uid??null,email:data.email??null,memberReference:data.memberReference??null}:null));}
 async function accountState(rows:RegistryRow[]):Promise<AccountState> {
   const addresses=[...new Set(rows.map(row=>row.email).filter(value=>{try{return email(value)===value;}catch{return false;}}))].sort();
-  const accounts:AccountState['accounts']=new Map(), users:Record<string,unknown>[] = [], memberRefs:DocumentReference[]=[], memberStamps:Record<string,string>={};
-  const memberByEmail=new Map<string,Record<string,any>>();
-  for(let offset=0;offset<addresses.length;offset+=30) {
-    const snapshot=await db.collection('members').where('email','in',addresses.slice(offset,offset+30)).get();
-    for(const row of snapshot.docs) {
-      const data=row.data();
-      if(memberByEmail.has(data.email)) throw new HttpsError('failed-precondition','Duplicate account email records must be corrected before import.');
-      memberByEmail.set(data.email,{uid:row.id,...data});memberRefs.push(row.ref);memberStamps[row.id]=memberStamp(data);
+  const references=[...new Set(rows.map(row=>row.memberReference).filter(value=>!!value && value.length<=80 && !/[\u0000-\u001f\u007f]/u.test(value)))].sort();
+  const accounts:AccountState['accounts']=new Map(),members=new Map<string,{ref:DocumentReference;data:Record<string,any>|undefined}>(),bindings=new Map<string,{ref:DocumentReference;data:Record<string,any>|undefined}>();
+  const byEmail=new Map<string,{uid:string;data:Record<string,any>}[]>(),byReference=new Map<string,{uid:string;data:Record<string,any>}[]>();
+  async function findProfiles(field:'email'|'membershipReference',values:string[],index:Map<string,{uid:string;data:Record<string,any>}[]>) {
+    for(let offset=0;offset<values.length;offset+=30) {
+      const snapshot=await db.collection('members').where(field,'in',values.slice(offset,offset+30)).limit(61).get();
+      if(snapshot.size>60)throw new HttpsError('failed-precondition','Conflicting account records must be reconciled before import.');
+      for(const row of snapshot.docs){const data=row.data(),value=data[field];members.set(row.id,{ref:row.ref,data});index.set(value,[...(index.get(value)??[]),{uid:row.id,data}]);}
     }
   }
-  for(let offset=0;offset<addresses.length;offset+=100) {
-    const result=await auth.getUsers(addresses.slice(offset,offset+100).map(address=>({email:address})));
-    const staff=result.users.length?await db.getAll(...result.users.map(user=>db.doc(`staff/${user.uid}`))):[];
-    for(let index=0;index<result.users.length;index++) {
-      const user=result.users[index]!, address=user.email?.toLowerCase();if(!address)continue;
-      const member=memberByEmail.get(address), isAdmin=user.customClaims?.admin===true || staff[index]?.exists===true;
-      accounts.set(address,{uid:user.uid,admin:isAdmin,membershipReference:member?.uid===user.uid?member.membershipReference??null:null});
-      users.push({uid:user.uid,email:address,disabled:user.disabled,admin:isAdmin,membershipReference:member?.uid===user.uid?member.membershipReference??null:null});
-    }
+  await Promise.all([findProfiles('email',addresses,byEmail),findProfiles('membershipReference',references,byReference)]);
+  for(const matches of byEmail.values())if(matches.length>1)throw new HttpsError('failed-precondition','Duplicate account email records must be corrected before import.');
+  const users=[];
+  for(let offset=0;offset<addresses.length;offset+=100)users.push(...(await auth.getUsers(addresses.slice(offset,offset+100).map(address=>({email:address})))).users);
+  const profilesByUid=new Map<string,Record<string,any>|undefined>(),staffIds=new Set<string>();
+  for(let offset=0;offset<users.length;offset+=100) {
+    const batch=users.slice(offset,offset+100);
+    const [profiles,staff]=await Promise.all([
+      db.getAll(...batch.map(user=>db.doc(`members/${user.uid}`))),db.getAll(...batch.map(user=>db.doc(`staff/${user.uid}`))),
+    ]);
+    for(const profile of profiles){const data=profile.data();profilesByUid.set(profile.id,data);members.set(profile.id,{ref:profile.ref,data});}
+    for(const person of staff)if(person.exists)staffIds.add(person.id);
   }
-  // A Firestore account without an Auth identity is also a pairing conflict, not a new account to activate.
-  for(const [address,member] of memberByEmail) if(!accounts.has(address)) accounts.set(address,{uid:member.uid,admin:false,membershipReference:member.membershipReference??null});
-  return {accounts,fingerprint:sha(JSON.stringify({users:users.sort((a,b)=>String(a.uid).localeCompare(String(b.uid))),memberStamps:Object.fromEntries(Object.entries(memberStamps).sort())})),memberRefs,memberStamps};
+  for(let offset=0;offset<references.length;offset+=100) {
+    const snapshots=await db.getAll(...references.slice(offset,offset+100).map(reference=>db.doc(`registryBindings/${sha(reference)}`)));
+    for(const binding of snapshots)bindings.set(binding.id,{ref:binding.ref,data:binding.data()});
+  }
+  const proposed=new Map(rows.map(row=>[row.email,row.memberReference])),userFacts:Record<string,unknown>[]=[];
+  for(const user of users) {
+    const address=user.email?.trim().toLowerCase();if(!address)continue;
+    const reference=proposed.get(address)??'',profile=profilesByUid.get(user.uid),binding=bindings.get(sha(reference))?.data;
+    const sameEmail=byEmail.get(address)??[],sameReference=byReference.get(reference)??[];
+    const isAdmin=user.customClaims?.admin===true || staffIds.has(user.uid);
+    const bindingConflict=!!binding && (binding.uid!==user.uid || binding.email!==address || binding.memberReference!==reference);
+    const legacyConflict=[...sameEmail,...sameReference].some(candidate=>candidate.uid!==user.uid);
+    const passwordIdentity=user.providerData.some(provider=>provider.providerId==='password');
+    const unlinkedAuthOnly=!isAdmin && passwordIdentity && !profile && !sameEmail.length && !sameReference.length && !bindingConflict;
+    const identityConflict=bindingConflict || legacyConflict || !!profile && profile.email!==address;
+    accounts.set(address,{uid:user.uid,admin:isAdmin,membershipReference:profile?.email===address?profile.membershipReference??null:null,unlinkedAuthOnly,identityConflict});
+    userFacts.push({uid:user.uid,email:address,emailVerified:user.emailVerified,disabled:user.disabled,admin:isAdmin,providers:user.providerData.map(provider=>provider.providerId).sort(),unlinkedAuthOnly,identityConflict});
+  }
+  // An orphaned/different-UID profile is not a genuine unlinked signup and cannot gain eligibility through this exception.
+  for(const row of rows)if(!accounts.has(row.email)) {
+    const profiles=[...(byEmail.get(row.email)??[]),...(byReference.get(row.memberReference)??[])],binding=bindings.get(sha(row.memberReference))?.data;
+    if(profiles.length || binding && (binding.email!==row.email || binding.memberReference!==row.memberReference))accounts.set(row.email,{uid:profiles[0]?.uid??String(binding?.uid??''),admin:false,membershipReference:null,unlinkedAuthOnly:false,identityConflict:true});
+  }
+  const memberStamps=Object.fromEntries([...members].sort(([a],[b])=>a.localeCompare(b)).map(([uid,row])=>[uid,memberStamp(row.data)]));
+  const bindingStamps=Object.fromEntries([...bindings].sort(([a],[b])=>a.localeCompare(b)).map(([key,row])=>[key,bindingStamp(row.data)]));
+  return {accounts,fingerprint:sha(JSON.stringify({users:userFacts.sort((a,b)=>String(a.uid).localeCompare(String(b.uid))),memberStamps,bindingStamps})),memberRefs:[...members.values()].map(row=>row.ref),memberStamps,bindingRefs:[...bindings.values()].map(row=>row.ref),bindingStamps};
 }
 async function registryEntries(version:string|null):Promise<RegistryEntry[]> {
   if(!version)return [];
@@ -49,14 +77,18 @@ async function registryEntries(version:string|null):Promise<RegistryEntry[]> {
 }
 function summary(previewId:string, data:Record<string,any>, payload:PreviewPayload, offset=0) {
   const rows=payload.rows.slice(offset,offset+25);
-  return {previewId,digest:data.digest,registryVersion:data.registryVersion,expiresAt:iso(data.expiresAt),state:data.state,...(['processing','confirmed'].includes(data.state)?{progress:result(previewId,data)}:{}),counts:data.counts,errors:payload.rows.flatMap(row=>row.errors.map(error=>`Row ${row.rowNumber}: ${error}`)).slice(0,100),rows:rows.map(({accessSuspended:_,...row})=>row),nextCursor:offset+rows.length<payload.rows.length?offset+rows.length:null};
+  return {previewId,digest:data.digest,registryVersion:data.registryVersion,restoreSuspended:data.restoreSuspended===true,expiresAt:iso(data.expiresAt),state:data.state,...(['processing','confirmed'].includes(data.state)?{progress:result(previewId,data)}:{}),counts:data.counts,errors:payload.rows.flatMap(row=>row.errors.map(error=>`Row ${row.rowNumber}: ${error}`)).slice(0,100),rows:rows.map(({accessSuspended:_,...row})=>row),nextCursor:offset+rows.length<payload.rows.length?offset+rows.length:null};
+}
+export function registryPreviewDigest(rows:RegistryRow[],restoreSuspended:boolean):string {
+  return sha(JSON.stringify({restoreSuspended,rows:rows.map(({errors:_,accessSuspended:__,...row})=>row)}));
 }
 async function readPayload(metadata:Record<string,any>):Promise<PreviewPayload> {
   const file=bucket().file(metadata.storagePath,{generation:metadata.storageGeneration});
   const [bytes]=await file.download();
   if(bytes.length>12*1024*1024 || sha(bytes.toString('utf8'))!==metadata.payloadDigest) throw new HttpsError('failed-precondition','The private preview did not match its stored digest. Upload the CSV again.');
   const payload=JSON.parse(bytes.toString('utf8')) as PreviewPayload;
-  if(!Array.isArray(payload.rows) || payload.rows.length>5000) throw new HttpsError('failed-precondition','The private preview is invalid.');
+  if(!Array.isArray(payload.rows) || payload.rows.length>5000 || !payload.memberStamps || !payload.bindingStamps || typeof payload.restoreSuspended!=='boolean' || payload.restoreSuspended!==metadata.restoreSuspended
+    || registryPreviewDigest(payload.rows,payload.restoreSuspended)!==metadata.digest) throw new HttpsError('failed-precondition','The private preview intent did not match. Create a fresh preview.');
   return payload;
 }
 function result(previewId:string,data:Record<string,any>) {
@@ -67,14 +99,16 @@ function verifyConfirmation(metadata:Record<string,any>, actorUid:string,digest:
   if(metadata.digest!==digest || metadata.registryVersion!==version) throw new HttpsError('failed-precondition','Confirmation did not match the exact reviewed preview.');
 }
 export async function previewRegistryImportHandler(request:Request) {
-  const actorUid=await admin(request), source=obj(request.data,['csv']), rows=parseRegistryCsv(source.csv), stateRef=db.doc('registryState/current'), before=await stateRef.get();
+  const actorUid=await admin(request), source=obj(request.data,['csv','restoreSuspended']);
+  if(source.restoreSuspended!==undefined && typeof source.restoreSuspended!=='boolean')throw new HttpsError('invalid-argument','restoreSuspended must be an explicit boolean.');
+  const restoreSuspended=source.restoreSuspended===true, rows=parseRegistryCsv(source.csv), stateRef=db.doc('registryState/current'), before=await stateRef.get();
   const baseVersion=typeof before.get('activeVersion')==='string'?before.get('activeVersion') as string:null, registryVersion=before.get('revision')??0;
-  const [existing,accounts]=await Promise.all([registryEntries(baseVersion),accountState(rows)]), classification=classifyRegistry(rows,existing,accounts.accounts);
-  const digest=sha(JSON.stringify(rows.map(({errors:_,accessSuspended:__,...row})=>row))), previewId=randomBytes(16).toString('hex'), expiresAt=expiry(15);
-  const payload:PreviewPayload={rows,accountFingerprint:accounts.fingerprint,memberStamps:accounts.memberStamps}, serialized=JSON.stringify(payload), storagePath=`registryPreviews/${previewId}/preview.json`, file=bucket().file(storagePath);
+  const [existing,accounts]=await Promise.all([registryEntries(baseVersion),accountState(rows)]), classification=classifyRegistry(rows,existing,accounts.accounts,restoreSuspended);
+  const digest=registryPreviewDigest(rows,restoreSuspended), previewId=randomBytes(16).toString('hex'), expiresAt=expiry(15);
+  const payload:PreviewPayload={rows,restoreSuspended,accountFingerprint:accounts.fingerprint,memberStamps:accounts.memberStamps,bindingStamps:accounts.bindingStamps}, serialized=JSON.stringify(payload), storagePath=`registryPreviews/${previewId}/preview.json`, file=bucket().file(storagePath);
   await file.save(serialized,{resumable:false,contentType:'application/json',preconditionOpts:{ifGenerationMatch:0},metadata:{cacheControl:'private, no-store'}});
   const [stored]=await file.getMetadata();
-  const data={actorUid,state:classification.errors.length?'invalid':'ready',counts:classification.counts,digest,registryVersion,baseVersion,baseCount:existing.length,expiresAt,createdAt:now(),storagePath,storageGeneration:stored.generation,payloadDigest:sha(serialized)};
+  const data={actorUid,restoreSuspended,state:classification.errors.length?'invalid':'ready',counts:classification.counts,digest,registryVersion,baseVersion,baseCount:existing.length,expiresAt,createdAt:now(),storagePath,storageGeneration:stored.generation,payloadDigest:sha(serialized)};
   try {
     await db.runTransaction(async transaction=>{
       await admin(request,transaction);
@@ -116,7 +150,7 @@ export async function confirmRegistryImportHandler(request:Request) {
       if(data.state!=='ready' || data.expiresAt.toMillis()<=Date.now())throw new HttpsError('failed-precondition','This preview expired or is not ready.');
       if((state!.get('revision')??0)!==registryVersion || (state!.get('activeVersion')??null)!==data.baseVersion)conflict();
       transaction.update(ref,{state:'processing',targetVersion,phase:data.baseVersion?'copy':'apply',cursor:null,copied:0,applied:0,step:0,startedAt:now(),resumeExpiresAt:expiry(24*60)});
-      transaction.create(db.doc(`memberRegistryVersions/${targetVersion}`),{state:'staging',actorUid,previewId,baseVersion:data.baseVersion,baseRegistryVersion:registryVersion,expectedCount:data.baseCount+data.counts.add,createdAt:now()});
+      transaction.create(db.doc(`memberRegistryVersions/${targetVersion}`),{state:'staging',actorUid,previewId,baseVersion:data.baseVersion,baseRegistryVersion:registryVersion,restoreSuspended:data.restoreSuspended,restoredSuspensions:data.counts.restoredSuspensions,expectedCount:data.baseCount+data.counts.add,createdAt:now()});
     });
     snapshot=await ref.get();metadata=snapshot.data()!;
   }
@@ -155,6 +189,10 @@ export async function confirmRegistryImportHandler(request:Request) {
         const members=await transaction.getAll(...accounts.memberRefs.slice(offset,offset+100));
         for(const account of members)if(memberStamp(account.data())!==payload.memberStamps[account.id])throw new HttpsError('failed-precondition','Account pairing changed while staging. Nothing from this staged version is active.');
       }
+      for(let offset=0;offset<accounts.bindingRefs.length;offset+=100) {
+        const bindings=await transaction.getAll(...accounts.bindingRefs.slice(offset,offset+100));
+        for(const binding of bindings)if(bindingStamp(binding.data())!==payload.bindingStamps[binding.id])throw new HttpsError('failed-precondition','A membership binding changed while staging. Nothing from this staged version is active.');
+      }
       const confirmedAt=now();
       transaction.set(stateRef,{activeVersion:targetVersion,revision:registryVersion+1,updatedAt:confirmedAt,updatedBy:actorUid});
       transaction.update(versionRef,{state:'active',entryCount:data.baseCount+data.counts.add,activatedAt:confirmedAt});
@@ -180,4 +218,7 @@ export async function listRegistryHandler(request:Request) {
   let query=db.collection(`memberRegistryVersions/${id(activeVersion)}/entries`).orderBy(FieldPath.documentId()).limit(25);if(after)query=query.startAfter(after);
   const page=await query.get();return {items:page.docs.map(row=>({id:row.id,...row.data()})),nextCursor:page.size===25?page.docs.at(-1)!.id:null,activeVersion,revision:state.get('revision')};
 }
+
+
+
 

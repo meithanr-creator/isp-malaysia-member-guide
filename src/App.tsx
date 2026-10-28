@@ -1,4 +1,5 @@
 import { flushSync } from 'react-dom';
+import ActivateAccount from './ActivateAccount';
 import { ConnectedDiscover, ConnectedInterests, ContentRoute, HomeEvents, HomePublications } from './ContentPages';
 import { useCallback, useEffect, useRef, useState, type AnchorHTMLAttributes, type FormEvent, type ReactNode } from 'react';
 import {
@@ -79,6 +80,7 @@ export default function App() {
   let content: ReactNode;
   if (path === '/') content = <ConnectedDiscover session={session}>{connectedSlides => <Home session={session} connectedSlides={connectedSlides} />}</ConnectedDiscover>;
   else if (path === '/about') content = <About />;
+  else if (path === '/activate-account') content = <ActivateAccount key={session.identity.epoch + ':' + (session.user?.uid ?? '')} session={session} refresh={receiveSession} navigate={go} />;
   else if (path === '/login') content = session.user ? <Access key={session.identity.epoch + ':' + (session.user?.uid ?? '')} session={session} refresh={receiveSession} /> : <Login session={session} />;
   else if (path === '/admin/authenticator' && session.user?.emailVerified && (session.status === 'loading' || (session.status === 'ready' && session.adminClaim && session.staffActive))) {
     content = <TotpEnrollment key={session.identity.epoch + ':' + session.user.uid} clearPrivateView={clearPrivateView} checking={session.status !== 'ready'} />;
@@ -108,7 +110,7 @@ export default function App() {
               <Link href="/"><Icon name="house-door-fill" />Home</Link>
               <Link href="/events"><Icon name="calendar3" />Events & activities</Link>
               {!session.adminClaim && <>
-                <Link href="/member/membership"><Icon name="people-fill" />Membership</Link>
+                <Link href="/member/membership"><Icon name="people-fill" />Membership</Link><Link href="/activate-account"><Icon name="people-fill" />Activate account</Link>
                 <Link href="/member/publications"><Icon name="journal-bookmark" /><span>Publications<small>Members only</small></span></Link>
                 <Link href="/member/consultation"><Icon name="bar-chart-line" /><span>Consultation<small>Members only</small></span></Link>
               </>}
@@ -169,7 +171,7 @@ function Login({ session }: { session: Session }) {
       </form>
       {mfa && <button type="button" className="text-action full" disabled={busy} onClick={() => { cancelMfa(); setMfa(false); setError(''); }}>Cancel sign-in</button>}
     </section>
-    {!mfa && <p className="form-hint"><Link href="/password-recovery">Forgot your password?</Link></p>}
+    {!mfa && <p className="form-hint"><Link href="/password-recovery">Forgot your password?</Link></p>}{!mfa && <p className="form-hint"><Link href="/activate-account">Create or activate your account</Link></p>}
   </section>;
 }
 
@@ -186,7 +188,7 @@ function Access({ session, refresh, admin = false }: { session: Session; refresh
     : needsAdminSetup ? 'Set up your authenticator, then sign in again with its current code.'
     : admin ? 'Administrator access is not available for this account.'
     : session.member?.status === 'suspended' ? 'Your membership access is unavailable. Please contact ISP.'
-    : 'Your membership has not been approved yet. Please contact ISP if you need help.';
+    : 'Connect your verified account to your ISP membership to continue.';
   async function verifyEmail() {
     setChecking(true); setError('');
     try { await requestEmailVerification(); setVerificationSent(true); }
@@ -201,7 +203,7 @@ function Access({ session, refresh, admin = false }: { session: Session; refresh
   return <section className="page membership-page"><span className="eyebrow">Your member space</span><h1>Your connection to ISP.</h1><p className="intro">{message}</p>{error && <div className="validation-errors" role="alert">{error}</div>}    {verificationSent && <p className="form-hint" role="status">Verification email sent. Follow its link, then check access again.</p>}
     <div className="stack">
       {!session.user.emailVerified && <button type="button" className="primary full" disabled={checking || verificationSent} onClick={() => void verifyEmail()}>{verificationSent ? 'Verification email sent' : 'Send verification email'}</button>}
-      {needsAdminSetup && <Link href="/admin/authenticator" className="primary full">Set up authenticator<Icon name="chevron-right" /></Link>}
+      {needsAdminSetup && <Link href="/admin/authenticator" className="primary full">Set up authenticator<Icon name="chevron-right" /></Link>}{!session.adminClaim && !session.staffActive && session.member?.status !== 'suspended' && <Link href="/activate-account" className="primary full">Activate your membership<Icon name="chevron-right" /></Link>}
       <button type="button" className="secondary full" onClick={() => void check()} disabled={checking}>{checking ? 'Checking…' : 'Check access again'}</button><Link href="/about" className="link-button">Contact ISP<Icon name="chevron-right" /></Link></div></section>;
 }
 
@@ -216,7 +218,7 @@ function Dashboard({ member, membership, interests }: { member: Member; membersh
         ...(member.membershipReference ? [['Membership reference', member.membershipReference]] : []),
         ['Email', member.email], ['Organisation', member.company], ['Branch', member.branch], ['Telephone', member.phone],
       ].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || 'Not added'}</dd></div>)}</dl>
-      <Link href="/member/profile" className="link-button">Edit your profile<Icon name="chevron-right" /></Link>
+      <Link href="/member/profile" className="link-button">Edit your profile<Icon name="chevron-right" /></Link><Link href="/activate-account" className="link-button">Activate or check your membership<Icon name="chevron-right" /></Link>
     </article>
     {!membership && interests}
     <div className="member-legacy"><h2>Keep your journey growing</h2><div className="stack">

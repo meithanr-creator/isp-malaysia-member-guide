@@ -2,6 +2,7 @@ import { setGlobalOptions } from 'firebase-functions/v2';
 import { onCall, onRequest } from 'firebase-functions/v2/https';
 import * as content from './content.js';
 import * as registry from './registry.js';
+import { activateMyMembershipHandler } from './enrollment.js';
 import { downloadContentFileHandler, DOWNLOAD_ORIGINS } from './download.js';
 
 setGlobalOptions({serviceAccount:'isp-functions@isp-planter-app.iam.gserviceaccount.com',region:'asia-southeast1',minInstances:0,maxInstances:2,concurrency:4,memory:'256MiB',timeoutSeconds:120});
@@ -26,4 +27,7 @@ export const listRegistry=onCall(registry.listRegistryHandler);
 export const downloadContentFile=onRequest({cors:DOWNLOAD_ORIGINS,concurrency:1},downloadContentFileHandler);
 
 
+
+
+export const activateMyMembership=onCall(activateMyMembershipHandler);
 

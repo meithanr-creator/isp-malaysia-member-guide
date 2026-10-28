@@ -171,8 +171,68 @@ export async function getInterest(eventId: string, session: Session): Promise<In
 }
 export function saveInterest(eventId: string, values: { name: string; email: string; company: string }, session: Session) { return call<Interest>('saveEventInterest', { eventId, ...values }, session, 'member'); }
 export function withdrawInterest(eventId: string, session: Session) { return call<{ withdrawn: true }>('withdrawEventInterest', { eventId }, session, 'member'); }
-export function previewRegistry(csv: string, session: Session) { return call<RegistryPreview>('previewRegistryImport', { csv }, session, 'admin'); }
+export function previewRegistry(csv: string, session: Session, restoreSuspended = false) { return call<RegistryPreview>('previewRegistryImport', { csv, restoreSuspended }, session, 'admin'); }
 export function getRegistryPreview(previewId: string, afterRow: number | null, session: Session) { return call<RegistryPreview>('getRegistryImportPreview', { previewId, ...(afterRow ? { afterRow } : {}) }, session, 'admin'); }
-export function confirmRegistry(preview: RegistryPreview, session: Session) { return call<RegistryProgress>('confirmRegistryImport', { previewId: preview.previewId, digest: preview.digest, registryVersion: preview.registryVersion }, session, 'admin'); }
+export function confirmRegistry(preview: RegistryPreview, session: Session) {
+  if (typeof preview.restoreSuspended !== 'boolean' || !Number.isSafeInteger(preview.counts.restoredSuspensions) || preview.counts.restoredSuspensions < 0 || preview.counts.restoredSuspensions > preview.counts.total || (!preview.restoreSuspended && (preview.counts.restoredSuspensions !== 0 || preview.rows.some(row => row.restoreSuspension === true)))) throw Error('The restoration preview could not be confirmed. Create a fresh preview.');
+  return call<RegistryProgress>('confirmRegistryImport', { previewId: preview.previewId, digest: preview.digest, registryVersion: preview.registryVersion }, session, 'admin');
+}
+
+
+export interface RegistryAdvanceOptions {
+  resume: boolean;
+  active: () => boolean;
+  pauseRequested: () => boolean;
+  onProgress: (value: RegistryProgress) => void;
+}
+let registryAdvanceRunning = false;
+const registryPhases = ['copy', 'apply', 'activate', 'complete'] as const;
+function registryReceipt(value: RegistryProgress, preview: RegistryPreview, previous: RegistryProgress | null): RegistryProgress {
+  const rank = registryPhases.indexOf(value?.phase), priorRank = previous ? registryPhases.indexOf(previous.phase) : -1;
+  if (!value || value.previewId !== preview.previewId || !['processing', 'confirmed'].includes(value.state) || rank < 0
+    || !Number.isSafeInteger(value.total) || value.total < preview.counts.total || !Number.isSafeInteger(value.processed) || value.processed < 0 || value.processed > value.total
+    || (previous && (value.total !== previous.total || value.processed < previous.processed || rank < priorRank || rank > priorRank + 1))
+    || (previous && value.processed === previous.processed && rank === priorRank)
+    || (value.state === 'confirmed' ? value.phase !== 'complete' || value.processed !== value.total || typeof value.activeVersion !== 'string' || !value.activeVersion : value.phase === 'complete')) {
+    throw Error('Import progress could not be confirmed. Resume to reload its private preview.');
+  }
+  return value;
+}
+export async function advanceRegistryImport(original: RegistryPreview, session: Session, options: RegistryAdvanceOptions): Promise<'confirmed' | 'paused' | 'stopped'> {
+  if (registryAdvanceRunning) throw Error('An import request is still finishing. Wait before resuming.');
+  registryAdvanceRunning = true;
+  const active = () => options.active() && sessionResultIsCurrent(session);
+  try {
+    check(session, 'admin');
+    if (!active()) return 'stopped';
+    let preview = original, previous: RegistryProgress | null = null;
+    if (options.resume) {
+      preview = await getRegistryPreview(original.previewId, null, session);
+      if (!active()) return 'stopped';
+      const counts = (value: RegistryPreview) => JSON.stringify(Object.entries(value.counts).sort(([a], [b]) => a.localeCompare(b)));
+      if (preview.previewId !== original.previewId || preview.digest !== original.digest || preview.registryVersion !== original.registryVersion || preview.restoreSuspended !== original.restoreSuspended || counts(preview) !== counts(original)) throw Error('This preview changed. Review a fresh preview before confirming.');
+    }
+    if (!['ready', 'processing', 'confirmed'].includes(preview.state)) throw Error('Correct this preview before confirming.');
+    if (preview.progress) {
+      previous = registryReceipt(preview.progress, preview, null);
+      options.onProgress(previous);
+      if (previous.state === 'confirmed') return 'confirmed';
+    } else if (preview.state !== 'ready') throw Error('Import progress is missing. Reload the private preview.');
+    let calls = 0, budget = previous ? Math.ceil(previous.total / 100) + 4 : 1;
+    while (active()) {
+      if (options.pauseRequested()) return 'paused';
+      if (calls >= budget) throw Error('Import reached its bounded request limit. Resume to reload its progress.');
+      const result = await confirmRegistry(preview, session);
+      calls++;
+      if (!active()) return 'stopped';
+      previous = registryReceipt(result, preview, previous);
+      budget = Math.ceil(previous.total / 100) + 4;
+      options.onProgress(previous);
+      if (previous.state === 'confirmed') return 'confirmed';
+      if (options.pauseRequested()) return 'paused';
+    }
+    return 'stopped';
+  } finally { registryAdvanceRunning = false; }
+}
 
 export function listRegistry(afterId: string | null, session: Session) { return call<ContentPage<RegistryEntry> & {activeVersion: string | null; revision: number}>('listRegistry', afterId ? {afterId} : {}, session, 'admin'); }

@@ -9,3 +9,11 @@ audit/private/
 *token*.json
 firebase-debug.log
 firebase-debug.*.log
+audit/*.log
+audit/billing-budget.json
+audit/drive-consent.json
+audit/first-admin-prepared.json
+audit/owner-setup-email.json
+audit/mfa-config.json
+audit/core-artifacts.json
+audit/cloud-run-pricing-*.html
