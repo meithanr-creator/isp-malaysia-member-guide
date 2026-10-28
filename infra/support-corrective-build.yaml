@@ -1,0 +1,14 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    dir: scanner
+    env: ['DOCKER_BUILDKIT=1']
+    args: ['build', '-t', 'asia-southeast1-docker.pkg.dev/isp-planter-app/isp-support/scanner:${_ISP_SOURCE_VERSION}', '.']
+  - name: gcr.io/cloud-builders/docker
+    env: ['DOCKER_BUILDKIT=1']
+    args: ['build', '-f', 'backup/Dockerfile', '--build-arg', 'ISP_SOURCE_VERSION=${_ISP_SOURCE_VERSION}', '-t', 'asia-southeast1-docker.pkg.dev/isp-planter-app/isp-support/backup:${_ISP_SOURCE_VERSION}', '.']
+images:
+  - 'asia-southeast1-docker.pkg.dev/isp-planter-app/isp-support/scanner:${_ISP_SOURCE_VERSION}'
+  - 'asia-southeast1-docker.pkg.dev/isp-planter-app/isp-support/backup:${_ISP_SOURCE_VERSION}'
+options:
+  machineType: E2_STANDARD_2
+timeout: 1200s

@@ -20,7 +20,7 @@ Evidence: project isp-planter-app created with Analytics off; Blaze billing link
 
 Exit: the existing visual shell has a real Firebase Hosting URL; no fabricated live URL or working-backend claim.
 
-## 2. Login — CORE VERIFIED; OWNER MFA DEFERRED
+## 2. Login — TECHNICAL ACCEPTANCE COMPLETE; OWNER MFA DEFERRED
 
 Connect existing login/dashboard controls to Firebase Authentication and member/admin records. Member access requires verified email and members/{uid}.status approved. Administrative operations require server-owned admin claim, active staff record and TOTP. Missing records stay unapproved. Retain password recovery/verification as managed Firebase flows.
 
@@ -63,3 +63,12 @@ The old hosted app is off and its raw evidence is preserved. Do not resume Rails
 Budget evidence: the billing account uses MYR. The project-only calendar-month alert budget is RM200 with actual-spend thresholds 25/50/75/90/100 percent. This is slightly below the approved US$50 planning amount using Bank Negara Malaysia's 28 October 2026 reference rate 4.0818 MYR/USD; alerts do not cap charges. audit/firebase-test-budget.json records US$9.92624768 of conservative reservations within the US$10 cumulative setup/test authorization, leaving USBudget evidence: the billing account uses MYR. The project-only calendar-month alert budget is RM200 with actual-spend thresholds 25/50/75/90/100 percent. This is slightly below the approved US$50 planning amount using Bank Negara Malaysia's 28 October 2026 reference rate 4.0818 MYR/USD; alerts do not cap charges. Existing cumulative setup/test authorization remains US$10, retaining the historical US$6.07624768 conservative bound. All deployed functions use zero minimum instances; no paid always-on function has been deployed and no invoice total is claimed from delayed provider reporting.
 
 .07375232 unallocated. The total includes the retained historical US$6.07624768 bound and the scoped Firebase/core/scanner/backup allowances; it is not an invoice or a current billed-spend total. All deployed functions use zero minimum instances. No paid always-on function or completed invoice reconciliation is claimed.
+
+## Current closure update (29 October, Malaysia time)
+
+1. Hosting foundation remains complete; the existing Firebase URL and exact built PWA files are live.
+2. Login technical acceptance is complete. The previously accepted Auth/profile and TOTP proofs carry forward, and the new live verified activation/registry area passed. The owner's own verification/authenticator completion remains an explicitly deferred launch action.
+3. One hosted attempt passed enrollment/registry, events/interest, Discover, consultation and explicit suspension restoration. Private files failed because the trusted scan did not complete within its allowance. The supervisor exited and cleanup completed; no temporary identities/content remain. Those five PASS receipts carry forward. Scanner delivery/receiver correction is being reviewed from actual logs and primary documentation; no scanner retry is yet admitted.
+4. The first backup captured a covered two-user Auth snapshot, then stopped before any Firestore export intent or operation. Its checkpoint and Auth payload remain preserved. Actual installed SDK inspection identified a CommonJS/ESM Firestore namespace mismatch; corrected source and an image-level Node22 SDK contract are published at5f4da8b1542bff7b2911acedf9b79f23856676b3. One corrective image build is admitted within the unchanged0.40USD backup reservation. No complete Drive backup, restoration or schedule is claimed yet.
+
+Evidence: private workflow journal is retained onD; its public-safe outcome is five PASS, one FAIL and CLEANUP_COMPLETE. The one failed backup execution is isp-drive-backup-sj5ln; exportIntent/operation/exportInfo are all null, so there is no unresolved remote export. The original covered Auth snapshot is carried instead of being exported again.

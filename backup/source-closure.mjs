@@ -77,6 +77,7 @@ export const SOURCE_PATHS = Object.freeze([
   "scanner/scanner.py",
   "scanner/test_policy.py",
   "scanner/test_review_fixes.py",
+  "scanner/test_receiver_http.py",
   "scanner/validate_file.py",
   "src/ActivateAccount.tsx",
   "src/App.tsx",
@@ -97,3 +98,4 @@ export function assertSourceClosure(paths) {
   requireThat(Array.isArray(paths) && paths.length === allowed.size && new Set(paths).size === allowed.size, 'SOURCE_REBUILD_CLOSURE_INCOMPLETE');
   for (const value of paths) assertSourcePath(value);
 }
+

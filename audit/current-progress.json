@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-28T21:51:59.1475700+00:00",
+  "hosting": "COMPLETE",
+  "loginTechnical": "COMPLETE_OWNER_MFA_DEFERRED",
+  "workflowPasses": [
+    "enrollment_registry",
+    "events_interest",
+    "discover",
+    "consultation",
+    "suspension_restoration"
+  ],
+  "workflowRemaining": "private_files",
+  "workflowCleanup": "COMPLETE",
+  "workflowRelease": "dd29f2ceb0a6315943f15649e5f4891c8e2aea440b9bfa2dbeb58cd6c5e00f95",
+  "backupFailedExecution": "isp-drive-backup-sj5ln",
+  "backupExportNeverStarted": true,
+  "backupAuthSnapshotCarried": true,
+  "correctiveBackupSource": "5f4da8b1542bff7b2911acedf9b79f23856676b3",
+  "budgetReservationUsd": 9.92624768,
+  "budgetCeilingUsd": 10,
+  "invoiceClaimed": false
+}

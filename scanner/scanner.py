@@ -5,7 +5,9 @@ service; no browser Firebase token or user-supplied bytes are accepted here.
 """
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from contextlib import contextmanager
+import functions_framework
+from cloudevents.http import from_http
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import json
@@ -183,11 +185,13 @@ def scan(attachment_id, expected, deadline):
         return "error"
 
 
-def event_attachment(headers, raw, deadline):
+def event_attachment(cloud_event, deadline):
     from google.events.cloud.firestore_v1.types import DocumentEventData
-    if headers.get("ce-type") != "google.cloud.firestore.document.v1.updated" or headers.get("ce-source") != f"//firestore.googleapis.com/projects/{PROJECT}/databases/(default)":
+    if cloud_event.get("specversion") != "1.0" or cloud_event.get("type") != "google.cloud.firestore.document.v1.updated" or cloud_event.get("source") != f"//firestore.googleapis.com/projects/{PROJECT}/databases/(default)":
         return None
-    event = DocumentEventData.deserialize(raw)
+    if str(cloud_event.get("datacontenttype", "")).split(";")[0].lower() != "application/protobuf" or not isinstance(cloud_event.data, bytes):
+        raise Blocked("invalid_firestore_event_encoding", "error")
+    event = DocumentEventData.deserialize(cloud_event.data)
     before, after = event.old_value.fields, event.value.fields
     if "finalizedAt" in before or "finalizedAt" not in after or after.get("scanStatus").string_value != "pending":
         return None
@@ -203,48 +207,75 @@ def event_attachment(headers, raw, deadline):
     return attachment_id, expected
 
 
-class Handler(BaseHTTPRequestHandler):
-    def log_message(self, *_args):
-        pass  # No tokens, names, uploaded bytes or private filenames in application request logs.
+MAX_EVENT_BYTES = 512 * 1024
 
-    def reply(self, status, data):
-        body = json.dumps(data).encode()
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
 
-    def do_GET(self):
-        self.reply(200 if self.path == "/healthz" else 404, {"service": SCANNER_ID, "status": "receiver_ready_not_scan_evidence"})
+@contextmanager
+def request_alarm(deadline):
+    # Docker fixes WORKERS=1/THREADS=1: this runs on the synchronous worker's main thread.
+    def expired(_number, _frame):
+        raise Blocked("overall_scan_deadline_exceeded", "error")
+    previous = signal.signal(signal.SIGALRM, expired)
+    signal.setitimer(signal.ITIMER_REAL, deadline.remaining(420, reserve=0))
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)
 
-    def do_POST(self):
-        deadline = Deadline(420)
-        def expired(_number, _frame):
-            raise Blocked("overall_scan_deadline_exceeded", "error")
-        previous = signal.signal(signal.SIGALRM, expired)
-        signal.setitimer(signal.ITIMER_REAL, deadline.remaining(420, reserve=0))
-        try:
-            self.connection.settimeout(deadline.remaining(10))
-            size = int(self.headers.get("Content-Length", "0"))
-            if self.path != "/" or not 0 < size <= 512 * 1024:
-                self.reply(400, {"state": "invalid_event"})
-                return
-            selected = event_attachment(self.headers, self.rfile.read(size), deadline)
-            state = scan(*selected, deadline) if selected else "ignored"
-            if selected:
-                print(json.dumps({"event": "upload_scan", "attachmentId": selected[0], "state": state}), flush=True)
-            self.reply(200, {"state": state})
-        except Exception:
-            print(json.dumps({"event": "upload_scan", "state": "blocked_event_error"}), flush=True)
-            self.reply(200, {"state": "blocked_event_error"})
-        finally:
-            signal.setitimer(signal.ITIMER_REAL, 0)
-            signal.signal(signal.SIGALRM, previous)
+
+def receiver_reply(state, status=200):
+    return json.dumps({"state": state}), status, {"Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"}
+
+
+def receiver_log(stage, **safe_fields):
+    # Fixed stage/codes and hashes only. Never log headers, body, tokens, names or filenames.
+    print(json.dumps({"event": "upload_receiver", "stage": stage, **safe_fields}), flush=True)
+
+
+@functions_framework.http
+def receive_event(request):
+    # The official HTTP adapter parses HTTP framing and separates path from the query.
+    # __GCP_CloudEventsMode/MaxAttempts are transport controls, not authority or payload formats.
+    if request.method == "GET" and request.path == "/healthz":
+        return receiver_reply("receiver_ready_not_scan_evidence")
+    if request.method != "POST" or request.path != "/":
+        receiver_log("blocked", code="invalid_request_route")
+        return receiver_reply("invalid_event", 400)
+    deadline = Deadline(420)
+    try:
+        with request_alarm(deadline):
+            if request.content_length is not None and request.content_length > MAX_EVENT_BYTES:
+                receiver_log("blocked", code="event_size_limit")
+                return receiver_reply("invalid_event", 413)
+            raw = request.stream.read(MAX_EVENT_BYTES + 1)
+            if not 0 < len(raw) <= MAX_EVENT_BYTES:
+                receiver_log("blocked", code="event_size_limit")
+                return receiver_reply("invalid_event", 413)
+            try:
+                # Same CloudEvents SDK entry used by the official Python CloudEvent wrapper.
+                # Identity unmarshaller preserves protobuf bytes; SDK handles standard data_base64.
+                cloud_event = from_http(request.headers, raw, data_unmarshaller=lambda value: value)
+            except Exception:
+                receiver_log("blocked", code="invalid_cloudevent")
+                return receiver_reply("invalid_event", 400)
+            event_id_hash = sha256(str(cloud_event.get("id", "")).encode()).hexdigest()[:16]
+            receiver_log("received", eventIdHash=event_id_hash, bodyBytes=len(raw))
+            selected = event_attachment(cloud_event, deadline)
+            if not selected:
+                receiver_log("ignored", eventIdHash=event_id_hash)
+                return receiver_reply("ignored")
+            receiver_log("selected", eventIdHash=event_id_hash, attachmentId=selected[0])
+            state = scan(*selected, deadline)
+            receiver_log("completed", eventIdHash=event_id_hash, attachmentId=selected[0], state=state)
+            return receiver_reply(state)
+    except Blocked as error:
+        receiver_log("blocked", code=error.code)
+        return receiver_reply("blocked_event_error")
+    except Exception:
+        receiver_log("blocked", code="event_processing_failed")
+        return receiver_reply("blocked_event_error")
+
 
 if __name__ == "__main__":
-    HTTPServer(("0.0.0.0", int(os.environ.get("PORT", "8080"))), Handler).serve_forever()
-
-
-
+    raise SystemExit("Use the pinned Functions Framework receive_event HTTP entry point.")

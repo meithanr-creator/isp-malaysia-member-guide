@@ -1,14 +1,14 @@
 {
   "projectId": "isp-planter-app",
   "region": "asia-southeast1",
-  "status": "PREPARED_PENDING_EXACT_DIRECTOR_COST_REVIEW",
+  "status": "RECEIVER_SOURCE_GO_COMBINED_BUILD_COST_REVIEW_PENDING",
   "sourceCheckpointRequired": true,
   "sourceFiles": {
-    "requirements.txt": "ee92fac2a2be3dda8555121c44913e1ce5788f97d3fc2961089db344ab6e773e",
+    "requirements.txt": "b875e9c9a96b4386cec68937475e40aa0d1bdc5eca626ff70fa0f4822baaad06",
     "validate_file.py": "63dda60aecfece351bc7e0eba0deb69ae169f79b0668184b0d020a9d4689299a",
     "policy.py": "8cda0ffd49359e189934be54b69c2e1edbd1eef7bfe1c476698db5746776916f",
-    "scanner.py": "59b516d07fa9a11abb66cb1f89636c04d5fbfbea1a2fd8714711419bac2a81fc",
-    "Dockerfile": "ea366be9bcbdb8bd3fdcfdb1aebd5e031ddc95b30b8d2a71ffbaf406b2459f2d",
+    "scanner.py": "ce7f4ddc64721c4f61c010a76ae3d627ac9d658ccd64ac345c8add9b47756f82",
+    "Dockerfile": "b82b672b18f59d16e8dfe63f6ebaa242a6f8f59a072355d3daa02222949c1264",
     "mirror.py": "cd8347051f647291e36aced24964cd50e65368f03e233e516fe117195e9e48d1"
   },
   "resources": {
@@ -22,14 +22,14 @@
     "eventIdentity": "isp-scan-eventarc@isp-planter-app.iam.gserviceaccount.com"
   },
   "trial": {
-    "maximumBuilds": 1,
+    "maximumBuilds": 2,
     "buildTimeoutSeconds": 1200,
     "buildMachineType": "e2-standard-2",
     "maximumSeedExecutions": 1,
     "seedTaskTimeoutSeconds": 1200,
     "seedTasks": 1,
     "seedMaxRetries": 0,
-    "maximumAttachmentScans": 3,
+    "maximumAttachmentScans": 4,
     "scannerRequestTimeoutSeconds": 480,
     "scannerInternalDeadlineSeconds": 420,
     "scannerFinishReserveSeconds": 40,
@@ -42,21 +42,29 @@
     "eventDeliveryAttempts": 1,
     "automaticOperatorRetry": false,
     "scheduleEnabledDuringTrial": false,
-    "maxFinalizedAttachments": 3,
+    "maxFinalizedAttachments": 4,
     "cleanPublicationAttachments": 2,
     "unsafeFormatAttachments": 1,
     "seedInternalAntivirusSelfTest": "standard harmless encoded EICAR generated only in updater-container tmp; actual named detection required before manifest activation; no local fixture",
-    "buildOwnedCancellationGraceSeconds": 120
+    "buildOwnedCancellationGraceSeconds": 120,
+    "remainingFinalizedAttachments": 3,
+    "previouslyFinalizedFailedAttachments": 1,
+    "acknowledgementDeadlineSeconds": 600,
+    "nextBuildImages": [
+      "scanner receiver correction",
+      "backup current-source archive; logic unchanged"
+    ],
+    "noSignatureReseed": true
   },
   "cost": {
     "kind": "conservative_allowance_not_invoice_or_hard_cap",
     "trialAllowanceUsd": 1.5,
-    "buildAllowanceUsd": 0.12,
-    "scanCpuRamIncludingStartupAndShutdownReserveUsd": 0.115,
+    "buildAllowanceUsd": 0.138229,
+    "scanCpuRamIncludingStartupAndShutdownReserveUsd": 0.16,
     "seedCpuRamIncludingStartupAndShutdownReserveUsd": 0.05,
     "artifactAndSignatureStorageAllowanceUsd": 0.5,
     "operationsEventsLoggingTransferAllowanceUsd": 0.25,
-    "unallocatedTrialReserveUsd": 0.465,
+    "unallocatedTrialReserveUsd": 0.401771,
     "includedWithinCumulativeTenDollarLedger": true,
     "requestCpuPerSecondUsd": 3.36E-05,
     "requestGiBPerSecondUsd": 3.5E-06,
@@ -82,7 +90,10 @@
       "https://cloud.google.com/build/pricing",
       "https://cloud.google.com/artifact-registry/pricing",
       "https://cloud.google.com/storage/pricing"
-    ]
+    ],
+    "previousBuildObservedRoundedUpUsd": 0.006229,
+    "nextCombinedBuildAndCancellationUsd": 0.132,
+    "requestCpuRamBound": "Conservatively reserve two old480-second requests plus three new480-second requests=2400seconds at1CPU/4GiB (.11424USD), plus startup/shutdown inside .16; do not infer cancellation from old5-second disconnect logs."
   },
   "proof": [
     "Two actual allowed-format clean publication files: one cover and one PDF, exact immutable generation/hash and signed fresh database evidence",
@@ -113,5 +124,23 @@
     ],
     "condition": "resource.name == 'projects/isp-planter-app/databases/(default)'",
     "boundary": "Database-scoped IAM; collection and immutable-tuple restrictions are enforced by reviewed scanner source, not IAM fields."
+  },
+  "continuation": {
+    "areas": [
+      "private_files"
+    ],
+    "carriedPasses": [
+      "enrollment_registry",
+      "events_interest",
+      "discover",
+      "consultation",
+      "suspension_restoration"
+    ],
+    "priorRelease": "dd29f2ceb0a6315943f15649e5f4891c8e2aea440b9bfa2dbeb58cd6c5e00f95",
+    "previousAttemptCleanup": "COMPLETE",
+    "signatureSeedCarried": true,
+    "finalizedAttachmentsAcrossAllAttemptsMaximum": 4,
+    "newFinalizedAttachmentsMaximum": 3,
+    "retryOrRuntimeNotYetAdmitted": true
   }
 }
