@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "scope": "Workflow-specific transport correction; code/images unchanged",
+  "sourceCommit": "4fcc5f2469bf440919d816aeb376e608ba508570",
+  "basePlanSha256": "ee3387f7adc8578125fdbeca041f3a690c384eb4107c37f0c1178f135a37c139",
+  "providerDeliveryAttempts": "provider_default_redelivery_possible",
+  "override": "Cloud Run-only max-retry-attempts=1 must not be passed to Workflow destination. Application dispatch CAS/singlePOST and worker claim remain one-attempt; no automatic Job retry.",
+  "workflowDeduplicationWindowHours": 24,
+  "maximumWorkflowExecutions": 64,
+  "maximumNamedSteps": 25,
+  "maximumInternalSteps": 1600,
+  "reservedInternalSteps": 2000,
+  "newJobExecutionsMaximum": 3,
+  "additionalCeilingOrReservationUsd": 0,
+  "source": "https://docs.cloud.google.com/sdk/gcloud/reference/eventarc/triggers/create",
+  "officialWorkflowDelivery": "https://docs.cloud.google.com/workflows/docs/trigger-workflow-eventarc",
+  "createdAt": "2026-10-28T23:35:49.391Z"
+}

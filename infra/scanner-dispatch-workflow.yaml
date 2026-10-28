@@ -98,9 +98,13 @@ main:
           steps:
             - fenceHold:
                 return: {launchStatus: not_launched, reason: fence_read_failed}
+    - inspectFence:
+        assign:
+          - fenceFields: ${fence.body.fields}
+          - fenceDispatch: ${map.get(fenceFields, ["scanDispatch", "mapValue", "fields"])}
     - requireFence:
         switch:
-          - condition: '${map.get(fence.body.fields, ["scanDispatch", "mapValue", "fields", "id", "stringValue"]) != dispatchId or map.get(fence.body.fields, ["scanDispatch", "mapValue", "fields", "cancelled", "booleanValue"]) != false or map.get(fence.body.fields, ["scanStatus", "stringValue"]) != "pending" or map.get(fence.body.fields, "scanAttempt") != null or map.get(fence.body.fields, ["generation", "stringValue"]) != generation or map.get(fence.body.fields, ["sha256", "stringValue"]) != fileHash}'
+          - condition: '${map.get(fenceDispatch, ["id", "stringValue"]) != dispatchId or map.get(fenceDispatch, ["cancelled", "booleanValue"]) != false or map.get(fenceFields, ["scanStatus", "stringValue"]) != "pending" or map.get(fenceFields, "scanAttempt") != null or map.get(fenceFields, ["generation", "stringValue"]) != generation or map.get(fenceFields, ["sha256", "stringValue"]) != fileHash}'
             steps:
               - selectedExit5:
                   return: {launchStatus: not_launched, reason: cancelled_or_changed}

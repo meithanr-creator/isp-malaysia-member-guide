@@ -98,6 +98,24 @@ class JobEntryChecks(unittest.TestCase):
                     self.assertNotIn("return", branch)
                     visit(branch.get("steps", []))
         visit(workflow["main"]["steps"])
+        expressions = []
+        def collect(value):
+            if isinstance(value, dict):
+                for child in value.values(): collect(child)
+            elif isinstance(value, list):
+                for child in value: collect(child)
+            elif isinstance(value, str) and value.startswith("${") and value.endswith("}"):
+                expressions.append(value)
+        collect(workflow)
+        self.assertTrue(expressions)
+        self.assertLessEqual(max(map(len, expressions)), 400)
+        print(f"All {len(expressions)} complete YAML expressions <=400 characters; maximum {max(map(len, expressions))} including delimiters.")
+        self.assertEqual(len(labels), len(set(labels)))
+        self.assertLessEqual((ROOT.parent / "infra/scanner-dispatch-workflow.yaml").stat().st_size, 128 * 1024)
+        self.assertEqual(steps["inspectFence"]["assign"], [{"fenceFields": "${fence.body.fields}"}, {"fenceDispatch": '${map.get(fenceFields, ["scanDispatch", "mapValue", "fields"])}'}])
+        expanded = steps["requireFence"]["switch"][0]["condition"].replace('map.get(fenceDispatch, [', 'map.get(fence.body.fields, ["scanDispatch", "mapValue", "fields", ').replace('fenceFields', 'fence.body.fields')
+        original = '${map.get(fence.body.fields, ["scanDispatch", "mapValue", "fields", "id", "stringValue"]) != dispatchId or map.get(fence.body.fields, ["scanDispatch", "mapValue", "fields", "cancelled", "booleanValue"]) != false or map.get(fence.body.fields, ["scanStatus", "stringValue"]) != "pending" or map.get(fence.body.fields, "scanAttempt") != null or map.get(fence.body.fields, ["generation", "stringValue"]) != generation or map.get(fence.body.fields, ["sha256", "stringValue"]) != fileHash}'
+        self.assertEqual(expanded, original)
         self.assertLessEqual(len(labels) * 64, 2000)
         self.assertEqual(sum(body.get("try", {}).get("call") == "http.post" for body in steps.values()), 1)
         self.assertEqual(steps["claimDispatch"]["try"]["args"]["query"]["currentDocument.updateTime"], "${document.body.updateTime}")
