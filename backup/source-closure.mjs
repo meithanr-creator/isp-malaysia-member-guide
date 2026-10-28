@@ -1,6 +1,7 @@
 import { requireThat } from './manifest.mjs';
 // Explicit nonsecret rebuild closure; no environment, credential, audit or generated runtime files.
 export const SOURCE_PATHS = Object.freeze([
+  "backup/sdk-contract.mjs",
   "backup/restore-probe.mjs",
   "docs/CONTROLLED-RESTORE-PROOF.md",
   "public/assets/isp-512.png",

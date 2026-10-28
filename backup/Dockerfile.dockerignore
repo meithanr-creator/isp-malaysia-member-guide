@@ -96,3 +96,4 @@
 !docs/
 !backup/restore-probe.mjs
 !docs/CONTROLLED-RESTORE-PROOF.md
+!backup/sdk-contract.mjs

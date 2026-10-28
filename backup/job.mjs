@@ -10,11 +10,17 @@ import {
 import { startProcessWatchdog } from './watchdog.mjs';
 import { assertSourcePath, assertSourceClosure } from './source-closure.mjs';
 
+export async function loadBackupSdk() {
+  const [{ GoogleAuth, OAuth2Client }, { Storage }, { default: firestore }, { initializeApp, applicationDefault }, { getAuth }] = await Promise.all([import('google-auth-library'), import('@google-cloud/storage'), import('@google-cloud/firestore'), import('firebase-admin/app'), import('firebase-admin/auth')]);
+  // Firestore9.4.0 defines v1 as a CommonJS module.exports getter; use its exact default namespace.
+  return { GoogleAuth, OAuth2Client, Storage, v1: firestore.v1, initializeApp, applicationDefault, getAuth };
+}
+
 const CHUNK = 8 * 1024 * 1024;
 const FILE_FIELDS = 'id,name,mimeType,size,md5Checksum,sha256Checksum,parents,owners(emailAddress),shared,trashed,appProperties';
 let watchdog, currentPhase = 'plan';
 function timeLeft() { return watchdog.remaining(); }
-function log(phase, fields = {}) { console.log(encode({ kind: APP_TAG, phase, ...fields }).trim()); }
+function log(phase, fields = {}) { console.log(JSON.stringify({ kind: APP_TAG, phase, ...fields })); }
 function configuredBucket(name, value) { requireThat(typeof value === 'string' && value.startsWith(PROJECT) && /^[a-z0-9_.-]{3,222}$/.test(value), name + '_INVALID'); return value; }
 function describe(file, metadata) {
   return { bucket: file.bucket.name, name: file.name, generation: String(metadata.generation), metageneration: String(metadata.metageneration), size: Number(metadata.size), contentType: metadata.contentType || 'application/octet-stream', md5Hash: metadata.md5Hash || null, crc32c: metadata.crc32c || null };
@@ -151,7 +157,7 @@ async function backup() {
   const sourceBucket = configuredBucket('SOURCE_BUCKET', process.env.ISP_BACKUP_SOURCE_BUCKET), stageBucket = configuredBucket('STAGING_BUCKET', process.env.ISP_BACKUP_STAGING_BUCKET);
   requireThat(sourceBucket === SOURCE_BUCKET && stageBucket === STAGING_BUCKET && sourceBucket !== stageBucket, 'EXACT_BACKUP_BUCKETS_REQUIRED');
   const secret = parseDriveSecret(process.env.ISP_DRIVE_BACKUP || '');
-  const [{ GoogleAuth, OAuth2Client }, { Storage }, { v1 }, { initializeApp, applicationDefault }, { getAuth }] = await Promise.all([import('google-auth-library'), import('@google-cloud/storage'), import('@google-cloud/firestore'), import('firebase-admin/app'), import('firebase-admin/auth')]);
+  const { GoogleAuth, OAuth2Client, Storage, v1, initializeApp, applicationDefault, getAuth } = await loadBackupSdk();
   const google = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] }), adc = await google.getClient(), storage = new Storage({ projectId: PROJECT, retryOptions: { autoRetry: false } }), stage = storage.bucket(stageBucket);
   requireThat(await google.getProjectId() === PROJECT, 'ATTACHED_PROJECT_MISMATCH');
   requireThat((await google.getCredentials()).client_email === BACKUP_SERVICE_ACCOUNT, 'ATTACHED_SERVICE_ACCOUNT_MISMATCH');
@@ -243,6 +249,6 @@ async function backup() {
 const mode = process.argv[2] || '--plan';
 if (process.argv[1]?.endsWith('/job.mjs') || process.argv[1]?.endsWith('\\job.mjs')) {
   if (mode === '--plan' && process.argv.length <= 3) console.log(encode({ project: PROJECT, database: DATABASE, serviceAccount: BACKUP_SERVICE_ACCOUNT, sourceBucket: SOURCE_BUCKET, stagingBucket: STAGING_BUCKET, driveOwner: OWNER, folderId: FOLDER, scope: DRIVE_SCOPE, runtime: 'Node22 attached Cloud Run Job identity', taskTimeoutSeconds: 1800, taskCount: 1, parallelism: 1, maxRetries: 0, requiredEnvironment: ['ISP_DRIVE_BACKUP(secret JSON)', 'ISP_BACKUP_STAGING_BUCKET', 'ISP_BACKUP_SOURCE_BUCKET', 'ISP_SOURCE_VERSION'] }).trim());
-  else if (mode === '--run' && process.argv.length === 3) run().catch(error => { log('failed', { failedPhase: currentPhase, providerStatus: Number.isInteger(error.response?.status) ? error.response.status : Number.isInteger(error.code) ? error.code : null, code: /^[A-Z0-9_]+$/.test(error.safeCode || '') ? error.safeCode : 'BACKUP_INCOMPLETE', priorCompleteBackupModified: false }); process.exitCode = 1; });
+  else if (mode === '--run' && process.argv.length === 3) run().catch(error => { log('failed', { failedPhase: currentPhase, errorClass: ['Error', 'TypeError', 'RangeError', 'SyntaxError', 'GaxiosError', 'ApiError', 'FirebaseError', 'GoogleError'].includes(error?.name) ? error.name : 'UnknownError', providerStatus: Number.isInteger(error.response?.status) ? error.response.status : Number.isInteger(error.code) ? error.code : null, code: /^[A-Z0-9_]+$/.test(error.safeCode || '') ? error.safeCode : 'BACKUP_INCOMPLETE', priorCompleteBackupModified: false }); process.exitCode = 1; });
   else { log('refused', { code: 'USE_PLAN_OR_RUN' }); process.exitCode = 1; }
 }

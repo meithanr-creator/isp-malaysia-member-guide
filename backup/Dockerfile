@@ -3,7 +3,8 @@ ENV NODE_ENV=production
 WORKDIR /app/backup
 COPY backup/package*.json ./
 RUN test -f package-lock.json && npm ci --omit=dev --ignore-scripts --no-audit --no-fund && npm cache clean --force
-COPY --chown=node:node backup/job.mjs backup/manifest.mjs backup/watchdog.mjs backup/source-closure.mjs backup/restore-probe.mjs ./
+COPY --chown=node:node backup/job.mjs backup/manifest.mjs backup/watchdog.mjs backup/source-closure.mjs backup/restore-probe.mjs backup/sdk-contract.mjs ./
+RUN node sdk-contract.mjs
 COPY --chown=node:node src/ /app/source/src/
 COPY --chown=node:node public/ /app/source/public/
 COPY --chown=node:node functions/ /app/source/functions/

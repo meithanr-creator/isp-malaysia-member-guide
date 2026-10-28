@@ -1,10 +1,10 @@
 {
   "projectId": "isp-planter-app",
   "region": "asia-southeast1",
-  "status": "SOURCE_GO_BUILD_ADMITTED_RUNTIME_CONDITIONAL",
+  "status": "CORRECTIVE_SOURCE_GO_ONE_BUILD_ADMITTED_RUNTIME_CONDITIONAL",
   "allowanceUsd": 0.4,
   "build": {
-    "maximumBuilds": 1,
+    "maximumBuilds": 2,
     "machineType": "e2-standard-2",
     "timeoutSeconds": 1200,
     "ownedCancellationReserveSeconds": 120,
@@ -12,22 +12,26 @@
     "imageBytesMaximum": 2147483648,
     "sourceBytesMaximum": 10485760,
     "secretsExcluded": true,
-    "dockerBuildKit": true
+    "dockerBuildKit": true,
+    "remainingAdmittedBuilds": 1,
+    "firstBuildObservedSeconds": 43.570429147,
+    "firstBuildRoundedUpUsd": 0.004358
   },
   "runtime": {
-    "backupExecutions": 1,
+    "backupExecutions": 2,
     "backupSeconds": 1800,
     "restoreExecutions": 1,
     "restoreSeconds": 600,
     "cpu": 1,
-    "memoryMiB": 256,
+    "memoryMiB": 512,
     "tasks": 1,
     "parallelism": 1,
     "maxRetries": 0,
     "schedulesEnabled": false,
     "identity": "isp-backup@isp-planter-app.iam.gserviceaccount.com",
     "secret": "ISP_DRIVE_BACKUP:1",
-    "privateFolderId": "1gjZnAk2RxfTGL40UINhz-lZ6sRt2g2Rh"
+    "privateFolderId": "1gjZnAk2RxfTGL40UINhz-lZ6sRt2g2Rh",
+    "remainingAdmittedBackupExecutions": 1
   },
   "proof": {
     "syntheticOnly": true,
@@ -43,9 +47,9 @@
     "temporaryImportIamRemovedAfterProof": true
   },
   "cost": {
-    "buildAndCancellationUsd": 0.132,
-    "backupAndRestoreComputeUsd": 0.05328,
-    "artifactStorageExportImportTransferOperationsReserveUsd": 0.21472,
+    "buildAndCancellationUsd": 0.136358,
+    "backupAndRestoreComputeUsd": 0.062928,
+    "artifactStorageExportImportTransferOperationsReserveUsd": 0.200714,
     "totalUsd": 0.4,
     "includedInExistingTenDollarLedger": true,
     "freeTierCreditsAssumed": false,
@@ -60,5 +64,16 @@
     "Read actual complete Drive manifest, all file hashes/counts/bytes before one isolated import.",
     "Only explicitly owned synthetic probe/test database/prefix may be cleaned; real ISP/owner records and other projects untouched.",
     "Current exports/ lifecycle is ineffective for firestore/ payloads; no age-only active-export cleanup. Bound trial retention through reviewed owned-artifact cleanup after verified Drive completion or explicit operations admission."
-  ]
+  ],
+  "minimumJobMemoryReference": "https://docs.cloud.google.com/run/docs/configuring/jobs/memory-limits",
+  "correction": {
+    "cause": "Installed Firestore CommonJS SDK exposes v1 under its ESM default",
+    "proof": "Actual module namespace inspected; no export intent or operation was ever started",
+    "source": "Shared lazy SDK loader and image-build contract, compact safe logs; archive encoding unchanged",
+    "state": "Preserve existing two-user covered Auth snapshot; guarded sourceVersion-only migration separately reviewed before resume",
+    "runtimeSecondsBound": 2760,
+    "gitBuildSource": "Exact published Git archive on D, independent of active scanner edits",
+    "priorJob": "isp-drive-backup-sj5ln",
+    "priorBuild": "dea017fc-eab1-4d6e-9cfd-26eca18d22ae"
+  }
 }
