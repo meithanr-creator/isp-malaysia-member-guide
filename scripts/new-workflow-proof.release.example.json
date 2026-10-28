@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "projectId": "isp-planter-app",
+  "region": "asia-southeast1",
+  "bucket": "isp-planter-app.firebasestorage.app",
+  "approvedBy": "root",
+  "sourceGo": false,
+  "directorSourceGo": false,
+  "privateAclVerified": false,
+  "functionsReady": false,
+  "providerSealSha256": "ROOT_FILLS_EXACT_OBSERVED_PROVIDER_SEAL_HASH",
+  "commit": "ROOT_FILLS_REVIEWED_40_HEX_COMMIT",
+  "reviewedFixturePlanSha256": "ROOT_FILLS_PRIVATE_JOURNAL_PLAN_HASH",
+  "expiresAt": "ROOT_FILLS_SHORT_RELEASE_EXPIRY_ISO",
+  "maxSeconds": 1800,
+  "cleanupSeconds": 180,
+  "areas": ["enrollment_registry", "events_interest", "discover", "consultation", "suspension_restoration", "private_files"],
+  "acceptPassedAreas": {},
+  "resolvedMutations": [],
+  "discoverBaselineSha256": null,
+  "firebase": {
+    "projectId": "isp-planter-app",
+    "authDomain": "isp-planter-app.firebaseapp.com",
+    "apiKey": "ROOT_FILLS_EXISTING_REGISTERED_WEB_CONFIG",
+    "appId": "ROOT_FILLS_EXISTING_REGISTERED_WEB_CONFIG"
+  },
+  "scanner": {
+    "ready": false,
+    "serviceRevision": "ROOT_FILLS_ACTUAL_REVISION",
+    "imageDigest": "sha256:ROOT_FILLS_ACTUAL_IMAGE_DIGEST",
+    "manifestSha256": "ROOT_FILLS_ACTUAL_SIGNATURE_MANIFEST_HASH",
+    "dailyVersion": 0,
+    "observedAt": "ROOT_FILLS_ACTUAL_OBSERVATION_TIME",
+    "antivirusSelfTest": {"state": "pending", "engineVersion": "1.4.6", "dailyVersion": 0}
+  },
+  "cost": {
+    "approved": false,
+    "maxAdditionalUsd": 1.50,
+    "ledgerSha256": "ROOT_FILLS_CURRENT_PRIVATE_LEDGER_HASH"
+  },
+  "sourceSha256": {
+    "functions/src/index.ts": "ROOT_FILLS_64_HEX_SHA256",
+    "functions/src/runtime.ts": "ROOT_FILLS_64_HEX_SHA256",
+    "functions/src/content.ts": "ROOT_FILLS_64_HEX_SHA256",
+    "functions/src/download.ts": "ROOT_FILLS_64_HEX_SHA256",
+    "functions/src/enrollment.ts": "ROOT_FILLS_64_HEX_SHA256",
+    "functions/src/registry.ts": "ROOT_FILLS_64_HEX_SHA256",
+    "functions/src/validation.ts": "ROOT_FILLS_64_HEX_SHA256",
+    "firestore.rules": "ROOT_FILLS_64_HEX_SHA256",
+    "storage.rules": "ROOT_FILLS_64_HEX_SHA256",
+    "scanner/scanner.py": "ROOT_FILLS_64_HEX_SHA256",
+    "scanner/mirror.py": "ROOT_FILLS_64_HEX_SHA256",
+    "scanner/policy.py": "ROOT_FILLS_64_HEX_SHA256",
+    "scanner/validate_file.py": "ROOT_FILLS_64_HEX_SHA256",
+    "scanner/Dockerfile": "ROOT_FILLS_64_HEX_SHA256",
+    "scanner/requirements.txt": "ROOT_FILLS_64_HEX_SHA256",
+    "scripts/new-workflow-proof.mjs": "ROOT_FILLS_64_HEX_SHA256"
+  }
+}

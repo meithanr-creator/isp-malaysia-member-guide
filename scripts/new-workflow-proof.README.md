@@ -1,0 +1,51 @@
+# Focused new-workflow proof (source only)
+
+`new-workflow-proof.mjs` is prepared for root and Astra source review. It has **not been executed**. The only verification performed during preparation was `node --check`. It does not replace accepted Auth/profile/roster7/7 or MFA4/4 evidence.
+
+The six receipts are enrollment/registry, event/interest, Discover, consultation, explicit suspension restoration, and private files/publication. The file receipt requires two genuinely scanned clean attachments plus one inert unsafe-format rejection. Antivirus detection is a separate mandatory receipt from the mirror updater's container-only self-test. No antivirus test pattern is created on this computer.
+
+## Modes and release
+
+With no arguments, `--plan` prints a local plan and does not import Firebase. `--prepare --journal=<absolute D path>` creates a unique synthetic fixture plan and generated passwords **locally only** under `D:/Projects/isp-firebase/audit/private/`. It refuses overwrites. Root must verify that folder/file's Windows ACL is private; Node's0600 flag alone does not establish a Windows ACL. Never put that journal or a completed release in Git, stdout, a chat or a public audit receipt.
+
+Root copies `new-workflow-proof.release.example.json` to a new private release file and fills it after review. The journal's `planSha256` binds the generated fixture emails/references, transient TEST labels, CSV intents, fixed Discover slot and three-attachment limit. The release must bind:
+
+- Root and director source GO, current Git commit and SHA256 of every listed source file (including the script itself), plus the already observed deployed-functions provider-seal hash.
+- Actual scanner revision and immutable image digest, current signature-manifest hash/daily version, fresh observed-at time and the actual mirror antivirus-self-test PASS/engine/daily-version receipt. A health response is insufficient.
+- Root's current cost-ledger hash and explicit allowance within the already reserved US$1.50 trial; deadline<=2400seconds and cleanup reserve60..180seconds. These are operator/resource bounds, not a billing cap.
+- Exact fixture-plan hash, allowed area subset, expiry<=24hours, and Discover3 baseline hash. Use null only when both Discover3 documents are absent; otherwise hash the typed baseline `{draft,published}` with the script's canonical encoder. The script captures the exact baseline privately before any fixture creation and refuses a mismatch. Root should obtain that approval in its preflight; never weaken the check to overwrite existing content.
+
+Use the D-hosted runtime and the existing `Use-IspEnvironment.ps1`. The reviewed invocation is:
+
+```powershell
+. 'D:\Projects\isp-firebase\scripts\Use-IspEnvironment.ps1'
+& $ispNode 'D:\Projects\isp-firebase\scripts\new-workflow-proof.mjs' --execute --journal='D:\Projects\isp-firebase\audit\private\<owned-journal>.json' --release='D:\Projects\isp-firebase\audit\private\<reviewed-release>.json'
+```
+
+No execution is authorized by this document. Root runs only after the exact tuple is released. The supervisor obtains exclusive atomic project and journal locks before rereading admission. It suppresses child stdout/stderr and prints six compact statuses plus cleanup status; credentials/provider messages stay private. maxSeconds includes the main worker and one cleanup-only recovery window: the main child gets maxSeconds-cleanupSeconds, and normal business work stops at maxSeconds-2*cleanupSeconds so its own cleanup also fits. Recovery is clamped to the remaining original deadline; it never adds a second allowance. Internal worker modes require the parent-owned lock nonce. No feature/scan retry is performed.
+
+## Ownership and restoration
+
+Every identity uses a unique `isp-wf-...` synthetic email at `example.invalid`. Admin-created UIDs have the same prefix. Client signup necessarily receives a Firebase-generated UID: the journal records intent before creation, then binds its exact UID, unique email and creation time; an ambiguous create response can be recovered only through that exact owned email. No owner account/password is used. No verification/reset email is sent: Admin marks **only the owned signup fixture** verified, then the real client signs in fresh. This proves verified activation and does not claim mail delivery.
+
+Synthetic admin TOTP enrollment/sign-in is prerequisite setup. There are no old roster, MFA, profile/self-grant or recovery assertions. Temporary claims/staff belong only to the synthetic admin; real staff documents are never modified.
+
+Before any global registry mutation, the script refuses nonfixture members and any nonempty/foreign active registry state. It will not remove real records to make itself runnable. Before every import phase it checks ownership again. It validates and rereads the exact server CSV preview, records its rows/digest/version/options/counts privately, and explicitly advances at most eight bounded confirmation phases for the three-row fixture. Errors are never retried. Omitted fixture rows survive ordinary imports; ordinary eligible import preserves sticky suspension, and only explicit restoration clears it. Member profile/status/Auth enabled state/claims must remain unchanged by imports.
+
+Public fixture content explicitly says TEST and not a real ISP event/publication. During cleanup one Firestore transaction rereads member range/current state/current fixed-slot documents/owned records, rejects foreign changes, restores the exact typed registryState and Discover3 baseline, and removes only owned documents/versions/UID bindings. Exact-generation owned Storage objects and owned Auth UIDs are removed afterward. Cross-service Auth/Storage deletion cannot share Firestore's transaction; the journal records each completion and remains `cleanupRequired` until everything is removed. If concurrent real content/state appears, cleanup fails closed and retains the journal for root review rather than overwriting it.
+
+A stopped/failed run attempts cleanup once. Every creating mutation is durably recorded before dispatch and acknowledged only after its response and owned receipt are persisted. A lost response or killed worker leaves an unresolved intent. Cleanup may remove currently observed state but cannot declare CLEANUP_COMPLETE while that intent might still materialize; absence on an initial lookup is insufficient. Upload reconciliation checks the exact reserved journal path even if an earlier cleanup removed its attachment document. A fixed private project pending marker blocks every other journal until this journal is proven clean. Process locks are never automatically stolen: after a supervisor crash, root must verify that its exact owned parent/child processes have ended before explicitly removing stale lock directories; retain the pending marker. A retained journal with `cleanupRequired` blocks new feature work. Root can invoke the same reviewed script with `--cleanup` and the same private journal/release; this mode cannot create identities, import data, finalize attachments or run scans. The ordinary source/ownership checks still apply. Do not delete the private journal while cleanup is pending.
+
+
+An UNKNOWN intent requires an operation-specific terminal receipt in a **new root-reviewed private cleanup release**, under `resolvedMutations`. Each entry must match that journal's `planSha256`, exact attempt number, intent UUID and `intentSha256`, and contain `terminalResponse:true`, `outcome:"succeeded"|"failed"`, a unique64-hex `terminalEvidenceSha256`, `providerEvidenceId`, and `observedAt` no earlier than intent dispatch. The evidence must establish the actual operation's terminal disposition; a generic root hash, elapsed time, or first absence observation cannot clear it. Cleanup then inventories/removes any late owned UID/object/doc; it never replays signup, upload or a callable. Unresolved intents keep cleanupRequired/UNKNOWN and the project pending marker. The marker clears only after completed cleanup with no unresolved intent.
+
+The four local checks in `new-workflow-control-checks.test.mjs` substitute normal/lost replies and delayed remote state; they exercise locking, persistence, uncertainty and deadline arithmetic only. They do not import Firebase or execute the six feature areas. They passed locally; no old core or business proof was repeated.
+## Failed-area continuation
+
+Each PASS stores its source/release receipt. The next release explicitly carries it with `acceptPassedAreas[area]=<earlier releaseSha256>` and lists only the unpassed areas to run. Reusing one release for another feature attempt is refused. If enrollment has already passed, a continuation constructs only a clearly marked prerequisite fixture registry/profile using Admin; it does not replay signup/import/activation assertions or claim another PASS for them. The first run must include enrollment. Cleanup still restores the original empty baseline.
+
+The maximum three finalized attachments applies to one released attempt. An ambiguous/failing finalization consumes its fixture slot and is not replaced. A failed scan produces a failed area; the script never rewrites scan fields, supplies clean attestations, resubmits events or substitutes a fresh attachment. New paid work needs a new reviewed release/ledger allowance.
+
+## Password-policy recommendation (no configuration change)
+
+Set `passwordPolicyEnforcementState: "ENFORCE"`, preserve existing custom strength/max-length settings while setting `customStrengthOptions.minPasswordLength:12`, and keep `forceUpgradeOnSignin:false` in `passwordPolicyConfig`. This enforces the stronger policy on newly set/changed passwords while allowing existing accounts to continue signing in without a forced upgrade. The authoritative current REST schema distinguishes enforcement from forced sign-in upgrades: [Google Identity Platform PasswordPolicyConfig](https://docs.cloud.google.com/identity-platform/docs/reference/rest/v2/projects.tenants#PasswordPolicyConfig). The web UI can preflight chosen passwords with `validatePassword`: [Firebase password policy guide](https://firebase.google.com/docs/auth/web/password-auth#recommended_set_a_password_policy). Root owns any eventual configuration change.
