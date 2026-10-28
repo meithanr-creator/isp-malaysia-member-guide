@@ -1,3 +1,0 @@
-<section class="page consultation-page"><%= link_to "All enquiries", admin_consultation_requests_path, class: "back" %><%= render "shared/consultation_request", query: @consultation_request %>
-  <section class="profile-card"><h2>Member contact</h2><dl class="profile-details"><% [["Name", @consultation_request.user.name], ["Email", @consultation_request.user.email], ["Telephone", @consultation_request.user.phone], ["Organisation", @consultation_request.user.company]].each do |label, value| %><div><dt><%= label %></dt><dd><%= value.presence || "Not added" %></dd></div><% end %></dl><p class="form-hint">Current profile details. No automatic acknowledgement or follow-up email has been sent.</p></section>
-</section>

@@ -1,0 +1,10 @@
+{
+  "timestamp": "2026-10-28T18:26:44.983Z",
+  "projectId": "isp-planter-app",
+  "outcomes": [
+    "TOTP enrollment accepted by Firebase",
+    "fresh password sign-in requires second factor"
+  ],
+  "complete": false,
+  "scope": "one owned synthetic administrator; no real users or mail"
+}

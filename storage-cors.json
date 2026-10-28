@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["https://isp-planter-app.web.app", "https://isp-planter-app.firebaseapp.com"],
+    "method": ["GET", "HEAD"],
+    "responseHeader": ["Content-Type", "Content-Length", "Content-Disposition", "ETag", "x-goog-generation"],
+    "maxAgeSeconds": 3600
+  }
+]

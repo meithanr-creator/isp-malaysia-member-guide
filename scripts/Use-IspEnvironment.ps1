@@ -1,0 +1,17 @@
+$env:CLOUDSDK_CONFIG='D:\Projects\isp-firebase-tools\config\gcloud'
+$env:CLOUDSDK_PYTHON='D:\Projects\isp-firebase-tools\gcloud\google-cloud-sdk\platform\bundledpython\python.exe'
+$env:CLOUDSDK_CORE_DISABLE_USAGE_REPORTING='true'
+$env:XDG_CONFIG_HOME='D:\Projects\isp-firebase-tools\config'
+$env:GOOGLE_APPLICATION_CREDENTIALS='D:\Projects\isp-firebase-tools\config\gcloud\application_default_credentials.json'
+$env:GOOGLE_CLOUD_PROJECT='isp-planter-app'
+$env:GOOGLE_CLOUD_QUOTA_PROJECT='isp-planter-app'
+$env:TEMP='D:\Projects\isp-firebase-tools\tmp'
+$env:TMP=$env:TEMP
+$env:npm_config_cache='D:\Projects\isp-firebase-tools\npm-cache'
+$env:npm_config_userconfig='D:\Projects\isp-rails-tools\node24\empty.npmrc'
+$env:npm_config_globalconfig='D:\Projects\isp-rails-tools\node24\empty-global.npmrc'
+$env:PATH='D:\Projects\isp-rails-tools\node24;'+$env:PATH
+$ispNode='D:\Projects\isp-rails-tools\node24\node.exe'
+$ispNpm='D:\Projects\isp-rails-tools\node24\node_modules\npm\bin\npm-cli.js'
+$ispFirebase='D:\Projects\isp-firebase-tools\firebase-cli-15.34.1\node_modules\firebase-tools\lib\bin\firebase.js'
+$ispGcloud='D:\Projects\isp-firebase-tools\gcloud\google-cloud-sdk\bin\gcloud.cmd'

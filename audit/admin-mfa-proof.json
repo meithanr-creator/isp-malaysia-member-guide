@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-10-28T18:30:31.151Z",
+  "projectId": "isp-planter-app",
+  "outcomes": [
+    "TOTP enrollment accepted by Firebase",
+    "fresh password sign-in requires second factor",
+    "TOTP-authenticated active administrator can read bounded roster",
+    "roster requests above 25 denied"
+  ],
+  "timing": {
+    "enrollmentStep": 59773740,
+    "signInStep": 59773741,
+    "distinctCodes": true
+  },
+  "failure": null,
+  "complete": true,
+  "scope": "one owned synthetic administrator; no real users or mail"
+}

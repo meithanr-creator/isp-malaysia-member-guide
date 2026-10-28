@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.firebase/
+.env*
+!.env.example
+audit/private/
+*service-account*.json
+*credentials*.json
+*token*.json
+firebase-debug.log
+firebase-debug.*.log

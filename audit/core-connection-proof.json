@@ -1,0 +1,36 @@
+{
+  "projectId": "isp-planter-app",
+  "timestamp": "2026-10-28T18:23:25.935Z",
+  "scope": "single live Firebase connection proof; no legacy or demo checks",
+  "outcomes": [
+    {
+      "name": "approved email/password sign-in and member read",
+      "status": "PASS"
+    },
+    {
+      "name": "own profile save and fresh server read",
+      "status": "PASS"
+    },
+    {
+      "name": "cross-member read and update denied",
+      "status": "PASS"
+    },
+    {
+      "name": "member status and administrator self-grant denied",
+      "status": "PASS"
+    },
+    {
+      "name": "sign-out clears identity and denies protected reads",
+      "status": "PASS"
+    },
+    {
+      "name": "unapproved member update denied",
+      "status": "PASS"
+    },
+    {
+      "name": "administrator claim without TOTP cannot read member roster",
+      "status": "PASS"
+    }
+  ],
+  "complete": true
+}

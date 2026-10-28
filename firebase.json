@@ -1,0 +1,26 @@
+{
+  "hosting": {
+    "site": "isp-planter-app",
+    "public": "dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [{ "source": "**", "destination": "/index.html" }],
+    "headers": [
+      { "source": "**", "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+      ] },
+      { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+    ]
+  },
+  "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" },
+  "storage": { "rules": "storage.rules" },
+  "functions": [{
+    "source": "functions",
+    "codebase": "isp-core",
+    "runtime": "nodejs22",
+    "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log", "test"],
+    "predeploy": ["npm --prefix functions run build"]
+  }]
+}

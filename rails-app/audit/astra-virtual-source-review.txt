@@ -1,9 +1,0 @@
-26 October 2026 — Astra high — source review only
-
-GO for the virtual mobile runner source after correcting private error handling, absolute deadline, bounded API/browser requests, exact fixture/release metadata, real carousel transition and the actual dashboard selector. No test execution passes are claimed by this source decision.
-
-Virtual WebKit and Chromium profiles satisfy the owner-selected mobile scope. Physical-device and native installation behavior remain unclaimed and are not new owner-action requirements.
-
-GO for inactive preparation/upload of the thirteen allowlisted database/storage/runtime bindings. The helper preserves five generated keys and cannot arm a window, enable traffic or start a container. Before activation confirm verify-full database TLS, demo off and both mail flags off in deployed configuration.
-
-Fixture setup and live activation remain subject to the separate complete-script, cleanup, exact target, watchdog and deadline reviews. Actual hosted and operational evidence is still required for release.

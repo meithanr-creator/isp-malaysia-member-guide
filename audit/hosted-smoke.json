@@ -1,0 +1,14 @@
+{
+  "dateMalaysia": "2026-10-29",
+  "projectId": "isp-planter-app",
+  "url": "https://isp-planter-app.web.app",
+  "observed": [
+    "Direct /login navigation rendered the approved mobile shell",
+    "Owned approved test member signed in through the hosted form",
+    "Dashboard displayed the company saved by the live connection proof",
+    "Menu sign-out removed the private dashboard and returned to public home"
+  ],
+  "notClaimed": ["native iOS/Android installation", "all remaining feature connections", "real-email delivery", "production launch"],
+  "temporaryIdentitiesRemoved": true,
+  "appSha256": "3f6f14d89baab2e7c6364254af80db0cd0b21f5f1786ce27ac699fbc39fb483c"
+}

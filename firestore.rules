@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+    function registryEntryAllows(member, version) {
+      let row = get(/databases/$(database)/documents/memberRegistryVersions/$(version)/entries/$(member.registryKey)).data;
+      return row.status == 'eligible' && row.get('accessSuspended', false) != true
+        && row.memberReference == member.membershipReference && row.email == member.email
+        && row.email == request.auth.token.email.lower();
+    }
+    function registryAllows(member) {
+      let statePath = /databases/$(database)/documents/registryState/current;
+      return !exists(statePath)
+        || get(statePath).data.get('activeVersion', null) == null
+        || (get(statePath).data.activeVersion is string
+          && (get(statePath).data.activeVersion.size() == 0
+            || (('registryKey' in member) && member.registryKey is string
+              && registryEntryAllows(member, get(statePath).data.activeVersion))));
+    }
+    function approved() {
+      let memberPath = /databases/$(database)/documents/members/$(request.auth.uid);
+      return verified() && get(memberPath).data.status == 'approved' && registryAllows(get(memberPath).data);
+    }
+    function admin() {
+      return verified() && request.auth.token.admin == true
+        && request.auth.token.firebase.sign_in_second_factor == 'totp'
+        && get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.active == true;
+    }
+    function text(value, maximum) { return value is string && value.size() <= maximum; }
+    function boundedList() { return request.query.limit != null && request.query.limit <= 25; }
+    function ownInterestId(id) {
+      let suffix = '__' + request.auth.uid;
+      return id.size() > suffix.size() && id[(id.size() - suffix.size()):id.size()] == suffix;
+    }
+    match /members/{uid} {
+      allow get: if (signedIn() && request.auth.uid == uid) || admin();
+      allow list: if admin() && request.query.limit != null && request.query.limit <= 25;
+      allow update: if approved() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'company', 'branch', 'phone', 'updatedAt'])
+        && text(request.resource.data.displayName, 80) && request.resource.data.displayName.size() > 0
+        && text(request.resource.data.company, 120) && text(request.resource.data.branch, 100)
+        && text(request.resource.data.phone, 40) && request.resource.data.updatedAt == request.time;
+      allow create, delete: if false;
+    }
+    match /staff/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid && request.auth.token.admin == true;
+      allow list, write: if false;
+    }
+    match /eventDrafts/{id} {
+      allow get: if admin();
+      allow list: if admin() && boundedList();
+      allow write: if false;
+    }
+    match /discoverDrafts/{id} {
+      allow get: if admin();
+      allow list: if admin() && boundedList();
+      allow write: if false;
+    }
+    match /publicationDrafts/{id} {
+      allow get: if admin();
+      allow list: if admin() && boundedList();
+      allow write: if false;
+    }
+    match /events/{id} {
+      allow get: if true;
+      allow list: if boundedList();
+      allow write: if false;
+    }
+    match /discover/{id} {
+      allow get: if id in ['1', '2', '3'];
+      allow list: if request.query.limit != null && request.query.limit <= 3;
+      allow write: if false;
+    }
+    match /publications/{id} {
+      allow get: if approved();
+      allow list: if approved() && boundedList();
+      allow write: if false;
+    }
+    match /contentAttachments/{id} {
+      allow get: if admin();
+      allow list: if admin() && boundedList();
+      allow write: if false;
+    }
+    match /consultations/{id} {
+      allow get: if admin() || (approved() && resource.data.ownerUid == request.auth.uid);
+      allow list: if boundedList() && (admin() || (approved() && resource.data.ownerUid == request.auth.uid));
+      allow write: if false;
+    }
+    match /eventInterests/{id} {
+      allow get: if admin() || (approved() && ownInterestId(id)
+        && (!exists(/databases/$(database)/documents/eventInterests/$(id)) || resource.data.ownerUid == request.auth.uid));
+      allow list: if boundedList() && (admin() || (approved() && resource.data.ownerUid == request.auth.uid));
+      allow write: if false;
+    }
+    // Registry versions/previews and all unlisted records are server-only.
+    match /{document=**} { allow read, write: if false; }
+  }
+}

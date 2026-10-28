@@ -1,0 +1,52 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function tokenAdmin() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.admin == true
+        && request.auth.token.firebase.sign_in_second_factor == 'totp';
+    }
+    function reservedCreate(kind, parentId, attachmentId) {
+      let file = firestore.get(/databases/(default)/documents/contentAttachments/$(attachmentId)).data;
+      let staff = firestore.get(/databases/(default)/documents/staff/$(request.auth.uid)).data;
+      return staff.active == true && file.ownerUid == request.auth.uid
+        && file.kind == kind && file.parentId == parentId && file.bucket == bucket
+        && file.storagePath == 'contentUploads/' + kind + '/' + parentId + '/' + attachmentId
+        && file.scanStatus == 'pending' && !('finalizedAt' in file)
+        && request.time < file.uploadExpiresAt
+        && request.resource.size == file.size && request.resource.size > 0
+        && request.resource.contentType == file.contentType
+        && request.resource.size <= 25 * 1024 * 1024;
+    }
+    function currentPublicParent(file, attachmentId) {
+      let parentCollection = file.kind == 'event' ? 'events' : 'discover';
+      let parent = firestore.get(/databases/(default)/documents/$(parentCollection)/$(file.parentId)).data;
+      return parent.revision == file.publishedRevision
+        && (file.kind == 'event'
+          ? (attachmentId in parent.data.images || parent.data.brochure == attachmentId)
+          : parent.data.image == attachmentId);
+    }
+    function publicRead(kind, parentId, attachmentId) {
+      let file = firestore.get(/databases/(default)/documents/contentAttachments/$(attachmentId)).data;
+      return kind in ['event', 'discover'] && file.kind == kind && file.parentId == parentId
+        && file.bucket == bucket && file.visibility == 'public'
+        && file.publishedKind == kind && file.publishedId == parentId
+        && file.storagePath == 'contentUploads/' + kind + '/' + parentId + '/' + attachmentId
+        && file.scanStatus == 'clean' && file.generation is string && file.generation.matches('^[0-9]+$')
+        && file.sha256 is string && file.sha256.matches('^[a-f0-9]{64}$')
+        && string(resource.generation) == file.generation
+        && file.scan.generation == file.generation && file.scan.sha256 == file.sha256
+        && file.scan.scannerId is string && file.scan.scannerId.size() > 0
+        && file.scan.scannedAt is timestamp && file.finalizedAt is timestamp
+        && resource.size == file.size && resource.contentType == file.contentType
+        && currentPublicParent(file, attachmentId);
+    }
+    match /contentUploads/{kind}/{parentId}/{attachmentId} {
+      allow create: if tokenAdmin() && reservedCreate(kind, parentId, attachmentId);
+      allow get: if publicRead(kind, parentId, attachmentId);
+      allow list, update, delete: if false;
+    }
+    // Member publications/private previews use the authenticated HTTP endpoint.
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}
