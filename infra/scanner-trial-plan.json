@@ -1,0 +1,117 @@
+{
+  "projectId": "isp-planter-app",
+  "region": "asia-southeast1",
+  "status": "PREPARED_PENDING_EXACT_DIRECTOR_COST_REVIEW",
+  "sourceCheckpointRequired": true,
+  "sourceFiles": {
+    "requirements.txt": "ee92fac2a2be3dda8555121c44913e1ce5788f97d3fc2961089db344ab6e773e",
+    "validate_file.py": "63dda60aecfece351bc7e0eba0deb69ae169f79b0668184b0d020a9d4689299a",
+    "policy.py": "8cda0ffd49359e189934be54b69c2e1edbd1eef7bfe1c476698db5746776916f",
+    "scanner.py": "59b516d07fa9a11abb66cb1f89636c04d5fbfbea1a2fd8714711419bac2a81fc",
+    "Dockerfile": "ea366be9bcbdb8bd3fdcfdb1aebd5e031ddc95b30b8d2a71ffbaf406b2459f2d",
+    "mirror.py": "cd8347051f647291e36aced24964cd50e65368f03e233e516fe117195e9e48d1"
+  },
+  "resources": {
+    "artifactRepository": "isp-support",
+    "scannerService": "isp-upload-scanner",
+    "signatureUpdaterJob": "isp-clamav-updater",
+    "signatureBucket": "isp-planter-app-clamav-definitions-606528057827",
+    "eventarcTrigger": "isp-attachment-finalized",
+    "scannerIdentity": "isp-upload-scanner@isp-planter-app.iam.gserviceaccount.com",
+    "updaterIdentity": "isp-clamav-updater@isp-planter-app.iam.gserviceaccount.com",
+    "eventIdentity": "isp-scan-eventarc@isp-planter-app.iam.gserviceaccount.com"
+  },
+  "trial": {
+    "maximumBuilds": 1,
+    "buildTimeoutSeconds": 1200,
+    "buildMachineType": "e2-standard-2",
+    "maximumSeedExecutions": 1,
+    "seedTaskTimeoutSeconds": 1200,
+    "seedTasks": 1,
+    "seedMaxRetries": 0,
+    "maximumAttachmentScans": 3,
+    "scannerRequestTimeoutSeconds": 480,
+    "scannerInternalDeadlineSeconds": 420,
+    "scannerFinishReserveSeconds": 40,
+    "memoryGiB": 4,
+    "cpu": 1,
+    "maxInstances": 1,
+    "concurrency": 1,
+    "minInstances": 0,
+    "cpuBoost": false,
+    "eventDeliveryAttempts": 1,
+    "automaticOperatorRetry": false,
+    "scheduleEnabledDuringTrial": false,
+    "maxFinalizedAttachments": 3,
+    "cleanPublicationAttachments": 2,
+    "unsafeFormatAttachments": 1,
+    "seedInternalAntivirusSelfTest": "standard harmless encoded EICAR generated only in updater-container tmp; actual named detection required before manifest activation; no local fixture",
+    "buildOwnedCancellationGraceSeconds": 120
+  },
+  "cost": {
+    "kind": "conservative_allowance_not_invoice_or_hard_cap",
+    "trialAllowanceUsd": 1.5,
+    "buildAllowanceUsd": 0.12,
+    "scanCpuRamIncludingStartupAndShutdownReserveUsd": 0.115,
+    "seedCpuRamIncludingStartupAndShutdownReserveUsd": 0.05,
+    "artifactAndSignatureStorageAllowanceUsd": 0.5,
+    "operationsEventsLoggingTransferAllowanceUsd": 0.25,
+    "unallocatedTrialReserveUsd": 0.465,
+    "includedWithinCumulativeTenDollarLedger": true,
+    "requestCpuPerSecondUsd": 3.36E-05,
+    "requestGiBPerSecondUsd": 3.5E-06,
+    "jobCpuPerSecondUsd": 2.16E-05,
+    "jobGiBPerSecondUsd": 2.4E-06,
+    "pricingEvidence": "audit/cloud-run-pricing-20261029.html",
+    "buildCancellationAllowanceWithinUnallocatedUsd": 0.012,
+    "buildPricePerMinuteUsd": 0.006,
+    "buildTimeoutComputeUsd": 0.12,
+    "threeScannerRequestsComputeUsd": 0.068544,
+    "singleSeedComputeUsd": 0.03744,
+    "storageBounds": {
+      "admission": "Root records actual artifact and source sizes before seed; records mirror bytes after one seed; refuse next phase if caps exceeded. Retain only owned trial objects; root removes owned trial image/source/mirror state by day7 unless separately admitted to operations. Include configured soft-delete retention, never assume deleted bytes are immediately free.",
+      "sourceBuildArchiveBytesMaximum": 10485760,
+      "softDeleteAdditionalDaysMaximum": 7,
+      "retainedTrialDaysMaximum": 7,
+      "storageAllowanceUsd": 0.5,
+      "artifactLogicalBytesMaximum": 2147483648,
+      "mirrorAndUpdaterTotalBytesMaximum": 2147483648
+    },
+    "pricingSources": [
+      "https://cloud.google.com/run/pricing",
+      "https://cloud.google.com/build/pricing",
+      "https://cloud.google.com/artifact-registry/pricing",
+      "https://cloud.google.com/storage/pricing"
+    ]
+  },
+  "proof": [
+    "Two actual allowed-format clean publication files: one cover and one PDF, exact immutable generation/hash and signed fresh database evidence",
+    "One inert non-PDF body reserved as PDF rejected by actual scanner strict format validation; rejected bytes cannot publish/download, including administrator",
+    "Inside the single seed/update container only, standard harmless EICAR actual engine self-test must detect exactly1 scanned/1 infected with named signature before activating candidate mirror. Store PASS/engine/daily-version/time only; delete fixture",
+    "No clean attestation on errors, missing/stale definitions, format/hash/limit failures",
+    "Only six new workflow areas and file publication/download; accepted Auth/profile/MFA checks carry without replay"
+  ],
+  "admission": [
+    "Director review of this exact source/image/identity/cost tuple",
+    "Installed CLI supports the documented single-delivery Eventarc option",
+    "Build contexts exclude all environment files, audit data and credentials",
+    "Core provider seal records one successful28-second build and112500892 logical image bytes",
+    "Private IAM only; updater has no Auth/Drive/Firestore access",
+    "Record image digest and signature manifest generation before scanning",
+    "No public launch, domain cutover, real members or unsolicited email",
+    "One build only with1200s server timeout; operator watches only its owned build and cancels that build if still running at the bound, allowing120s cancellation reserve within unallocated amount; no subsequent paid phase while build state is uncertain",
+    "Linux amd64 image only; public metadata shows Alpine3.24.3 base and compatible musllinux Pillow/grpcio wheels. Explicit CRC32C_PURE_PYTHON=1 uses supported slower Python checksum implementation rather than adding native compilers",
+    "One seed execution only, no schedule/retry/extra CDN probe; actual fresh signed mirror and internal antivirus self-test receipt must exist before attachment finalization",
+    "Maximum3 finalized attachments total for this released proof; failed/ambiguous attachment attempts consume the allowance and are never silently replaced",
+    "Observe actual built image bytes <=2GiB before admitting seed; mirror+updater+retained state <=2GiB including object versions,7days retained trial plus at most7days soft delete under0.50USD allowance; stop for review if observed size/retention exceeds bound"
+  ],
+  "scannerFirestoreIam": {
+    "permissions": [
+      "datastore.databases.get",
+      "datastore.entities.get",
+      "datastore.entities.update"
+    ],
+    "condition": "resource.name == 'projects/isp-planter-app/databases/(default)'",
+    "boundary": "Database-scoped IAM; collection and immutable-tuple restrictions are enforced by reviewed scanner source, not IAM fields."
+  }
+}

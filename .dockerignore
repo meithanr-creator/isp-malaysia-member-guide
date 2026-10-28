@@ -1,0 +1,15 @@
+.git/
+**/node_modules/
+**/__pycache__/
+**/.venv/
+dist/
+.firebase/
+functions/lib/
+audit/
+.env*
+**/.env*
+!.env.example
+firebase-debug*.log
+**/*service-account*.json
+**/*credentials*.json
+**/*token*.json

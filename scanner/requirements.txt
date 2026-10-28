@@ -1,0 +1,7 @@
+# Direct pins verified against publisher PyPI JSON on29October2026; full transitive lock belongs to reviewed image build.
+google-cloud-firestore==2.34.1
+google-cloud-storage==3.17.1
+google-events==0.14.0
+cvdupdate==1.2.0
+Pillow==13.0.0
+pypdf==6.21.4

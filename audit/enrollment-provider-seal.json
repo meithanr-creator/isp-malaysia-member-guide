@@ -1,0 +1,62 @@
+[
+  {
+    "buildConfig": {
+      "build": "projects/606528057827/locations/asia-southeast1/builds/dcf71f7c-6a1f-4260-92b3-b1b464056e50"
+    },
+    "name": "projects/isp-planter-app/locations/asia-southeast1/functions/activateMyMembership",
+    "serviceConfig": {
+      "environmentVariables": {
+        "ISP_SOURCE_COMMIT": "5ca54cca21781ec1b5ea6a351052903d6295ae97"
+      },
+      "revision": "activatemymembership-00001-liz",
+      "serviceAccountEmail": "isp-functions@isp-planter-app.iam.gserviceaccount.com"
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-28T20:46:37.143562452Z"
+  },
+  {
+    "buildConfig": {
+      "build": "projects/606528057827/locations/asia-southeast1/builds/dcf71f7c-6a1f-4260-92b3-b1b464056e50"
+    },
+    "name": "projects/isp-planter-app/locations/asia-southeast1/functions/previewRegistryImport",
+    "serviceConfig": {
+      "environmentVariables": {
+        "ISP_SOURCE_COMMIT": "5ca54cca21781ec1b5ea6a351052903d6295ae97"
+      },
+      "revision": "previewregistryimport-00002-jes",
+      "serviceAccountEmail": "isp-functions@isp-planter-app.iam.gserviceaccount.com"
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-28T20:46:38.270084055Z"
+  },
+  {
+    "buildConfig": {
+      "build": "projects/606528057827/locations/asia-southeast1/builds/dcf71f7c-6a1f-4260-92b3-b1b464056e50"
+    },
+    "name": "projects/isp-planter-app/locations/asia-southeast1/functions/getRegistryImportPreview",
+    "serviceConfig": {
+      "environmentVariables": {
+        "ISP_SOURCE_COMMIT": "5ca54cca21781ec1b5ea6a351052903d6295ae97"
+      },
+      "revision": "getregistryimportpreview-00002-koy",
+      "serviceAccountEmail": "isp-functions@isp-planter-app.iam.gserviceaccount.com"
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-28T20:46:39.943289180Z"
+  },
+  {
+    "buildConfig": {
+      "build": "projects/606528057827/locations/asia-southeast1/builds/dcf71f7c-6a1f-4260-92b3-b1b464056e50"
+    },
+    "name": "projects/isp-planter-app/locations/asia-southeast1/functions/confirmRegistryImport",
+    "serviceConfig": {
+      "environmentVariables": {
+        "ISP_SOURCE_COMMIT": "5ca54cca21781ec1b5ea6a351052903d6295ae97"
+      },
+      "revision": "confirmregistryimport-00002-kec",
+      "serviceAccountEmail": "isp-functions@isp-planter-app.iam.gserviceaccount.com"
+    },
+    "state": "ACTIVE",
+    "updateTime": "2026-10-28T20:46:38.373894739Z"
+  }
+]

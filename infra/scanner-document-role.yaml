@@ -1,0 +1,7 @@
+title: ISP attachment scanner transaction writer
+description: Read and update existing documents using transactions; bind only to the ISP default database. No create, list, delete, Auth, Drive or administration.
+stage: GA
+includedPermissions:
+  - datastore.databases.get
+  - datastore.entities.get
+  - datastore.entities.update
