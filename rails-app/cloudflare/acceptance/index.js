@@ -177,3 +177,6 @@ export class ISPPrivateAcceptanceMobileQueued6Continuation extends ISPPrivateAcc
 
 // Further reviewed continuation has its own permanent stop latch and namespace.
 export class ISPPrivateAcceptanceMobileQueued6NextContinuation extends ISPPrivateAcceptanceMobileQueued6 {}
+
+// Explicit reviewed fresh namespace; identical full-runner resource limits.
+export class ISPPrivateAcceptanceMobileQueued6RenewedContinuation extends ISPPrivateAcceptanceMobileQueued6 {}
