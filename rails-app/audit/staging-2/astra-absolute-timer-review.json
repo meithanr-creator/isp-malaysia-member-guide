@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "reviewer": "Astra high",
+  "agent": "/root/astra_release_review",
+  "source_base": "eb5c080d5693365f7d5dcdcee4f4537884c9a1f9",
+  "disposition": "GO_FOR_PUBLICATION_ONLY",
+  "exact_file_sha256": {
+    "script/cloudflare-staging-watchdog.mjs": "5692dda354af8b99e1fc9fde157f918d58f04c4292093e3e76656e6b0cdc3fe8",
+    "script/cloudflare-staging-watchdog.test.mjs": "8b6ab1a9cdb874f30e21de0d2e51d25500de18d415a8d98cacbb8f65a60834fc",
+    "cloudflare/staging/staging.test.mjs": "1563f141637f768972850d94e37bc00754d0fc953b0e8a6c5d398b4b2feb8bc0"
+  },
+  "actual_results": {
+    "release_node_passed": 165,
+    "adapter_node_passed": 56,
+    "failures": 0,
+    "skips": 0,
+    "cancelled": 0
+  },
+  "scope": "Immutable operation deadline; reschedule early timer wakeup only within same deadline, clear settled callbacks, deterministic diagnostic classification",
+  "exact_new_commit_ci_required": true,
+  "production_approved": false
+}

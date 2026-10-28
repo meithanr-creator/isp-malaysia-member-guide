@@ -21,14 +21,14 @@ class PublicationDraftUpdaterTest < ActiveSupport::TestCase
     publication.prepare_preview!(expected_lock_version: publication.lock_version)
     before = publication.reload.attributes
     [nil, "invalid", stale_lock].each do |token|
-      assert_no_difference("ActiveStorage::Blob.count") do
+      ActiveStorage::Blob.service.stub(:upload, ->(*) { flunk "Rejected edit reached object storage" }) do
         assert_not PublicationDraftUpdater.new(publication).call(attributes: { "title" => "Stale replacement" }, cover: discover_upload, expected_lock_version: token)
       end
       assert_equal before, publication.reload.attributes
     end
   end
 
-  test "invalid upload invalidates preview while retaining saved and published file references" do
+  test "invalid upload preserves saved preview and published references" do
     publication = create_published_publication
     publication.prepare_preview!(expected_lock_version: publication.lock_version)
     draft = publication.draft_data.deep_dup
@@ -39,7 +39,7 @@ class PublicationDraftUpdaterTest < ActiveSupport::TestCase
     end
     assert_equal draft, publication.reload.draft_data
     assert_equal public_copy, publication.published_data
-    assert_not publication.preview_current?
+    assert publication.preview_current?
   end
 
   test "PDFs between ten and twenty five MB are accepted and larger files are rejected" do

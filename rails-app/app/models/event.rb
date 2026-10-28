@@ -85,6 +85,12 @@ class Event < ApplicationRecord
       errors.add(:ends_at, "must be after the start time on the event date")
     end
     errors.add(:admission, "must be free or paid") unless %w[free paid].include?(data["admission"])
+    (Array(data["images"]) + [ data["brochure"] ].compact).each do |file|
+      blob = file.is_a?(Hash) && ActiveStorage::Blob.find_signed(file["signed_id"].to_s)
+      unless blob && uploads.blobs.exists?(id: blob.id) && UploadScanner.approved_blob?(blob)
+        errors.add(:base, "An event attachment is missing or has not passed the upload safety check.")
+      end
+    end
     return unless data["admission"] == "paid"
     fee = BigDecimal(data["fee"].to_s, exception: false)
     errors.add(:fee, "must be between RM 0.01 and RM 100,000, with up to two decimal places") unless fee&.finite? && fee >= 0.01 && fee <= 100_000 && data["fee"].to_s.match?(/\A\d+(?:\.\d{1,2})?\z/)

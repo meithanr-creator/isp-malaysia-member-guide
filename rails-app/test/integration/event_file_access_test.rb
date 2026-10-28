@@ -21,6 +21,8 @@ class EventFileAccessTest < ActionDispatch::IntegrationTest
     get @path
     assert_response :success
     assert_equal "application/pdf", response.media_type
+    assert_match(/\Aattachment;/, response.headers["Content-Disposition"])
+    assert_equal "nosniff", response.headers["X-Content-Type-Options"]
     assert_includes response.headers["Cache-Control"], "no-store"
     assert_includes response.headers["Cache-Control"], "private"
   end
@@ -31,6 +33,8 @@ class EventFileAccessTest < ActionDispatch::IntegrationTest
     get @path
     assert_response :success
     assert_includes response.body, "%PDF-1.7"
+    assert_match(/\Aattachment;/, response.headers["Content-Disposition"])
+    assert_equal "nosniff", response.headers["X-Content-Type-Options"]
     replacement = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("%PDF-1.7 private replacement"), filename: "replacement.pdf", content_type: "application/pdf", identify: false, metadata: { analyzed: true })
     @event.uploads.attach(replacement)
     @event.update!(draft_data: @event.draft_data.merge("brochure" => { "signed_id" => replacement.signed_id, "name" => "replacement.pdf", "size" => replacement.byte_size }), revision: @event.revision + 1)
@@ -66,3 +70,4 @@ class EventFileAccessTest < ActionDispatch::IntegrationTest
     post session_path, params: { email: user.email, password: "test-password-2026" }, headers: { "REMOTE_ADDR" => "2001:db8:#{SecureRandom.hex(2)}:#{SecureRandom.hex(2)}::1" }
   end
 end
+

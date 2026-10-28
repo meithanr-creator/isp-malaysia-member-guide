@@ -1,0 +1,24 @@
+{
+ "$schema":"../node_modules/wrangler/config-schema.json",
+ "name":"isp-member-production",
+ "account_id":"a9720867333b64a4f8ee70cdfd673eb9",
+ "main":"index.js",
+ "compatibility_date":"2026-10-26",
+ "workers_dev":false,"preview_urls":false,"routes":[],
+ "observability":{"enabled":false},
+ "vars":{
+  "ISP_CONTAINER_ENABLED":"false",
+  "APP_HOST":"isp-member-production.meithan-r.workers.dev",
+  "ISP_STAGING_START_AT":"","ISP_STAGING_EXPIRES_AT":"",
+  "ISP_DEMO_MODE":"false","ISP_ACCOUNT_EMAILS_ENABLED":"false",
+  "ISP_ACCOUNT_EMAIL_DISPATCHER_ENABLED":"false","DB_SSLMODE":"verify-full"
+ },
+ "containers":[{
+  "name":"isp-member-production","class_name":"RailsContainer",
+  "scheduling_policy":"default",
+  "image":"registry.cloudflare.com/a9720867333b64a4f8ee70cdfd673eb9/isp-member-rails@sha256:0187a1e32351a3f7a8f9c87a48798c0adf31f3b6c4116309c78f638582700cd2",
+  "instance_type":"standard-2","max_instances":1,"observability":{"enabled":false}
+ }],
+ "durable_objects":{"bindings":[{"name":"RAILS_CONTAINER","class_name":"RailsContainer"}]},
+ "migrations":[{"tag":"rails-container-v1","new_sqlite_classes":["RailsContainer"]}]
+}

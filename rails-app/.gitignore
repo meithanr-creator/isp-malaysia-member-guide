@@ -15,3 +15,18 @@
 /audit/*.png
 /audit/*.pdf
 /coverage/
+
+/public/assets/
+.neon
+node_modules/
+
+/node_modules/
+
+/.neon
+
+/.agents/
+
+/skills-lock.json
+
+# Mobile acceptance screenshots remain local/private.
+/audit/**/*.png

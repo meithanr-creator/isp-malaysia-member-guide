@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "recorded_at": "2026-10-27T18:42:38.9183905Z",
+  "runtime_continuation": true,
+  "batches": 15,
+  "first_batch": "bootstrap",
+  "last_deferred_batch": "aged-stepup",
+  "current_case_count": 33,
+  "carried_case_count": 9,
+  "application_requests": 0,
+  "provider_requests": 0,
+  "source": "actual native CLI --plan",
+  "archive_moved": false,
+  "runtime_started": false
+}

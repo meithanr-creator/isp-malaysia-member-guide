@@ -1,0 +1,235 @@
+{
+  "version": 1,
+  "kind": "local_process_cleanup_census_correction",
+  "status": "PASS_LOCAL_AMENDMENT_ORIGINAL_FAIL_PRESERVED",
+  "hosted_result_changed": false,
+  "source_frozen": true,
+  "source_sha256": {
+    "script/private-mobile-cleanup.mjs": "ae848046601fe58644ef33b5f261cebaff82c95e49292cd3efc2eb728d296a7a",
+    "script/private-mobile-census-timeout.test.mjs": "9ea521c19c2f1310f8cff98468e720f89a23172571bceb872ad69b028318260d"
+  },
+  "original_receipts_sha256": {
+    "browser-process-cleanup-stdout.txt": "a082160a676ff2f10bd221bcf2bbdf93b163ecb54e0e3c5ebc2e25478b79f08e",
+    "mobile-cleanup-9e55341f-faa7-403c-a06e-bc54dc171eda.json": "0d3f5987e2a5a04963a8af458957d4a24783b86f3a5970e1ab709e10e3ca285e",
+    "virtual-mobile-iphone-webkit-process.json": "2fa5af7e41a323b48f17fb7b15596fd60b6d22268a90363fcac6945f751e1870"
+  },
+  "independent_full_census": {
+    "path": "D:/Projects/isp-rails-tools/isp-mobile-qa/private-mobile-cleanup-amendment-1793201662749.json",
+    "sha256": "6feb906a39247227f536211a3f9aaaa17036b3fd96ed9eb6dc898e0050ec5e88",
+    "version": 1,
+    "kind": "independent_private_mobile_cleanup_amendment",
+    "at": "2026-10-28T15:34:22.748Z",
+    "original_verdict_preserved": "FAIL",
+    "original_receipts_sha256": {
+      "browser-process-cleanup-stdout.txt": "a082160a676ff2f10bd221bcf2bbdf93b163ecb54e0e3c5ebc2e25478b79f08e",
+      "mobile-cleanup-9e55341f-faa7-403c-a06e-bc54dc171eda.json": "0d3f5987e2a5a04963a8af458957d4a24783b86f3a5970e1ab709e10e3ca285e",
+      "virtual-mobile-iphone-webkit-process.json": "2fa5af7e41a323b48f17fb7b15596fd60b6d22268a90363fcac6945f751e1870"
+    },
+    "amendment_scope": "Full fresh local process census only. Does not change hosted result, case acceptance or original cleanup verdict.",
+    "dedicated_distro": {
+      "distro": "ISP-QA-Ubuntu-24.04",
+      "base_path": "D:/Projects/isp-rails-tools/isp-mobile-qa/wsl",
+      "version": 2
+    },
+    "source_sha256": {
+      "script/private-mobile-cleanup.mjs": "ae848046601fe58644ef33b5f261cebaff82c95e49292cd3efc2eb728d296a7a",
+      "script/private-mobile-census-timeout.test.mjs": "9ea521c19c2f1310f8cff98468e720f89a23172571bceb872ad69b028318260d"
+    },
+    "limits": {
+      "windows_ms": 5000,
+      "linux_ms": 20000,
+      "total_ms": 30000
+    },
+    "elapsed_ms": 17235,
+    "targets": {
+      "ids": [
+        "2fdea89e-4eb8-48ac-b274-05f42d3305e6"
+      ],
+      "windows": [
+        8824,
+        18556,
+        24956,
+        26236,
+        28576,
+        31780,
+        32476
+      ],
+      "linux": [
+        396,
+        528
+      ],
+      "issues": []
+    },
+    "observations": {
+      "windows": {
+        "complete": true,
+        "present": [],
+        "relevant": [],
+        "diagnostics": {
+          "limit_ms": 5000,
+          "elapsed_ms": 885,
+          "exit_code": 0,
+          "signal": null,
+          "error_class": null,
+          "error_code": null,
+          "stdout_bytes": 46,
+          "stderr_bytes": 0,
+          "stdout_sha256": "490d2306df38bbecd18c90dbd912805390bc166b1296f15017799b3c9d8541b5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "outcome": "observed"
+        }
+      },
+      "linux": {
+        "complete": true,
+        "present": [],
+        "relevant": [],
+        "diagnostics": {
+          "limit_ms": 20000,
+          "elapsed_ms": 16347,
+          "exit_code": 0,
+          "signal": null,
+          "error_class": null,
+          "error_code": null,
+          "stdout_bytes": 50,
+          "stderr_bytes": 0,
+          "stdout_sha256": "6ce804af2b7fc4e110979c9cf67429616ee1a0b933c146d5d55828ef94a655dd",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "outcome": "observed"
+        }
+      }
+    },
+    "status": "PASS",
+    "tracked_windows_pids": [
+      8824,
+      18556,
+      24956,
+      26236,
+      28576,
+      31780,
+      32476
+    ],
+    "tracked_linux_pids": [
+      396,
+      528
+    ],
+    "windows_absent": true,
+    "linux_absent": true,
+    "issues": [],
+    "census_diagnostics": {
+      "windows": {
+        "limit_ms": 5000,
+        "elapsed_ms": 885,
+        "exit_code": 0,
+        "signal": null,
+        "error_class": null,
+        "error_code": null,
+        "stdout_bytes": 46,
+        "stderr_bytes": 0,
+        "stdout_sha256": "490d2306df38bbecd18c90dbd912805390bc166b1296f15017799b3c9d8541b5",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outcome": "observed"
+      },
+      "linux": {
+        "limit_ms": 20000,
+        "elapsed_ms": 16347,
+        "exit_code": 0,
+        "signal": null,
+        "error_class": null,
+        "error_code": null,
+        "stdout_bytes": 50,
+        "stderr_bytes": 0,
+        "stdout_sha256": "6ce804af2b7fc4e110979c9cf67429616ee1a0b933c146d5d55828ef94a655dd",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outcome": "observed"
+      }
+    },
+    "provider_calls": 0,
+    "runtime_or_database_queries": 0,
+    "signals_sent": 0,
+    "processes_killed": 0,
+    "other_project_actions": 0
+  },
+  "diagnostics": [
+    {
+      "path": "D:/Projects/isp-rails-tools/isp-mobile-qa/census-diagnostic-1793201397757.json",
+      "sha256": "8e8857dda7cc6995454ce795f79796d8ebd4a492363e245b26291c41ecbc57c2",
+      "receipts": {
+        "windows": {
+          "exit_code": 0,
+          "signal": null,
+          "error_class": null,
+          "error_code": null,
+          "elapsed_ms": 1136,
+          "stderr_bytes": 0,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_bytes": 50,
+          "stdout_sha256": "2988cc43612cd369a7272e7f0de0e3b1ed9079d4cd98e673c0d72613484239f2",
+          "summary": {
+            "complete": true,
+            "present": [
+              8824
+            ],
+            "relevant": []
+          },
+          "safe_error_codes": []
+        },
+        "linux": {
+          "exit_code": null,
+          "signal": "SIGTERM",
+          "error_class": "Error",
+          "error_code": "ETIMEDOUT",
+          "elapsed_ms": 5016,
+          "stderr_bytes": 0,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_bytes": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "summary": null,
+          "safe_error_codes": []
+        }
+      }
+    },
+    {
+      "path": "D:/Projects/isp-rails-tools/isp-mobile-qa/census-diagnostic-1793201459431.json",
+      "sha256": "3df3c0d06875f043500c3fd18adcfb859d3bbf967d8ccc37bbcbe73a262260e6",
+      "receipts": {
+        "linux": {
+          "timeout_ms": 30000,
+          "exit_code": 0,
+          "signal": null,
+          "error_class": null,
+          "error_code": null,
+          "elapsed_ms": 13051,
+          "stderr_bytes": 0,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_bytes": 50,
+          "stdout_sha256": "6ce804af2b7fc4e110979c9cf67429616ee1a0b933c146d5d55828ef94a655dd",
+          "summary": {
+            "complete": true,
+            "present": [],
+            "relevant": []
+          },
+          "safe_error_codes": []
+        }
+      }
+    }
+  ],
+  "cause": "Dedicated QA Linux census exceeds the previous five-second per-command cap: exact command timed out at5016ms, then completed at13051ms with a longer diagnostic allowance. New independent full-census amendment completed Linux at16347ms. Original Windows incompleteness cause was not retained; fresh full Windows census completes normally.",
+  "change": "Only dedicated Linux census allowance increases to20000ms; Windows5000ms and total cleanup30000ms remain fixed. Incomplete/timeout/invalid output retains FAIL and safe exit/timing/hash diagnostics. Census scope and ownership rules remain unchanged.",
+  "focused_tests": {
+    "command": "D:/Projects/isp-rails-tools/node24/node.exe --test script/private-mobile-census-timeout.test.mjs",
+    "exit_code": 0,
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 614.0498
+  },
+  "provider_calls": 0,
+  "runtime_or_database_queries": 0,
+  "signals_sent": 0,
+  "processes_killed": 0,
+  "other_project_actions": 0,
+  "old_acceptance_checks_replayed": 0,
+  "old_unit_checks_replayed": 0,
+  "shared_private_context_changed": false
+}

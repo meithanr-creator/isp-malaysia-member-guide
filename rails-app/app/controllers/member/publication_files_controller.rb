@@ -12,7 +12,12 @@ module Member
       blob = publication.file_blob(file, kind: params[:kind])
       return head :not_found unless blob
       disposition = params[:kind] == "pdf" ? "attachment" : "inline"
-      send_data blob.download, filename: blob.filename.to_s, type: blob.content_type, disposition: disposition
+      bytes = UploadScanner.download(blob)
+      return head :not_found unless bytes
+      response.headers["X-Content-Type-Options"] = "nosniff"
+      send_data bytes, filename: blob.filename.to_s, type: blob.content_type, disposition: disposition
     end
   end
 end
+
+

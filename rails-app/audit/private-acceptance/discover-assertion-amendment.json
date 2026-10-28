@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "status": "ACCEPTED_BY_REVIEWED_AMENDMENT",
+  "run_marker": "qa-20261027-af5c0c9a4c4f",
+  "case_id": "discover_replaced_key",
+  "original_case_sha256": "24e60cc9fd8db7999941668721d221dd21d16327badfca73580e09a7e76ab93d",
+  "original_status": "FAIL",
+  "http": "PASS",
+  "baseline_lock_version": 2,
+  "original_expected_lock_version": 3,
+  "actual_lock_version": 4,
+  "expected_contract": "Saved version advances monotonically and matches persisted row; attachment touch may advance more than once",
+  "other_persisted_assertions": "PASS",
+  "image_blob_changed": true,
+  "http_assertions": [
+    "Actual replacement image serves exact new bytes; previous Discover key returns 404; persisted card version advanced once",
+    "Fresh independent persisted-state assertions failed"
+  ],
+  "artifacts": {
+    "packet.json": "a4783a11594208d975af382abf0a705614a173349a6733a64ba43998f09b1772",
+    "runtime.json": "78c840c15a9c87d64e8047985619da48c6b4e8e2d0907deed74f66ca61d9feec",
+    "acceptance-http.json": "aee5537e716b9d0443ccfc45085f8129d1400129e6ff7c388acf5342954dc13a",
+    "result.json": "c44a343d1c04482eeb89506f64881f75568c600d8a30870ce45c17c7d4742230",
+    "acceptance-db-critical-guards-scanner_eicar_rejection.json": "eec97991f295dfdc1bb8a66689e13dfe7560a9dfbbac86d55612d45b8e6fb9e6",
+    "acceptance-db-critical-replace-discover_replaced_key.json": "710480eabbc98bef0fb58d96d398d94b9d3694d9a474b46d568ada0c72229c0a"
+  },
+  "application_change": false,
+  "original_evidence_modified": false,
+  "new_hosted_requests": 0,
+  "review_required": false,
+  "review": {
+    "director": "Astra high",
+    "decision": "ACCEPTED",
+    "scope": "Original retained monotonic version advance 2 to 4, unchanged other card fields, actual replacement bytes and old-key denial; new saved-editor-token assertion was not executed in original run",
+    "original_failure_preserved": true,
+    "application_change": false,
+    "reviewed_at": "2026-10-27T19:51:10.713Z"
+  },
+  "accepted_selected_case_total": 40
+}

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "status": "PASS_COMPLETE_STRICT_SOURCE_ARCHIVE_READBACK",
+  "source": "D:/Projects/isp-rails-tools/isp-staging-private/private-acceptance",
+  "destination": "D:/Projects/isp-rails-tools/isp-staging-private/private-acceptance-history/qa-20261028-a92f2304fc78",
+  "source_packet_sha256": "3dea1bffc157886acaf3f5b3bcd2e534bbb9a52e6f0dac50775b08d5be16113a",
+  "source_result_sha256": "0d2e1ecde0872060f7336487b64269f4d5190917c66c82ddafd76e4707da743e",
+  "file_count": 124,
+  "identical_before_after_tree_sha256": "37960e4b8c28109e254196a62dd9e6206aa096fbad3169b7486e5941056e9964",
+  "private_readback_receipt_sha256": "fd5070cbf425eff6e870e287e585bae40b5925f14d7cf27a56edb18baceaa153",
+  "original_fail_preserved": true,
+  "mobile_journal_absent": true,
+  "fresh_current_directory_absence_verified_before_prepare": true,
+  "provider_requests": 0,
+  "database_requests": 0
+}

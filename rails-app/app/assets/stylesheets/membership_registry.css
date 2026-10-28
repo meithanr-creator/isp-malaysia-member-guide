@@ -1,0 +1,11 @@
+/* Private membership registry: readable stacked records on small screens. */
+.membership-row-list{padding:0;list-style:none;margin:24px 0}
+.membership-row{padding:22px 0;border-bottom:1px solid var(--line);min-width:0;overflow-wrap:anywhere}
+.membership-row h2{font-size:1.45rem;margin:6px 0 16px}
+.membership-details{margin:0;font-size:.94rem;line-height:1.5}
+.membership-details>div{display:grid;grid-template-columns:minmax(90px,1fr) minmax(0,1.6fr);gap:12px;margin:7px 0}
+.membership-details dt{color:var(--muted)}
+.membership-details dd{margin:0;overflow-wrap:anywhere}
+.membership-row-errors{color:#713724;padding-left:20px;font-size:.9rem;line-height:1.5}
+.membership-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:22px 0;font-size:.9rem}
+.membership-admin code{overflow-wrap:anywhere;white-space:normal}

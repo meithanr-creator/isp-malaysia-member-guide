@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "source": "4ec70fd6b7f18e65a19bd75a09245f53acd44f96",
+  "push_run": 40466092854,
+  "pr_run": 40466097242,
+  "failed_job": 122061730261,
+  "failed_step": "Validate bounded hosted acceptance tools without network or credentials",
+  "failed_invocation": "ISP_STAGING_LEASE=rails-staging-3 node script/run-hosted-acceptance.mjs --plan",
+  "actual_failure": "Hosted acceptance sequencing refused or stopped. Private credentials were not printed.",
+  "diagnosis": "CI runs Ubuntu, but the operator intentionally launches a script at its fixed D:/Projects path; this Windows-only invocation cannot run there.",
+  "correction": "Remove only this Linux CI invocation; retain parent syntax check, all274 release regressions, pure phase-plan tests, standalone explicit-lease3 plan/selftest and exact SDK source proof. The actual launcher --plan was already executed successfully on D.",
+  "application_source_unchanged": true,
+  "provider_operations": 0,
+  "new_runtime": false,
+  "hosted_pass": 0,
+  "production_approved": false,
+  "corrected_ci": "PENDING"
+}

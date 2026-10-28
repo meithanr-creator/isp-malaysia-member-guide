@@ -1,0 +1,11 @@
+{
+  "checked_at": "2026-10-26T10:37:59.893Z",
+  "serving_deployment": "1847c5bc-7b6e-4c0a-9eee-657f7c3476f1",
+  "serving_version": "d6978392-76ac-4208-aaf9-e907be1939c0",
+  "weight": 100,
+  "variables": {
+    "ISP_CONTAINER_ENABLED": "false",
+    "ISP_STAGING_EXPIRES_AT": "",
+    "ISP_STAGING_START_AT": ""
+  }
+}

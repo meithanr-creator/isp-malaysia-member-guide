@@ -1,0 +1,43 @@
+{
+  "scope": "Rows, schema, constraints, indexes and encrypted MFA; sequence state, write journey and files are not claimed",
+  "started_at": "2026-10-26T11:07:06.193Z",
+  "project": "royal-glitter-45740959",
+  "finalize_restore": false,
+  "plan": "free",
+  "automatic_preview_compute": true,
+  "compute_limits": {
+    "min_cu": 0.25,
+    "max_cu": 0.25
+  },
+  "reported_suspend_seconds": 0,
+  "free_plan_effective_idle_seconds": 300,
+  "restored": {
+    "ok": true,
+    "mode": "verify",
+    "tables": 21,
+    "actors": 9,
+    "registry": 7,
+    "mfa_decrypted": 2,
+    "read_only": true,
+    "matched": true
+  },
+  "parent": {
+    "ok": true,
+    "mode": "parent",
+    "tables": 21,
+    "actors": 9,
+    "registry": 7,
+    "mfa_decrypted": 2,
+    "read_only": true,
+    "matched": true
+  },
+  "restore_verified_at": "2026-10-26T11:07:50.708Z",
+  "database_restore": "pass",
+  "cleanup": {
+    "restored_branch_absent": true,
+    "snapshot_absent": true,
+    "created_compute_absent": true,
+    "original_endpoints_preserved": true
+  },
+  "finished_at": "2026-10-26T11:08:11.755Z"
+}

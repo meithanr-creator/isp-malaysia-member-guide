@@ -1,0 +1,322 @@
+{
+  "version": 1,
+  "status": "OFFLINE_CORRECTION_VERIFIED_RUNTIME_HOLD",
+  "scope": "Actual queued staging gateway with a local synthetic private gate/origin, actual Rails-rendered homepage and packaged assets. This is not hosted mobile business-workflow acceptance.",
+  "review_packet_sha256": "879162bfa2e4d2ee4d4b6f8cc6654bd8dd9a4e0caccdbb49e8c177d66f055bab",
+  "implementation_proof_sha256": "5893b83c10e5aced8746bc5015cf242c8a855b3ab5dd16dba55fb55ec6e485bf",
+  "tested_source_sha256": {
+    "cloudflare/acceptance/index.js": "a29054f60d378f867bd4df2b63830fbc5d14496fe8c925ece4c9d5faccfdfd76",
+    "cloudflare/acceptance/index.test.mjs": "269f51512f09b42a00b99a7d5bd219f7cf17e16148bd2ecd06227a824f945c51",
+    "script/virtual-mobile-failures.mjs": "2ca7967fb0ab958cfdf2507456c5bcc78363873a997c2490bdbb9d696e56fe48",
+    "script/virtual-mobile-failures.test.mjs": "02dadd96b41f6f664c4f6255d517f585efa649693c9fadb0bac851b29f578b18",
+    "script/virtual-mobile-acceptance.mjs": "707eed0a7f9ebacddf6d92064cf0f05bc49fb3df8a7120fd1f1fde64c5c85ea2",
+    "script/run-hosted-mobile-acceptance.mjs": "06eb36f05425b8d2bda4c3c2c19331ad884b035b79dcff031c6973c5381e3072",
+    "script/run-hosted-mobile-acceptance.test.mjs": "4b6a9b4d53e57e1560bb3e20a48784987eacc4e7826f7bdaa041c874b5da4b9d",
+    "script/offline-browser-preflight.mjs": "4bba63dd9055feecacd42466f6075649a9c6239c03f88729553c909b205cb3ee",
+    "script/private-mobile-cleanup.mjs": "a04a7875fdd8920c3f339d0fc6c18e3a2a019defe349230456b61131dd8da743"
+  },
+  "tests": {
+    "exit_code": 0,
+    "count": 116,
+    "failed": 0,
+    "skipped": 0,
+    "stdout_sha256": "c18d7621541349c7de17c1568aca3573b9fcb07800a455118f1dcd9af207da49",
+    "command": "node --import ./cloudflare/test/register-loader.mjs --test cloudflare/acceptance/index.test.mjs script/virtual-mobile-failures.test.mjs script/virtual-mobile-journeys.test.mjs script/private-acceptance-continuation-http.test.mjs script/run-hosted-mobile-acceptance.test.mjs script/private-mobile-cleanup.test.mjs"
+  },
+  "queue": {
+    "class": "ISPPrivateAcceptanceMobileQueued",
+    "active_readers": 4,
+    "queued_reads": 64,
+    "max_queue_wait_ms": 10000,
+    "independent_writers": 2,
+    "request_cap": 1500,
+    "transfer_cap_bytes": 67108864,
+    "old_classes_unchanged": true,
+    "strict_failures": true
+  },
+  "browsers": [
+    {
+      "platform": "linux",
+      "engine": "WebKit",
+      "engine_version": "27.2",
+      "proof_sha256": "2764c02975a0ff8087204db97c46d5a389ddd4f8a954b2b86ab5632f10015bf1",
+      "application_requests": 0,
+      "browser_absent": true,
+      "positive": {
+        "browser_requests": 43,
+        "gateway_requests": 42,
+        "bytes": 1777784,
+        "script_startup": true,
+        "menu": true,
+        "fonts": true,
+        "images": true,
+        "http_errors": 0,
+        "transport_failures": 0,
+        "active_readers_after": 0,
+        "queued_reads_after": 0
+      },
+      "negative": {
+        "deliberate_script_404": true,
+        "startup_refused": true,
+        "strict_cancellation_preserved": true
+      }
+    },
+    {
+      "platform": "windows",
+      "engine": "Chromium",
+      "engine_version": "156.0.8078.4",
+      "proof_sha256": "5cc6c4f73288650e5e318b741efb687afcf50a5bca86cf4e84c07120a7280f29",
+      "application_requests": 0,
+      "browser_absent": true,
+      "positive": {
+        "browser_requests": 42,
+        "gateway_requests": 41,
+        "bytes": 1777258,
+        "script_startup": true,
+        "menu": true,
+        "fonts": true,
+        "images": true,
+        "http_errors": 0,
+        "transport_failures": 0,
+        "active_readers_after": 0,
+        "queued_reads_after": 0
+      },
+      "negative": {
+        "deliberate_script_404": true,
+        "startup_refused": true,
+        "strict_cancellation_preserved": true
+      }
+    }
+  ],
+  "resource_admission": {
+    "status": "UNPROVEN_FULL_PROFILE_DEMAND",
+    "profile_request_cap": 180,
+    "global_gateway_request_cap": 1500,
+    "profile_cap_changed": false,
+    "global_cap_changed": false,
+    "measured_initial_page_requests": 43,
+    "case_admission_allowances_sum": 181,
+    "case_count": 17,
+    "inventory_is_static_call_sites_not_runtime_traffic": true,
+    "full_17_case_runtime_requests": null,
+    "bootstrap_setup_startup_and_two_profiles_total": null,
+    "turbo_head_retention_not_assumed": true,
+    "cases": [
+      {
+        "id": "private_gate",
+        "case_time_allowance_ms": 30000,
+        "case_request_admission_allowance": 8,
+        "navigation_helper_call_sites": 0,
+        "native_goto_call_sites": 1,
+        "submit_call_sites": 1,
+        "api_call_sites": 0,
+        "file_download_call_sites": 0,
+        "back_call_sites": 0,
+        "loops_present": false
+      },
+      {
+        "id": "landing_menu_keyboard",
+        "case_time_allowance_ms": 30000,
+        "case_request_admission_allowance": 5,
+        "navigation_helper_call_sites": 0,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 0,
+        "api_call_sites": 0,
+        "file_download_call_sites": 0,
+        "back_call_sites": 0,
+        "loops_present": false
+      },
+      {
+        "id": "member_login",
+        "case_time_allowance_ms": 45000,
+        "case_request_admission_allowance": 18,
+        "navigation_helper_call_sites": 1,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 1,
+        "api_call_sites": 0,
+        "file_download_call_sites": 0,
+        "back_call_sites": 0,
+        "loops_present": false
+      },
+      {
+        "id": "member_profile",
+        "case_time_allowance_ms": 40000,
+        "case_request_admission_allowance": 8,
+        "navigation_helper_call_sites": 3,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 1,
+        "api_call_sites": 0,
+        "file_download_call_sites": 0,
+        "back_call_sites": 0,
+        "loops_present": true
+      },
+      {
+        "id": "consultation",
+        "case_time_allowance_ms": 40000,
+        "case_request_admission_allowance": 8,
+        "navigation_helper_call_sites": 2,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 1,
+        "api_call_sites": 0,
+        "file_download_call_sites": 0,
+        "back_call_sites": 0,
+        "loops_present": false
+      },
+      {
+        "id": "administrator_mfa",
+        "case_time_allowance_ms": 90000,
+        "case_request_admission_allowance": 25,
+        "navigation_helper_call_sites": 1,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 2,
+        "api_call_sites": 1,
+        "file_download_call_sites": 0,
+        "back_call_sites": 0,
+        "loops_present": false
+      },
+      {
+        "id": "discover_edit",
+        "case_time_allowance_ms": 50000,
+        "case_request_admission_allowance": 12,
+        "navigation_helper_call_sites": 2,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 1,
+        "api_call_sites": 0,
+        "file_download_call_sites": 1,
+        "back_call_sites": 0,
+        "loops_present": false
+      },
+      {
+        "id": "event_edit_preview_publish",
+        "case_time_allowance_ms": 90000,
+        "case_request_admission_allowance": 22,
+        "navigation_helper_call_sites": 2,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 3,
+        "api_call_sites": 1,
+        "file_download_call_sites": 1,
+        "back_call_sites": 0,
+        "loops_present": false
+      },
+      {
+        "id": "publication_edit_preview_publish",
+        "case_time_allowance_ms": 90000,
+        "case_request_admission_allowance": 22,
+        "navigation_helper_call_sites": 1,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 3,
+        "api_call_sites": 3,
+        "file_download_call_sites": 1,
+        "back_call_sites": 0,
+        "loops_present": false
+      },
+      {
+        "id": "interest_repeat",
+        "case_time_allowance_ms": 45000,
+        "case_request_admission_allowance": 10,
+        "navigation_helper_call_sites": 3,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 1,
+        "api_call_sites": 0,
+        "file_download_call_sites": 0,
+        "back_call_sites": 0,
+        "loops_present": true
+      },
+      {
+        "id": "protected_pdf_auth_hash",
+        "case_time_allowance_ms": 45000,
+        "case_request_admission_allowance": 12,
+        "navigation_helper_call_sites": 1,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 0,
+        "api_call_sites": 6,
+        "file_download_call_sites": 1,
+        "back_call_sites": 0,
+        "loops_present": false
+      },
+      {
+        "id": "carousel_keyboard_accessibility",
+        "case_time_allowance_ms": 30000,
+        "case_request_admission_allowance": 5,
+        "navigation_helper_call_sites": 1,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 0,
+        "api_call_sites": 0,
+        "file_download_call_sites": 0,
+        "back_call_sites": 0,
+        "loops_present": false
+      },
+      {
+        "id": "pwa",
+        "case_time_allowance_ms": 20000,
+        "case_request_admission_allowance": 4,
+        "navigation_helper_call_sites": 0,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 0,
+        "api_call_sites": 1,
+        "file_download_call_sites": 0,
+        "back_call_sites": 0,
+        "loops_present": false
+      },
+      {
+        "id": "offline_privacy",
+        "case_time_allowance_ms": 30000,
+        "case_request_admission_allowance": 5,
+        "navigation_helper_call_sites": 0,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 0,
+        "api_call_sites": 0,
+        "file_download_call_sites": 0,
+        "back_call_sites": 0,
+        "loops_present": false
+      },
+      {
+        "id": "responsive",
+        "case_time_allowance_ms": 20000,
+        "case_request_admission_allowance": 4,
+        "navigation_helper_call_sites": 2,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 0,
+        "api_call_sites": 0,
+        "file_download_call_sites": 0,
+        "back_call_sites": 0,
+        "loops_present": false
+      },
+      {
+        "id": "logout_back",
+        "case_time_allowance_ms": 30000,
+        "case_request_admission_allowance": 8,
+        "navigation_helper_call_sites": 1,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 1,
+        "api_call_sites": 2,
+        "file_download_call_sites": 0,
+        "back_call_sites": 1,
+        "loops_present": false
+      },
+      {
+        "id": "administrator_logout",
+        "case_time_allowance_ms": 20000,
+        "case_request_admission_allowance": 5,
+        "navigation_helper_call_sites": 1,
+        "native_goto_call_sites": 0,
+        "submit_call_sites": 1,
+        "api_call_sites": 1,
+        "file_download_call_sites": 0,
+        "back_call_sites": 0,
+        "loops_present": false
+      }
+    ]
+  },
+  "deployment": {
+    "new_class": "ISPPrivateAcceptanceMobileQueued",
+    "configured_for_hosted_execution": false,
+    "fresh_packet_prepared": false,
+    "source_published": false,
+    "budget_hold": true
+  },
+  "historical_http_cases_retested": 0,
+  "provider_requests": 0,
+  "private_acceptance_evidence_changed": false,
+  "production_release_approved": false
+}

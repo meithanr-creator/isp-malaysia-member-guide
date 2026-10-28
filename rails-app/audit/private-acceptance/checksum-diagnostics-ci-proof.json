@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "recorded_at": "2026-10-27T18:26:50.968Z",
+  "source": "f026ef94c9269569a6454fd1c718822893af540b",
+  "runtime_correction_source": "d1f0f44ab9e6458183027737ac5888c1b91c2367",
+  "run_id": 40557865749,
+  "url": "https://github.com/meithanr-creator/isp-malaysia-member-guide/actions/runs/40557865749",
+  "status": "SUCCESS",
+  "required_checks": [
+    {
+      "name": "neon_build_tools",
+      "status": "success"
+    },
+    {
+      "name": "rails_checks (postgresql)",
+      "status": "success"
+    },
+    {
+      "name": "cloudflare_adapter",
+      "status": "success"
+    },
+    {
+      "name": "rails_checks (sqlite)",
+      "status": "success"
+    },
+    {
+      "name": "virtual_browser_gate",
+      "status": "success"
+    },
+    {
+      "name": "container_build",
+      "status": "success"
+    },
+    {
+      "name": "cloudflare_scanner_runtime",
+      "status": "success"
+    }
+  ],
+  "image_rebuilt": false,
+  "new_hosted_cases_passed": 0,
+  "historical_hosted_passes": 9,
+  "remaining_selected_http_cases": 33,
+  "continuation_candidate_ci": "NOT_YET_SUBMITTED",
+  "production_release_approved": false
+}

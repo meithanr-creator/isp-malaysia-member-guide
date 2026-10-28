@@ -1,0 +1,169 @@
+{
+  "version": 1,
+  "status": "PASS_FOCUSED_OFFLINE_CORRECTION",
+  "at": "2026-10-28T12:43:44.272Z",
+  "cause": "Turbo fragment visit completes asynchronously after Enter. The original immediate focus read can precede real main focus; actual local WebKit observed main focus after838ms from turbo:visit.",
+  "correction": "Wait at most5000ms for document.activeElement to equal main#main and location.hash to equal#main, then retain the original exact focus assertion. No fixed delay and no destination-focus injection.",
+  "source_sha256": {
+    "script/virtual-mobile-journeys.mjs": "0f273c84fb9a41c45643dbec13f0ae3944285bfdd6eee273ca6739c2dd5df787",
+    "script/virtual-mobile-skip-link.test.mjs": "7fbc7dcc48978243cb2c4ceaeea6bd57af6ef2c1d56af123e2578784f72e3732"
+  },
+  "unchanged_product_source_sha256": {
+    "app/views/layouts/application.html.erb": "5ffba2ba1df3385c0ba451027610f2582f2ddd9331014b00917ac9bf62924af6",
+    "app/javascript/controllers/menu_controller.js": "f5eaf981e9203014ba44a11d0159fc56906efc41c2e8847a19cf7bbca75cd335",
+    "app/assets/stylesheets/application.css": "873a2f0658d0d60b16b5b3cc2e46a08fd9ee38b45aa00b4924b56c7ab7de98f7"
+  },
+  "before": {
+    "path": "D:/Projects/isp-rails-tools/isp-mobile-qa/skip-focus-1793190824792/proof.json",
+    "sha256": "35590cfb1ec9859d9225c37de3487aaec24577b3eae389088795930af997deae",
+    "preserved": true
+  },
+  "after": {
+    "path": "D:/Projects/isp-rails-tools/isp-mobile-qa/skip-link-verified-1793191212808/proof.json",
+    "sha256": "768c484a692197d9bc22b7b8d51fddaa3c137159c948c10f24e90cb00095c7cd",
+    "source_snapshot": {
+      "script/virtual-mobile-journeys.mjs": "0f273c84fb9a41c45643dbec13f0ae3944285bfdd6eee273ca6739c2dd5df787",
+      "script/virtual-mobile-skip-link.test.mjs": "8f025882982e38369fbaece0caf272f7299e86316d7b0ce423437f6adbf1c6e2",
+      "app/views/layouts/application.html.erb": "5ffba2ba1df3385c0ba451027610f2582f2ddd9331014b00917ac9bf62924af6",
+      "app/javascript/controllers/menu_controller.js": "f5eaf981e9203014ba44a11d0159fc56906efc41c2e8847a19cf7bbca75cd335"
+    },
+    "positive": {
+      "status": "PASS",
+      "elapsed_ms": 1240,
+      "active_id": "main",
+      "active_tag": "MAIN",
+      "hash": "#main",
+      "request_delta": 1,
+      "requests": [
+        {
+          "path": "/",
+          "method": "GET",
+          "resource": "fetch"
+        }
+      ]
+    },
+    "negative": {
+      "status": "PASS_EXPECTED_TIMEOUT",
+      "elapsed_ms": 451,
+      "active_id": "",
+      "active_tag": "A",
+      "hash": "",
+      "request_delta": 0
+    },
+    "browser_absent": true,
+    "application_requests": 0
+  },
+  "tests": {
+    "actual_webkit_focused_positive_and_negative": "PASS",
+    "continuation_selection_contract": "PASS",
+    "command_actual": "ISP_OFFLINE_SKIP_LINK_VERIFY=true D:/Projects/isp-rails-tools/node24/node.exe --test --test-isolation=none script/virtual-mobile-skip-link.test.mjs",
+    "command_selection": "D:/Projects/isp-rails-tools/node24/node.exe --test --test-isolation=none --test-name-pattern='carried iPhone gate resumes' script/virtual-mobile-skip-link.test.mjs",
+    "previous_accepted_checks_replayed": 0,
+    "critical_http_cases_replayed": 0,
+    "historical_unit_checks_replayed": 0,
+    "note": "The real-engine proof retains the earlier test-file snapshot. The only subsequent test-file change adds the separate synthetic continuation-selection contract; engine helper and production journey hash remain the verified snapshot."
+  },
+  "continuation": {
+    "iphone_private_gate": "PASS_CARRIED only from validated previous source",
+    "fresh_cookie_entry": "Operational controller setup",
+    "failed_landing_case": "Resume only skip-link assertion, structure audit and screenshot; previous successful menu checks are not repeated",
+    "android": "Full unrun profile remains required",
+    "failed_case_pass_carried": false
+  },
+  "static_review": {
+    "scope": "Only similar immediate focus/key/fragment assumptions in the15 previously NOT_RUN iPhone journeys",
+    "cases": [
+      {
+        "id": "member_login",
+        "finding": "Existing waits for dashboard URL and rendered member-home.",
+        "executed": false
+      },
+      {
+        "id": "member_profile",
+        "finding": "Existing waits for redirected dashboard URL and saved heading; fresh edit route uses URL and selector waits.",
+        "executed": false
+      },
+      {
+        "id": "consultation",
+        "finding": "Textarea focus follows a native tap, with no fragment or Turbo visit; submission waits for URL and heading.",
+        "executed": false
+      },
+      {
+        "id": "administrator_mfa",
+        "finding": "Existing waits for challenge URL/input and authenticated admin URL/home.",
+        "executed": false
+      },
+      {
+        "id": "discover_edit",
+        "finding": "Input preview title is updated synchronously by Stimulus; persisted navigation uses URL and card selector waits.",
+        "executed": false
+      },
+      {
+        "id": "event_edit_preview_publish",
+        "finding": "Existing form/navigation waits cover draft, edit, preview and published URL/headings.",
+        "executed": false
+      },
+      {
+        "id": "publication_edit_preview_publish",
+        "finding": "Existing form/navigation waits cover draft, edit, preview and published routes/headings.",
+        "executed": false
+      },
+      {
+        "id": "interest_repeat",
+        "finding": "Existing waits for redirected event URL and visible confirmation.",
+        "executed": false
+      },
+      {
+        "id": "protected_pdf_auth_hash",
+        "finding": "Existing URL/heading waits and awaited file/API responses; no fragment activation.",
+        "executed": false
+      },
+      {
+        "id": "carousel_keyboard_accessibility",
+        "finding": "Home/End/arrows/Enter invoke synchronous Stimulus hidden/ARIA rendering; no fragment navigation.",
+        "executed": false
+      },
+      {
+        "id": "pwa",
+        "finding": "Explicit waitForFunction already awaits service-worker controller.",
+        "executed": false
+      },
+      {
+        "id": "offline_privacy",
+        "finding": "Awaits navigation rejection plus the exact deliberate request failure; strict private DOM absence remains.",
+        "executed": false
+      },
+      {
+        "id": "responsive",
+        "finding": "Awaits setViewportSize and rendered route selectors before structure audit; no focus or fragment activation.",
+        "executed": false
+      },
+      {
+        "id": "logout_back",
+        "finding": "Back navigation awaits DOMContentLoaded; immediate private-DOM absence is an intentional privacy assertion, retained.",
+        "executed": false
+      },
+      {
+        "id": "administrator_logout",
+        "finding": "Existing home URL wait precedes independent server denial check.",
+        "executed": false
+      }
+    ],
+    "additional_same_fragment_races_found": 0,
+    "no_other_case_changed": true,
+    "hosted_or_unrun_case_pass_claimed": false
+  },
+  "resource_followup": {
+    "skip_fragment_request_delta": 1,
+    "path": "/",
+    "method": "GET",
+    "resource_type": "fetch",
+    "extra_asset_attempts_observed": 0,
+    "required": "Resources owner must add a conservative full-document landing allowance for both profiles; old45-document provenance alone cannot carry."
+  },
+  "product_changed": false,
+  "provider_calls": 0,
+  "application_requests": 0,
+  "hosted_mobile_pass_claimed": false,
+  "final_hosted_review": "PENDING_ASTRA"
+}

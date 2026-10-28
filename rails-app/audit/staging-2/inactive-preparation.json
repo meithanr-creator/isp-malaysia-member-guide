@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "prepared": true,
+  "lease_id": "rails-staging-2",
+  "candidate": "80d32fddf88251a6608ba047a577ce16efe8c834",
+  "image_digest": "sha256:152480a896060eae82a380dc54f651e199ff1585cd5dd805d0d51b9f3a587d2a",
+  "config_sha256": "a18c41e5f95949823ddab603215f6f681547409c453f24cef827df97a8229232",
+  "seed_key_count": 5,
+  "runtime_created": false,
+  "timestamps_armed": false,
+  "activation": false,
+  "network_requests": 0,
+  "review": "Astra reviewed actual inactive config; no blocking finding; no deployment authorization"
+}

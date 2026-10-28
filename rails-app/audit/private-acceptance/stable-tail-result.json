@@ -1,0 +1,29 @@
+{
+  "at": "2026-10-27T20:16:25.529Z",
+  "status": "SELECTED_HTTP_COMPLETE_MOBILE_DEFERRED",
+  "deferred_profiles": [
+    "iphone-webkit",
+    "android-chromium"
+  ],
+  "primary_failure": null,
+  "shutdown": "PASS",
+  "shutdown_facts": {
+    "at": "2026-10-27T20:15:44.587Z",
+    "worker": "isp-rails-startup",
+    "application_id": "40da2eb25eff4359861cab4a7d930fe1",
+    "application_absent": true,
+    "ingress_closed": true,
+    "local_stop_evidence": true,
+    "provider_evidence_complete": true,
+    "status": "PASS"
+  },
+  "browser_processes": "NOT_STARTED",
+  "fixtures": "CLEAN_TO_PROTECTED_BASELINE",
+  "fixture_disposition": {
+    "status": "CLEAN_TO_PROTECTED_BASELINE",
+    "retained_protected_blob_count": 2,
+    "protected_blob_rows_sha256": "ade7fc2601adff2d43055ad939d988f16e4c734b271dfb7ebe9c8413f102cd4a",
+    "global_empty_baseline": false
+  },
+  "production_release_approved": false
+}

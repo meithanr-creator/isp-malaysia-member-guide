@@ -1,0 +1,15 @@
+# Production-mode acceptance environment
+
+This separate configuration uses the otherwise empty ISP Worker and the immutable reviewed Rails image. The production configuration is unchanged. All source defaults remain inactive, with no public URL, no dates, no mail and no demos.
+
+Runtime image source: c9a5142bd8c949c6415c3639c0113ee015f9a3f4; Cloudflare image build 7df5ce3e-a847-4533-8ca0-a7bfc6d546e8; SHA-256 digest 0187a1e32351a3f7a8f9c87a48798c0adf31f3b6c4116309c78f638582700cd2. Application-source changes require a new reviewed image; this source increment changes deployment controls only.
+
+Store ISP_STAGING_KEY as a Worker secret of exactly 64 lowercase hex characters. For automated checks, send it only in x-isp-staging-key. Browser reviewers enter it in the same-origin /__isp_review form. That staging-only form issues a signed Secure, HttpOnly, SameSite=Strict host cookie ending at the fixed deadline. The cookie contains no raw key and is stripped before Rails. Never use a key in a URL or log its value. The Worker and Durable Object independently check the key, exact host, disabled mail/demo flags and fixed ISO UTC seconds timestamps spanning at most 55 minutes. The key is removed before Rails. Earliest expiry and expired state persist, so later configuration cannot extend a completed rehearsal.
+
+The Durable Object arms its private scheduled destroy callback before startup, clamps request/idle activity to the cutoff, and retries failed destruction after five seconds. Provider alarms may be delayed. Arm the independent operator watchdog before admission; it closes the URL and deletes the concrete verified application around minute 50. Verify actual shutdown and disable activation/builds afterward. No public shutdown endpoint exists.
+
+Use the full hosted acceptance runbook and director gates. Test with controlled accounts/files on actual Rails, Neon, private R2 and ClamAV. Direct storage or unit checks alone do not close hosted application gates. Shop and Jobs are frozen DEMO references, excluded from production acceptance.
+
+Remote image builds use repository root /, explicit rails-app paths, pinned Node 24.21.0 and SKIP_DEPENDENCY_INSTALL=true. Ruby is installed inside the Docker image; unnecessary host Ruby detection previously failed before build. Recreate the image using the pinned reviewed source only. Deploy the edge locally from cloudflare with the reviewed staging configuration and registry digest; no local Docker engine is required for that deployment.
+
+Keep all local private configuration under D:/Projects/isp-rails-tools/isp-staging-private. Generate a private active config with a fixed window immediately before the run. Preserve the inactive source configuration. Store secret values separately from vars declared in the config. Retain the US$5 total test ceiling, at most one standard-2 instance, and no domain changes, real member import, real accounts or outbound emails.

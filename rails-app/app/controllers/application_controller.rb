@@ -1,14 +1,37 @@
 class ApplicationController < ActionController::Base
   stale_when_importmap_changes
-  helper_method :current_user, :demo_mode?, :account_path
+  helper_method :current_user, :demo_mode?, :account_path, :fresh_admin_verification?
   before_action :private_response_cache
 
   private
 
   def current_user
-    @current_user ||= User.find_by(id: session[:user_id]) if session[:user_id]
+    return @current_user if defined?(@current_user)
+    @current_user_session = UserSession.resume(session[:authentication_token])
+    @current_user = @current_user_session&.user
+    if (session[:authentication_token] && !@current_user) || session[:user_id]
+      revoke_pending_authentication
+      reset_session
+    end
+    @current_user
   end
 
+  def current_user_session
+    current_user
+    @current_user_session
+  end
+
+  def fresh_admin_verification?
+    return false unless current_user&.admin?
+    return true unless current_user.admin_mfa_required?
+    current_user_session&.mfa_verified_at && current_user_session.mfa_verified_at > Time.current - AdministrativeAction::FRESHNESS
+  end
+  def revoke_pending_authentication
+    [session[:authentication_challenge], session[:recovery_display_token]].compact.each do |token|
+      challenge = AuthenticationChallenge.lookup(token)
+      challenge&.update!(consumed_at: Time.current, otp_secret: nil, recovery_codes: nil)
+    end
+  end
   def demo_mode?
     !Rails.env.production? && ENV.fetch("ISP_DEMO_MODE", Rails.env.development? ? "true" : "false") == "true"
   end

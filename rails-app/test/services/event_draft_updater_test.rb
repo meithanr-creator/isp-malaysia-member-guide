@@ -34,7 +34,7 @@ class EventDraftUpdaterTest < ActiveSupport::TestCase
     assert_equal "Private revision", event.draft_data.fetch("title")
   end
 
-  test "invalid files are rejected before storage and cannot create a publishable preview" do
+  test "invalid files are rejected before storage and preserve the saved preview" do
     event = create_event
     event.prepare_preview!
     revision = event.revision
@@ -45,7 +45,7 @@ class EventDraftUpdaterTest < ActiveSupport::TestCase
     assert_match(/valid JPG, PNG or WebP/, event.errors.full_messages.join)
     assert_equal revision, event.reload.revision
     assert_equal [], event.draft_data.fetch("images")
-    assert_not event.preview_current?
+    assert event.preview_current?
   end
 
   test "images and brochure are stored by signed reference and removed only from the draft" do
@@ -78,6 +78,25 @@ class EventDraftUpdaterTest < ActiveSupport::TestCase
     assert_equal 3, event.reload.draft_data.fetch("images").size
   end
 
+  test "excessive image counts do not scan any image or brochure or change the draft" do
+    event = create_event
+    original = event.attributes
+    files = 4.times.map { |index| upload("\x89PNG\r\n\x1A\nsample".b, "too-many-#{index}.png", "image/png") }
+    pdf = upload("%PDF-1.7 sample", "not-scanned.pdf", "application/pdf")
+    scanner_calls = 0
+    original_scan = UploadScanner.method(:error)
+    begin
+      UploadScanner.define_singleton_method(:error) { |_file| scanner_calls += 1; nil }
+      assert_no_difference("ActiveStorage::Blob.count") do
+        assert_not EventDraftUpdater.new(event).call(attributes: { "title" => "Rejected copy" }, images: files, brochure: pdf, expected_lock_version: event.lock_version)
+      end
+    ensure
+      UploadScanner.define_singleton_method(:error, original_scan)
+    end
+    assert_equal 0, scanner_calls
+    assert_match(/up to three/, event.errors.full_messages.join)
+    assert_equal original, event.reload.attributes
+  end
   private
 
   def upload(content, filename, type)
@@ -89,3 +108,4 @@ class EventDraftUpdaterTest < ActiveSupport::TestCase
     ActionDispatch::Http::UploadedFile.new(tempfile: tempfile, filename: filename, type: type)
   end
 end
+

@@ -1,0 +1,19 @@
+✔ actual deployed window/host/enable metadata and compiled module must match the prepared package (1.2033ms)
+✔ missing/extra actual bindings and a changed migration cannot borrow the same review (0.1976ms)
+✔ known dependency initialization is bounded polling after both anonymous denials (2.7986ms)
+✔ 403 and wrong success body fail immediately; there is no permissive health fallback (0.4491ms)
+✔ anonymous exposure stops before any keyed request (0.3032ms)
+✔ transport failure is retained by caller and never blindly replayed (0.2155ms)
+✔ 55 minute compute and cumulative reservation are bounded, not reported as actual charges (0.2647ms)
+✔ watch stops even when heartbeat persistence fails and does not require normal packet admission (0.2942ms)
+✔ parent absence and invalid local deadline each still invoke the fixed cleanup callback (0.2077ms)
+✔ cleanup logging failure does not interrupt provider-response processing, and evidence loss is explicit (0.1653ms)
+✔ ordinary deployment and enable calls remain strict if provider evidence cannot be saved (0.1571ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 103.4077

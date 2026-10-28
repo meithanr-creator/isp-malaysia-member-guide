@@ -1,0 +1,77 @@
+{
+  "source": "73add85e87235caccb8661208b8fe28a5cdd0a2c",
+  "application_image_source": "80d32fddf88251a6608ba047a577ce16efe8c834",
+  "run_id": 40351242941,
+  "url": "https://github.com/meithanr-creator/isp-malaysia-member-guide/actions/runs/40351242941",
+  "jobs": [
+    {
+      "id": 121671737568,
+      "name": "virtual_browser_gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 121671737935,
+      "name": "cloudflare_adapter",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 121671737996,
+      "name": "rails_checks (postgresql)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 121671738034,
+      "name": "neon_build_tools",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 121671738041,
+      "name": "reviewed_image_artifact",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 121671738052,
+      "name": "cloudflare_scanner_runtime",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 121671738060,
+      "name": "rails_checks (sqlite)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 121671738100,
+      "name": "container_build",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "artifact": {
+    "id": 12664935022,
+    "name": "isp-reviewed-image-80d32fdd",
+    "size_in_bytes": 443316473,
+    "url": "https://api.github.com/repos/meithanr-creator/isp-malaysia-member-guide/actions/artifacts/12664935022",
+    "archive_download_url": "https://api.github.com/repos/meithanr-creator/isp-malaysia-member-guide/actions/artifacts/12664935022/zip",
+    "expired": false,
+    "created_at": "2026-10-26T15:40:40Z",
+    "expires_at": "2026-10-27T15:40:35Z",
+    "updated_at": "2026-10-26T15:40:40Z",
+    "digest": "sha256:a9fa0c7dbfe3c340e361809fbb23e7e77e9b01f2a1495be69f79d44679251a1e",
+    "workflow_run": {
+      "id": 40351242941,
+      "repository_id": 1423075794,
+      "head_repository_id": 1423075794,
+      "head_branch": "production-readiness",
+      "head_sha": "73add85e87235caccb8661208b8fe28a5cdd0a2c"
+    }
+  },
+  "registry_upload": false,
+  "runtime_activation": false
+}

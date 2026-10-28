@@ -1,0 +1,1 @@
+{"authenticated_bucket_head":true,"private_write_read":true,"anonymous_response_status":400,"anonymous_error_code":"InvalidArgument","anonymous_get_denied":400,"probe_deleted_verified":true,"status":"passed","scope":"direct R2 only; hosted Rails verification pending"}

@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "scope": "actual Rails readiness including Neon/schema, R2 availability and scanner readiness",
+  "attempts": 3,
+  "finished_at": "2026-10-27T17:11:58.382Z"
+}

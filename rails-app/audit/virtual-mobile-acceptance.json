@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "scope": "Virtual browser engines and mobile profiles; no physical-device or native installation claim",
+  "started_at": "2026-10-26T09:44:36.871Z",
+  "profiles": [
+    {
+      "name": "iphone-webkit",
+      "profile": "iPhone 13",
+      "engine": "WebKit",
+      "checks": [
+        "Private review form loads",
+        "Same-origin review entry accepted"
+      ],
+      "screenshots": [],
+      "errors": [],
+      "requests": 2,
+      "engine_version": "27.2",
+      "viewport": {
+        "width": 390,
+        "height": 664
+      },
+      "touch": true,
+      "status": "fail",
+      "failure": "Virtual browser acceptance failed; detailed error retained privately",
+      "finished_at": "2026-10-26T09:44:49.177Z"
+    },
+    {
+      "name": "android-chromium",
+      "profile": "Pixel 7",
+      "engine": "Chromium",
+      "checks": [
+        "Private review form loads",
+        "Same-origin review entry accepted",
+        "Browser accepts secure fixed-expiry cookie without raw key",
+        "Bounded scanner and Rails readiness before navigation"
+      ],
+      "screenshots": [],
+      "errors": [],
+      "requests": 37,
+      "engine_version": "156.0.8078.4",
+      "viewport": {
+        "width": 412,
+        "height": 839
+      },
+      "touch": true,
+      "status": "fail",
+      "failure": "Virtual browser acceptance failed; detailed error retained privately",
+      "finished_at": "2026-10-26T09:45:47.044Z"
+    }
+  ],
+  "release": {
+    "worker_source": "3d893feaa921166eff9f99196f2297f5259680f8",
+    "worker_version": "ebe55939-c4ac-448c-b39d-2a47209d22b1",
+    "rails_source": "c9a5142bd8c949c6415c3639c0113ee015f9a3f4",
+    "image_digest": "sha256:0187a1e32351a3f7a8f9c87a48798c0adf31f3b6c4116309c78f638582700cd2"
+  },
+  "run_marker": "qa-20261026-5fec518122c9",
+  "finished_at": "2026-10-26T09:45:47.045Z"
+}

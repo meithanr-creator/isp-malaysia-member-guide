@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {unstable_readConfig} from 'wrangler';
+import {build} from 'esbuild';
+const config=unstable_readConfig({config:'staging/wrangler.jsonc'});
+assert.equal(config.name,'isp-member-production');
+assert.equal(config.workers_dev,false);assert.equal(config.preview_urls,false);
+assert.equal(config.vars.ISP_CONTAINER_ENABLED,'false');
+assert.equal(config.vars.ISP_STAGING_START_AT,'');assert.equal(config.vars.ISP_STAGING_EXPIRES_AT,'');
+assert.equal(config.containers.length,1);assert.equal(config.containers[0].name,'isp-member-production');
+assert.equal(config.containers[0].max_instances,1);assert.equal(config.containers[0].instance_type,'standard-2');
+assert.match(config.containers[0].image,/@sha256:0187a1e32351a3f7a8f9c87a48798c0adf31f3b6c4116309c78f638582700cd2$/);
+const result=await build({entryPoints:['staging/index.js'],bundle:true,write:false,format:'esm',platform:'neutral',target:'es2022',external:['cloudflare:*']});
+console.log(`Inactive staging configuration valid; real SDK guard bundle built (${result.outputFiles[0].contents.length} bytes). No deployment performed.`);

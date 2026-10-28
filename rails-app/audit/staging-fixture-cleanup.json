@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "counts": {
+    "blobs": 0,
+    "consultations": 0,
+    "events": 0,
+    "actors": 0,
+    "registry": 0,
+    "publications": 0,
+    "imports": 0
+  },
+  "checked_at": "2026-10-26T11:33:12.2753281Z",
+  "scope": "Exact recorded staging fixtures after completed restore; no real identities",
+  "action": "cleanup",
+  "phase": "cleaned",
+  "throttle": "No broad deletion; normal expiry retained"
+}

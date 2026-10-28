@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "source_review": "Astra high SOURCE_PUBLICATION_GO",
+  "independent_implementation": "GPT-6.1 Sol xhigh",
+  "scope": "One Singleline regex option; preserves anchored command identity and wrapper refusal",
+  "core_sha256": "4d6a85001a6e29f813b5b31a74f377d29188945bd2eec4035797052c4df15213",
+  "operator_sha256": "1c575185dc1ed5dca5f9817488c4a5b15b649abf6cc8e283ffa0d457243714f9",
+  "test_sha256": "df428d2856c5cb2824f6c0f7f2e77dbcf797dcaae948b125dd5f0b166f0b9eab",
+  "actual_release_tests": {
+    "tests": 281,
+    "pass": 281,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "evidence": "audit/staging-3/controller-multiline-release-tests.txt"
+  },
+  "native_windows": {
+    "assertions": 33,
+    "status": "PASS",
+    "fixture_sha256": "65045df0b3ac60a4468654a2a81d549632ffce52a579fbed04d2c843da74fa25"
+  },
+  "actual_census": {
+    "complete": true,
+    "process_count": 594,
+    "matching_controllers": 0,
+    "evidence": "audit/staging-3/controller-live-census.json",
+    "release_admission": false
+  },
+  "application_mutations": 0,
+  "runtime_created": false,
+  "exact_commit_ci": "PENDING",
+  "production_approved": false
+}

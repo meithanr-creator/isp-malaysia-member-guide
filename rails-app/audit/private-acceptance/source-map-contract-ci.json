@@ -1,0 +1,44 @@
+{
+  "source": "7b73d04f1aaa548bfa14ab3a8c6d35638884f05a",
+  "run_id": 40545239912,
+  "conclusion": "success",
+  "required_checks": [
+    {
+      "name": "neon_build_tools",
+      "id": 122333967637,
+      "conclusion": "success"
+    },
+    {
+      "name": "cloudflare_scanner_runtime",
+      "id": 122333967886,
+      "conclusion": "success"
+    },
+    {
+      "name": "rails_checks (sqlite)",
+      "id": 122333967939,
+      "conclusion": "success"
+    },
+    {
+      "name": "cloudflare_adapter",
+      "id": 122333967975,
+      "conclusion": "success"
+    },
+    {
+      "name": "virtual_browser_gate",
+      "id": 122333968103,
+      "conclusion": "success"
+    },
+    {
+      "name": "container_build",
+      "id": 122333968330,
+      "conclusion": "success"
+    },
+    {
+      "name": "rails_checks (postgresql)",
+      "id": 122333968393,
+      "conclusion": "success"
+    }
+  ],
+  "affected_portion": "Source-map inventory/sealing contract only",
+  "prior_area_evidence": "carried forward"
+}

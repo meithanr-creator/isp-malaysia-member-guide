@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "commit": "32e98032f4a09c59b7b8be0f59195bb17bc7e467",
+  "run_id": 40456154158,
+  "scope": "Actual first CI attempt; failures preserved",
+  "jobs": [
+    {
+      "id": 122029833764,
+      "name": "cloudflare_adapter",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122029833975,
+      "name": "container_build",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122029834015,
+      "name": "rails_checks (postgresql)",
+      "status": "completed",
+      "conclusion": "failure"
+    },
+    {
+      "id": 122029834120,
+      "name": "cloudflare_scanner_runtime",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122029834121,
+      "name": "neon_build_tools",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122029834146,
+      "name": "rails_checks (sqlite)",
+      "status": "completed",
+      "conclusion": "failure"
+    },
+    {
+      "id": 122029834177,
+      "name": "virtual_browser_gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 122029834905,
+      "name": "reviewed_image_artifact",
+      "status": "completed",
+      "conclusion": "skipped"
+    }
+  ],
+  "failures": [
+    {
+      "job_id": 122029834015,
+      "area": "CI real PostgreSQL inventory",
+      "observed": "Generic inventory refusal after Rails303tests2573assertionsPASS",
+      "cause": "Not yet confirmed in actual CI; source review reproduces singleton sequence collision",
+      "correction": "Separate exact repeated catalog equality from recovery suitability, retain strict restore collision checks and add safe diagnostics"
+    },
+    {
+      "job_id": 122029834146,
+      "area": "Brakeman",
+      "observed": "10 weak Marshal.load warnings in new Ruby test fixture copying",
+      "correction": "Replace all Marshal test copies with JSON copies; actual local rescan0warnings0errors"
+    },
+    {
+      "job_id": 122029850887,
+      "area": "PR cleanup test",
+      "observed": "Floating point cancellation in exact deadline-span equality",
+      "correction": "Compare exact construction started+budget; regression verifies fractional start and tampered deadline"
+    }
+  ],
+  "revised_local_results": {
+    "node_passed": 164,
+    "node_failed": 0,
+    "node_skipped": 0,
+    "ruby_runs": 8,
+    "ruby_assertions": 43,
+    "ruby_failures": 0,
+    "ruby_errors": 0,
+    "ruby_skips": 0,
+    "brakeman_warnings": 0,
+    "brakeman_errors": 0
+  },
+  "exact_corrected_commit_ci": "PENDING",
+  "hosted_passed": 0,
+  "production_approved": false
+}

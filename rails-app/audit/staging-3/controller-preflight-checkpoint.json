@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "lease_id": "rails-staging-3",
+  "status": "BLOCKED_BEFORE_MUTATION",
+  "reviewed_source": "0099612fc9a8bca16256b7e33ba5ec27839742dd",
+  "ci_run_id": 40482076742,
+  "required_checks_passed": 7,
+  "reviewed_package_sha256": "d0601470f0a4554f8bfed5a6cad5f1d5c8493af201935514d3fe94dd34eef12b",
+  "actual_access_capture": {
+    "attempt_id": "b0b0b827-e757-4c1a-ab0c-d07d498a274b",
+    "database": "PASS",
+    "storage": "PASS",
+    "read_only": true,
+    "database_writes": 0,
+    "object_writes": 0,
+    "process_cleanup": true
+  },
+  "preflight": {
+    "result": "FAIL_CLOSED",
+    "error": "Controller PID observation required",
+    "provider_methods": [
+      "GET"
+    ],
+    "application_mutation_intents": 0
+  },
+  "historical_legacy_state": {
+    "application_id": "a03ae965-44e9-40b6-9c10-3f8f2c659c34",
+    "armed": false,
+    "container_application_absent": true,
+    "ingress_closed": true,
+    "pid_present": false,
+    "original_preserved": true
+  },
+  "independent_os_census": {
+    "process_rows": 563,
+    "matching_operators_excluding_observer": 0,
+    "method": "Win32_Process"
+  },
+  "director_direction": "Preserve historical leaf; narrow source fix requires fresh complete OS census plus current provider absence/closed ingress. Test every deployment boundary, then exact CI and repackaging.",
+  "access_expires_at": "2026-10-27T11:35:00Z",
+  "test_ceiling_usd": 5,
+  "hosted_cases_closed": 0,
+  "hosted_cases_total": 63,
+  "production_approved": false,
+  "recorded_at": "2026-10-27T10:07:06.2734972Z"
+}

@@ -1,8 +1,8 @@
-name: Rails member and events checks
+name: Rails production readiness checks
 
 on:
   push:
-    branches: [rails-member-events]
+    branches: [rails-member-events, production-readiness]
     paths: ['rails-app/**', '.github/workflows/rails-ci.yml']
   pull_request:
     paths: ['rails-app/**', '.github/workflows/rails-ci.yml']
@@ -17,8 +17,26 @@ defaults:
 jobs:
   rails_checks:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [sqlite, postgresql]
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: isp_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       RAILS_ENV: test
+      TEST_DATABASE_URL: ${{ matrix.database == 'postgresql' && 'postgresql://postgres:postgres@localhost:5432/isp_test' || '' }}
     steps:
       - uses: actions/checkout@v6
       - uses: ruby/setup-ruby@v1
@@ -26,9 +44,229 @@ jobs:
           ruby-version: '3.4.12'
           bundler-cache: true
           working-directory: rails-app
-      - name: Prepare database and run independent tests
-        run: bundle exec rails db:test:prepare test
+      - name: Apply migrations to a fresh database
+        run: bundle exec rails db:create db:migrate
+      - name: Run application and security tests
+        run: bundle exec rails test
+      - name: Verify private R2 checksum compatibility without network
+        run: |
+          bundle exec ruby script/r2-checksum-offline.test.rb
+          bundle exec ruby script/hosted-acceptance-fixtures-protected-baseline.test.rb
+      - name: Prove recovery inventory queries against real PostgreSQL
+        if: matrix.database == 'postgresql'
+        run: bundle exec ruby script/recovery-inventory-ci.rb
       - name: Check Rails autoloading
         run: bundle exec rails zeitwerk:check
       - name: Scan Rails code
+        if: matrix.database == 'sqlite'
         run: bundle exec brakeman --no-pager
+      - name: Audit dependency advisories
+        if: matrix.database == 'sqlite'
+        run: bundle exec bundler-audit check --update
+
+  container_build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build the production image without runtime secrets
+        run: docker build -t isp-production-check:${{ github.sha }} .
+      - name: Confirm unprivileged runtime
+        run: test "$(docker image inspect isp-production-check:${{ github.sha }} --format '{{.Config.User}}')" = "1000:1000"
+
+  cloudflare_adapter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: rails-app/cloudflare/package-lock.json
+      - name: Install pinned Cloudflare dependencies
+        working-directory: rails-app/cloudflare
+        run: npm ci --ignore-scripts --fetch-timeout=30000 --fetch-retries=1
+      - name: Test activation, proxy and secret boundaries
+        working-directory: rails-app/cloudflare
+        run: npm test
+      - name: Validate configuration and compile the real SDK bundle
+        working-directory: rails-app/cloudflare
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+        run: npm run check
+      - name: Audit Cloudflare dependencies
+        working-directory: rails-app/cloudflare
+        run: npm audit --audit-level=high --fetch-timeout=30000 --fetch-retries=1
+
+  cloudflare_scanner_runtime:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.12'
+          bundler-cache: true
+          working-directory: rails-app
+      - name: Test scanner startup and shutdown supervision
+        run: bundle exec ruby deployment/cloudflare/supervisor_test.rb
+      - name: Build pinned Rails and private-scanner image
+        run: docker build --platform linux/amd64 -f deployment/cloudflare/Dockerfile.runtime -t isp-cloudflare-check:${{ github.sha }} .
+      - name: Confirm scanner runtime is unprivileged
+        run: test "$(docker image inspect isp-cloudflare-check:${{ github.sha }} --format '{{.Config.User}}')" = "1000:1000"
+      - name: Exercise real clean and EICAR scans without application credentials
+        timeout-minutes: 8
+        run: docker run --rm --no-healthcheck --memory=6g --cpus=1 isp-cloudflare-check:${{ github.sha }} --scanner-smoke
+
+      - name: Verify exact hosted PDF malware fixture with the real scanner
+        timeout-minutes: 8
+        run: docker run --rm --no-healthcheck --memory=6g --cpus=1 --entrypoint ruby isp-cloudflare-check:${{ github.sha }} script/scanner-pdf-acceptance.rb
+  neon_build_tools:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.12'
+          bundler-cache: true
+          working-directory: rails-app
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            rails-app/package-lock.json
+            rails-app/cloudflare/package-lock.json
+      - name: Install pinned Neon and build dependencies
+        run: npm ci --ignore-scripts --fetch-timeout=30000 --fetch-retries=1
+      - name: Install pinned Cloudflare dependencies
+        run: npm --prefix cloudflare ci --ignore-scripts --fetch-timeout=30000 --fetch-retries=1
+      - name: Test environment isolation and direct-connection guards
+        run: npm run test:neon-tools
+      - name: Verify private staging controls and safe shutdown
+        run: node --test script/cloudflare-staging-ops.test.mjs script/cloudflare-staging-watchdog.test.mjs script/staging-lease-context.test.mjs script/prepare-unarmed-lease2.test.mjs script/upload-reviewed-image-2.test.mjs script/linux-webkit-connection.test.mjs script/virtual-mobile-failures.test.mjs script/hosted-execution-phase.test.mjs script/staging-credential-provider.test.mjs script/lease2-provision-core.test.mjs script/native-boot4.test.mjs script/provider-request-outcome.test.mjs script/virtual-mobile-journeys.test.mjs script/run-hosted-mobile-acceptance.test.mjs script/recovery-preflight.test.mjs script/lease3-release-policy.test.mjs script/acceptance-continuation.test.mjs script/active-staging-admission.test.mjs script/staging-access-observations.test.mjs script/private-acceptance-operator.test.mjs script/private-acceptance-metadata.test.mjs script/private-acceptance-context.test.mjs script/private-mobile-cleanup.test.mjs script/private-acceptance-carry.test.mjs script/private-acceptance-continuation-http.test.mjs
+      - name: Validate bounded hosted acceptance tools without network or credentials
+        run: |
+          ruby -c script/staging-postgres-access.rb
+          ruby -c script/staging-storage-access.rb
+          node script/staging-access-observations.mjs --plan
+          node script/acceptance-continuation.mjs --plan
+          ruby -c script/hosted-acceptance-fixtures.rb
+          node --check script/hosted-acceptance-operator.mjs
+          node --check script/run-hosted-acceptance.mjs
+          node --check script/lease2-provision.mjs
+          node --check script/native-boot4.mjs
+          node --check script/native-boot4-spec.mjs
+          node script/native-boot4.mjs --plan
+          node --check script/run-linux-webkit-offline-smoke.mjs
+          node --check script/linux-webkit-server.mjs
+          node --check script/linux-webkit-offline-smoke.mjs
+          node --check script/offline-browser-preflight.mjs
+          node --check script/private-mobile-cleanup.mjs
+          node --check script/private-acceptance.mjs
+          node --check script/private-acceptance-health.mjs
+          node --check script/run-private-mobile.mjs
+          node --check script/virtual-mobile-acceptance.mjs
+          node --check script/virtual-mobile-journeys.mjs
+          node --check script/run-hosted-mobile-acceptance.mjs
+          node --check script/recovery-preflight.mjs
+          node --check script/recovery-preflight-io.mjs
+          node --check script/neon-restore-rehearsal.mjs
+          node --check script/run-neon-fingerprint.mjs
+          ruby -c script/neon-restore-fingerprint.rb
+          ruby -c script/recovery-fingerprint-inventory.rb
+          bundle exec ruby script/recovery-fingerprint-inventory.test.rb
+          node script/hosted-acceptance.mjs --selftest
+          ISP_STAGING_LEASE=rails-staging-2 node script/hosted-acceptance.mjs --selftest
+          ISP_STAGING_LEASE=rails-staging-2 node script/hosted-acceptance.mjs --plan
+          ISP_STAGING_LEASE=rails-staging-3 node script/hosted-acceptance.mjs --selftest
+          ISP_STAGING_LEASE=rails-staging-3 node script/hosted-acceptance.mjs --plan
+          node --test script/hosted-diagnostics.test.mjs script/private-failed-response.test.mjs
+      - name: Prove the exact staging Worker bundle and operator source
+        run: |
+          node --input-type=module -e "const {buildBundleProof}=await import('./script/native-boot4.mjs'); console.log(JSON.stringify((await buildBundleProof(process.cwd())).proof));"
+      - name: Build Rails assets and real Cloudflare bundle without runtime secrets
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+        run: npm run build
+      - name: Audit Neon tooling dependencies
+        run: npm audit --audit-level=high --fetch-timeout=30000 --fetch-retries=1
+
+  virtual_browser_gate:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
+    env:
+      ISP_LOCAL_BROWSER_PRIVATE: ${{ github.workspace }}/rails-app/tmp/browser-fixture/private
+      ISP_BROWSER_TOOL_ROOT: ${{ github.workspace }}/rails-app/tmp/browser-fixture/tools
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.12'
+      - name: Install matching isolated browser API
+        run: |
+          mkdir -p "$ISP_LOCAL_BROWSER_PRIVATE" "$ISP_BROWSER_TOOL_ROOT"
+          npm install --prefix "$ISP_BROWSER_TOOL_ROOT" --ignore-scripts --no-audit --no-fund playwright@1.64.1
+      - name: Verify native review form and strict cross-site cookie behavior
+        run: |
+          ruby script/make-local-test-certificate.rb
+          node script/local-browser-gate-diagnostic.mjs
+
+  reviewed_image_artifact:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/production-readiness' && startsWith(github.event.head_commit.message, 'Export reviewed scanner-tested image')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: 80d32fddf88251a6608ba047a577ce16efe8c834
+          persist-credentials: false
+      - name: Verify reviewed application checkout
+        run: test "$(git rev-parse HEAD)" = '80d32fddf88251a6608ba047a577ce16efe8c834'
+      - name: Build exact reviewed image without runtime secrets
+        run: docker build --platform linux/amd64 --label org.opencontainers.image.revision=80d32fddf88251a6608ba047a577ce16efe8c834 -f deployment/cloudflare/Dockerfile.runtime -t isp-export:80d32fddf88251a6608ba047a577ce16efe8c834 .
+      - name: Verify image user and source label
+        run: |
+          test "$(docker image inspect isp-export:80d32fddf88251a6608ba047a577ce16efe8c834 --format '{{.Config.User}}')" = '1000:1000'
+          test "$(docker image inspect isp-export:80d32fddf88251a6608ba047a577ce16efe8c834 --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = '80d32fddf88251a6608ba047a577ce16efe8c834'
+      - name: Test the exact image clean and EICAR scanner
+        timeout-minutes: 8
+        run: docker run --rm --no-healthcheck --memory=6g --cpus=1 isp-export:80d32fddf88251a6608ba047a577ce16efe8c834 --scanner-smoke
+      - name: Test the exact hosted PDF fixture in the same image
+        timeout-minutes: 8
+        run: docker run --rm --no-healthcheck --memory=6g --cpus=1 --entrypoint ruby isp-export:80d32fddf88251a6608ba047a577ce16efe8c834 script/scanner-pdf-acceptance.rb
+      - name: Export the tested image and provenance without rebuilding
+        run: |
+          set -euo pipefail
+          mkdir image-export
+          docker image inspect isp-export:80d32fddf88251a6608ba047a577ce16efe8c834 > image-export/docker-image-inspect.json
+          docker save isp-export:80d32fddf88251a6608ba047a577ce16efe8c834 | gzip -n -1 > image-export/isp-rails-image.tar.gz
+          sha256sum image-export/isp-rails-image.tar.gz > image-export/SHA256SUMS
+          node - <<'NODE'
+          const fs=require('fs');
+          const image=JSON.parse(fs.readFileSync('image-export/docker-image-inspect.json','utf8'))[0];
+          const source='80d32fddf88251a6608ba047a577ce16efe8c834';
+          const checkout=require('child_process').execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+          if(checkout!==source)throw Error('Checkout changed before export');
+          if(image.Config.User!=='1000:1000'||image.Config.Labels['org.opencontainers.image.revision']!==source||image.Os!=='linux'||image.Architecture!=='amd64')throw Error('Image identity mismatch');
+          const proof={version:1,repository:process.env.GITHUB_REPOSITORY,workflow_source:process.env.GITHUB_SHA,application_source:source,run_id:process.env.GITHUB_RUN_ID,run_attempt:process.env.GITHUB_RUN_ATTEMPT,actual_checkout:checkout,image_id:image.Id,os:image.Os,architecture:image.Architecture,user:image.Config.User,archive_sha256:fs.readFileSync('image-export/SHA256SUMS','utf8').split(/\s/)[0],scanner_checks:'Passed on this image before export',runtime_secrets:false};
+          fs.writeFileSync('image-export/provenance.json',JSON.stringify(proof,null,2)+'\n');
+          NODE
+      - name: Retain only the reviewed image artifact for one day
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: isp-reviewed-image-80d32fdd
+          path: rails-app/image-export/
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error

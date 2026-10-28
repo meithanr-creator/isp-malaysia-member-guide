@@ -15,7 +15,7 @@ class LocalFileValidator
       else false
       end
     end
-    return if valid
+    return UploadScanner.error(file) if valid
     "Choose a valid #{kind == :pdf ? 'PDF document' : 'JPG, PNG or WebP image'}. The file contents must match its type."
   end
 end

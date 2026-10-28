@@ -46,7 +46,7 @@ class Publication < ApplicationRecord
     blob = ActiveStorage::Blob.find_signed(file["signed_id"].to_s)
     return unless blob && uploads.blobs.exists?(id: blob.id)
     allowed = kind.to_s == "pdf" ? blob.content_type == "application/pdf" && blob.byte_size.between?(1, 25.megabytes) : IMAGE_TYPES.include?(blob.content_type) && blob.byte_size.between?(1, 5.megabytes)
-    blob if allowed
+    blob if allowed && UploadScanner.approved_blob?(blob)
   end
 
   private

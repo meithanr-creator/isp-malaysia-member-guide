@@ -4,8 +4,12 @@ source "https://rubygems.org"
 gem "rails", "~> 8.1.4"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
-# Use sqlite3 as the database for Active Record
+# SQLite is for local review; production and PostgreSQL CI use pg.
 gem "sqlite3", ">= 2.1"
+gem "pg", "~> 1.6"
+gem "aws-sdk-s3", require: false
+gem "csv"
+gem "rotp", "~> 6.3"
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
 # Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
@@ -54,4 +58,9 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+end
+
+# Minitest 6 ships its fault-injection helpers separately.
+group :test do
+  gem "minitest-mock", "5.27.0", require: "minitest/mock"
 end

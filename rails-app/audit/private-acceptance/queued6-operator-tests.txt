@@ -1,0 +1,20 @@
+✔ queued6 context admits only the explicit current six-dollar fresh packet and forwards resource bindings (10.0469ms)
+✔ queued6 context refuses six-dollar historical packets and unknown modes (12.6269ms)
+✔ queued6 context refuses stale preflight, changed new class and migration bindings (8.4778ms)
+✔ queued6 active admission retains the ten-minute cutoff and rejects an extended total window (3.321ms)
+✔ queued6 cannot reuse the stopped namespace, stopped flag or original checkpoint after window rewrite (7.3737ms)
+✔ queued6 adds only an explicit new fresh class, budget and resource model contract (1.7188ms)
+✔ queued6 preserves opaque prior commitments and separately reserves failed and new full caps (0.3426ms)
+✔ queued6 refuses missing or lowered prior intervals, changed failure identity and a longer window (0.5011ms)
+✔ queued6 cannot relax historical five-dollar guards or borrow a historical packet (0.6302ms)
+✔ queued6 first hosted action requires Astra review of this packet, source, CI and raised cumulative ceiling (0.748ms)
+✔ queued6 deployed metadata and configuration require the fresh class and migration (1.6169ms)
+✔ queued6 source-map closure binds the shared resource model and rejects extra or changed sources (1.2133ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 145.9289

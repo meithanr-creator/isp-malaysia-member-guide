@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "reviewer": "Astra high",
+  "reviewer_agent": "/root/astra_release_review",
+  "reviewed_at": "2026-10-27T22:00:20.613Z",
+  "source_disposition": "GO_FOR_OFFLINE_PUBLICATION",
+  "runtime_disposition": "HOLD_BUDGET_AND_FULL_PROFILE_DEMAND",
+  "production_disposition": "NO_GO",
+  "material_source_findings": [],
+  "review_raw_sha256": "879162bfa2e4d2ee4d4b6f8cc6654bd8dd9a4e0caccdbb49e8c177d66f055bab",
+  "implementation_proof_sha256": "5893b83c10e5aced8746bc5015cf242c8a855b3ab5dd16dba55fb55ec6e485bf",
+  "tested_source_sha256": {
+    "cloudflare/acceptance/index.js": "a29054f60d378f867bd4df2b63830fbc5d14496fe8c925ece4c9d5faccfdfd76",
+    "cloudflare/acceptance/index.test.mjs": "269f51512f09b42a00b99a7d5bd219f7cf17e16148bd2ecd06227a824f945c51",
+    "script/virtual-mobile-failures.mjs": "2ca7967fb0ab958cfdf2507456c5bcc78363873a997c2490bdbb9d696e56fe48",
+    "script/virtual-mobile-failures.test.mjs": "02dadd96b41f6f664c4f6255d517f585efa649693c9fadb0bac851b29f578b18",
+    "script/virtual-mobile-acceptance.mjs": "707eed0a7f9ebacddf6d92064cf0f05bc49fb3df8a7120fd1f1fde64c5c85ea2",
+    "script/run-hosted-mobile-acceptance.mjs": "06eb36f05425b8d2bda4c3c2c19331ad884b035b79dcff031c6973c5381e3072",
+    "script/run-hosted-mobile-acceptance.test.mjs": "4b6a9b4d53e57e1560bb3e20a48784987eacc4e7826f7bdaa041c874b5da4b9d",
+    "script/offline-browser-preflight.mjs": "4bba63dd9055feecacd42466f6075649a9c6239c03f88729553c909b205cb3ee",
+    "script/private-mobile-cleanup.mjs": "a04a7875fdd8920c3f339d0fc6c18e3a2a019defe349230456b61131dd8da743"
+  },
+  "browser_proof_sha256": [
+    {
+      "engine": "WebKit",
+      "sha256": "2764c02975a0ff8087204db97c46d5a389ddd4f8a954b2b86ab5632f10015bf1"
+    },
+    {
+      "engine": "Chromium",
+      "sha256": "5cc6c4f73288650e5e318b741efb687afcf50a5bca86cf4e84c07120a7280f29"
+    }
+  ],
+  "tests": {
+    "passed": 116,
+    "failed": 0,
+    "skipped": 0,
+    "reviewer_reran_tests": false
+  },
+  "verified_invariants": [
+    "Four active readers,64 queued reads and10-second bounded queue wait",
+    "Two independent write slots",
+    "Count each admission once before waiting; no refund or replay",
+    "Caller abort, permanent stop and deadline remove waiting entries",
+    "Hold active slots until response completion or cancellation",
+    "Historical classes retain their two-stream behavior",
+    "Bounded64 sanitized private request facts and first failure before cleanup",
+    "Strict cancellation and broken-asset checks retained",
+    "Exact D-backed QA distro identity/base path validated in launcher,preflight and cleanup"
+  ],
+  "full_profile_demand": "UNPROVEN",
+  "new_class_wired_for_deployment": false,
+  "budget_cumulative_bound_usd": 5.05749952,
+  "approved_ceiling_usd": 5,
+  "prior_allowances_waived": false,
+  "critical_http_cases_carried": 42,
+  "critical_http_cases_reassessed": 0,
+  "provider_calls_by_reviewer": 0,
+  "hosted_mobile_pass_claimed": false,
+  "publication_ci": "PENDING",
+  "caveats": [
+    "Queue overflow,timeout and abort remain failures with no retry or benign classification; uncertain reservations remain charged.",
+    "Incomplete process census or dedicated-distro verification cannot prove cleanup. Cloud shutdown has separate evidence.",
+    "Real-engine local synthetic gateway/actual rendered asset-page proof is not full hosted17-journey acceptance.",
+    "Changed launcher/selector source invalidates older bound preflight packets. No new packet or live grant is approved."
+  ]
+}

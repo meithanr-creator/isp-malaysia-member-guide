@@ -1,0 +1,126 @@
+{
+  "status": "DIAGNOSTIC_COMPLETE",
+  "error": null,
+  "enabled_at": "2026-10-27T20:05:19.245Z",
+  "finished_at": "2026-10-27T20:05:41.951Z",
+  "elapsed_ms": 25110,
+  "requests": 12,
+  "container_requests": 0,
+  "observations": [
+    {
+      "client": "native_https",
+      "path": "/up",
+      "status": 503,
+      "body": "ISP member service is not available yet.",
+      "body_sha256": "6b2b24f1d675489401bb2d76f9cc685757961dc7e2586fa0cfd72b3de3eb9157",
+      "cf_ray": "a51450a33c32aedc-SIN",
+      "at": "2026-10-27T20:05:20.357Z"
+    },
+    {
+      "client": "curl",
+      "path": "/up",
+      "status": 503,
+      "body": "ISP member service is not available yet.",
+      "body_sha256": "6b2b24f1d675489401bb2d76f9cc685757961dc7e2586fa0cfd72b3de3eb9157",
+      "cf_ray": "a51450a298a09ba2-SIN",
+      "at": "2026-10-27T20:05:20.285Z"
+    },
+    {
+      "client": "native_https",
+      "path": "/member/dashboard",
+      "status": 503,
+      "body": "ISP member service is not available yet.",
+      "body_sha256": "6b2b24f1d675489401bb2d76f9cc685757961dc7e2586fa0cfd72b3de3eb9157",
+      "cf_ray": "a51450a45e7caedc-SIN",
+      "at": "2026-10-27T20:05:20.533Z"
+    },
+    {
+      "client": "curl",
+      "path": "/member/dashboard",
+      "status": 503,
+      "body": "ISP member service is not available yet.",
+      "body_sha256": "6b2b24f1d675489401bb2d76f9cc685757961dc7e2586fa0cfd72b3de3eb9157",
+      "cf_ray": "a51450a3fccd9c2c-SIN",
+      "at": "2026-10-27T20:05:20.502Z"
+    },
+    {
+      "client": "native_https",
+      "path": "/up",
+      "status": 503,
+      "body": "ISP member service is not available yet.",
+      "body_sha256": "6b2b24f1d675489401bb2d76f9cc685757961dc7e2586fa0cfd72b3de3eb9157",
+      "cf_ray": "a51450dc28cb32db-SIN",
+      "at": "2026-10-27T20:05:29.475Z"
+    },
+    {
+      "client": "curl",
+      "path": "/up",
+      "status": 503,
+      "body": "ISP member service is not available yet.",
+      "body_sha256": "6b2b24f1d675489401bb2d76f9cc685757961dc7e2586fa0cfd72b3de3eb9157",
+      "cf_ray": "a51450db9bb2f93a-SIN",
+      "at": "2026-10-27T20:05:29.399Z"
+    },
+    {
+      "client": "native_https",
+      "path": "/member/dashboard",
+      "status": 503,
+      "body": "ISP member service is not available yet.",
+      "body_sha256": "6b2b24f1d675489401bb2d76f9cc685757961dc7e2586fa0cfd72b3de3eb9157",
+      "cf_ray": "a51450dd3a2d32db-SIN",
+      "at": "2026-10-27T20:05:29.637Z"
+    },
+    {
+      "client": "curl",
+      "path": "/member/dashboard",
+      "status": 503,
+      "body": "ISP member service is not available yet.",
+      "body_sha256": "6b2b24f1d675489401bb2d76f9cc685757961dc7e2586fa0cfd72b3de3eb9157",
+      "cf_ray": "a51450dcea8cc390-SIN",
+      "at": "2026-10-27T20:05:29.600Z"
+    },
+    {
+      "client": "native_https",
+      "path": "/up",
+      "status": 503,
+      "body": "ISP member service is not available yet.",
+      "body_sha256": "6b2b24f1d675489401bb2d76f9cc685757961dc7e2586fa0cfd72b3de3eb9157",
+      "cf_ray": "a514511acc05f408-SIN",
+      "at": "2026-10-27T20:05:39.482Z"
+    },
+    {
+      "client": "curl",
+      "path": "/up",
+      "status": 503,
+      "body": "ISP member service is not available yet.",
+      "body_sha256": "6b2b24f1d675489401bb2d76f9cc685757961dc7e2586fa0cfd72b3de3eb9157",
+      "cf_ray": "a514511a2b994dce-SIN",
+      "at": "2026-10-27T20:05:39.413Z"
+    },
+    {
+      "client": "native_https",
+      "path": "/member/dashboard",
+      "status": 503,
+      "body": "ISP member service is not available yet.",
+      "body_sha256": "6b2b24f1d675489401bb2d76f9cc685757961dc7e2586fa0cfd72b3de3eb9157",
+      "cf_ray": "a514511bcdf4f408-SIN",
+      "at": "2026-10-27T20:05:39.635Z"
+    },
+    {
+      "client": "curl",
+      "path": "/member/dashboard",
+      "status": 503,
+      "body": "ISP member service is not available yet.",
+      "body_sha256": "6b2b24f1d675489401bb2d76f9cc685757961dc7e2586fa0cfd72b3de3eb9157",
+      "cf_ray": "a514511b7bc9f908-SIN",
+      "at": "2026-10-27T20:05:39.616Z"
+    }
+  ],
+  "cleanup": {
+    "status": "PASS",
+    "at": "2026-10-27T20:05:41.951Z",
+    "app_absent": true,
+    "ingress_closed": true
+  },
+  "conclusion": "Both clients and paths later returned the expected generic denial. Transient route propagation is supported; original native404 body was not retained."
+}

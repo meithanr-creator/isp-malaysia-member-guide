@@ -22,6 +22,11 @@ class RenderingAndPaymentTest < ActionDispatch::IntegrationTest
     assert_select "form[action*='receipt']", count: 0
     assert_equal public_copy, event.reload.published_data
     assert_equal 0, event.event_interests.count
+    assert_select ".payment-total", text: /RM 75\.50/
+    get root_path
+    assert_select ".event-teaser", text: /RM 75\.50/
+    get events_path
+    assert_select ".fee-tag", text: "RM 75.50"
   end
 
   test "free public event never exposes hidden payment instructions" do
@@ -33,3 +38,4 @@ class RenderingAndPaymentTest < ActionDispatch::IntegrationTest
     assert_select "a[href*='hidden']", count: 0
   end
 end
+

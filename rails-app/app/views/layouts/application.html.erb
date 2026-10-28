@@ -4,7 +4,8 @@
     <title><%= content_for(:title) || "People, Plants, Progress | ISP" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Isp Member Rails">
+    <meta name="application-name" content="ISP">
+    <meta name="apple-mobile-web-app-title" content="ISP">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="turbo-cache-control" content="no-cache">
     <%= csrf_meta_tags %>
@@ -12,8 +13,8 @@
 
     <%= yield :head %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+
+    <%= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
 
     <link rel="icon" href="/brand/isp-192.png" type="image/png">
     <link rel="apple-touch-icon" href="/brand/isp-180.png">
@@ -24,7 +25,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
+  <body data-controller="pwa">
     <a class="skip" href="#main">Skip to content</a>
     <div class="app-shell <%= 'admin-shell' if controller_path.start_with?('admin/') %>">
       <header class="brandbar">
@@ -45,6 +46,7 @@
             <%= link_to about_path do %><%= isp_icon "book" %>About & contact<% end %>
             <% if current_user&.admin? %>
               <div class="menu-divider"></div><span class="menu-heading">Administration</span>
+              <%= link_to admin_membership_registry_entries_path do %><%= isp_icon "people-fill" %>Membership list<% end %>
               <%= link_to admin_discover_path do %><%= isp_icon "file-earmark-text" %>Edit Discover ISP<% end %>
               <%= link_to admin_publications_path do %><%= isp_icon "journal-bookmark" %>Manage publications<% end %>
               <%= link_to admin_consultation_requests_path do %><%= isp_icon "bar-chart-line" %>Consultation enquiries<% end %>
@@ -66,4 +68,6 @@
     </div>
   </body>
 </html>
+
+
 

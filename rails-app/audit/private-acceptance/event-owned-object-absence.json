@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "observed_at": "2026-10-27T17:37:17Z",
+  "read_only": true,
+  "object_writes": 0,
+  "tls_verified": true,
+  "retry_limit": 0,
+  "operation_id": "a9ab3941-9489-4764-8a09-6a765c0666ae",
+  "objects": [
+    {
+      "id": 2,
+      "key_sha256": "a7d59a64f7f1197881f6277acfe7b6ea489bfdc4f735a381cac363183a852c16",
+      "head_status": 404,
+      "absent": true
+    },
+    {
+      "id": 3,
+      "key_sha256": "076648b022a30931c4e9eec81b67676ee768b1ce13d07c045a52e91f3c4598e7",
+      "head_status": 404,
+      "absent": true
+    }
+  ],
+  "status": "PASS"
+}

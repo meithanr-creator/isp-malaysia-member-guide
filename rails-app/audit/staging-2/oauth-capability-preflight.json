@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "checked_at": "2026-10-27T01:55:40.626Z",
+  "credential_kind": "oauth",
+  "scope_set_unchanged": true,
+  "expires_at": "2026-10-27T02:54:02.368Z",
+  "account_read": {
+    "http_status": 200,
+    "identity_matches": true,
+    "error_codes": []
+  },
+  "build_controls_read": {
+    "http_status": 403,
+    "commands_inert": false,
+    "error_codes": [
+      10000
+    ]
+  },
+  "provider_resource_mutations": 0,
+  "status": "blocked"
+}

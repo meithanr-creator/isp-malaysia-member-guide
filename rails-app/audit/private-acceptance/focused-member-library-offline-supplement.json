@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "kind": "focused_new_publication_library_offline_supplement",
+  "status": "PASS_OFFLINE_ONLY",
+  "at": "2026-10-28T16:00:45.888Z",
+  "scope": "Only the new library-index page. No earlier selector suite or hosted case replay.",
+  "rails_env": "test",
+  "database_adapter": "SQLite",
+  "network_forbidden_in_renderer": true,
+  "mail_disabled": true,
+  "rendered_page_count": 1,
+  "served_page_sha256": "dc150d817fb65551946c88be4c51c823c1c80be4058181b60f1f55ee696631e6",
+  "renderer_sha256": "88aa099979c8bfdc817f799c3a95c29462d89f67c61b5d250ae26c207c95f532",
+  "contract_sha256": "6d058f0ad55a8fbad40be964e1c39faa9b2c5931e26a2b83ee863b373202b2c9",
+  "engines": {
+    "webkit": {
+      "sha256": "a9dc87e7fb1bab299f2c0fbc304f0b082ddcf7ca7e60b943cd448e965d083d55",
+      "status": "PASS",
+      "selectors": [
+        {
+          "id": "LIBRARY-ROOT",
+          "status": "ACTUAL_OFFLINE_ENGINE_VERIFIED",
+          "touch_target": null,
+          "layout": {
+            "viewport": 390,
+            "scroll": 390
+          }
+        },
+        {
+          "id": "LIBRARY-CARD",
+          "status": "ACTUAL_OFFLINE_ENGINE_VERIFIED",
+          "touch_target": null,
+          "layout": null
+        },
+        {
+          "id": "LIBRARY-TITLE",
+          "status": "ACTUAL_OFFLINE_ENGINE_VERIFIED",
+          "touch_target": null,
+          "layout": null
+        },
+        {
+          "id": "LIBRARY-READ",
+          "status": "ACTUAL_OFFLINE_ENGINE_VERIFIED",
+          "touch_target": {
+            "x": 142,
+            "y": 519.015625,
+            "width": 147.21875,
+            "height": 44
+          },
+          "layout": null
+        }
+      ],
+      "browser_absent": true,
+      "application_requests": 0,
+      "external_attempts_blocked": 0
+    },
+    "chromium": {
+      "sha256": "7a67e3e527fd477da8f71a121e40ecd6b5600533b0eb1a663c848e477adc8977",
+      "status": "PASS",
+      "selectors": [
+        {
+          "id": "LIBRARY-ROOT",
+          "status": "ACTUAL_OFFLINE_ENGINE_VERIFIED",
+          "touch_target": null,
+          "layout": {
+            "viewport": 412,
+            "scroll": 412
+          }
+        },
+        {
+          "id": "LIBRARY-CARD",
+          "status": "ACTUAL_OFFLINE_ENGINE_VERIFIED",
+          "touch_target": null,
+          "layout": null
+        },
+        {
+          "id": "LIBRARY-TITLE",
+          "status": "ACTUAL_OFFLINE_ENGINE_VERIFIED",
+          "touch_target": null,
+          "layout": null
+        },
+        {
+          "id": "LIBRARY-READ",
+          "status": "ACTUAL_OFFLINE_ENGINE_VERIFIED",
+          "touch_target": {
+            "x": 142,
+            "y": 583.84375,
+            "width": 147.328125,
+            "height": 44
+          },
+          "layout": null
+        }
+      ],
+      "browser_absent": true,
+      "application_requests": 0,
+      "external_attempts_blocked": 0
+    }
+  },
+  "product_sources": {
+    "app/views/member/publications/index.html.erb": "94f05037e5e83c0a14b72e2a709ec329451c643df7ec6bb91748495688746295",
+    "app/views/member/publications/_card.html.erb": "23dc6186e8fe864fb88e3d7f46e75c9fd47bdf9c1b71081c61e83c42dac07508"
+  },
+  "first_chromium_attempt": {
+    "status": "FAIL_LOCAL_LOAD_TIMEOUT",
+    "selector_results": 0,
+    "reason": "page.goto waitUntil load exceeded20000ms",
+    "later_check": "Uses explicit DOM readiness, actual controller connection and font readiness; all4 contracts pass."
+  },
+  "provider_requests": 0,
+  "hosted_database_calls": 0,
+  "hosted_storage_calls": 0,
+  "backend_acceptance_proved": false
+}

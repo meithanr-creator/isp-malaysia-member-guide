@@ -1,0 +1,52 @@
+{
+  "source": "98d271dd2e105a263a214f238795b7331f7c001f",
+  "run": 40336471480,
+  "scope": "Source/CI acceptance only; no new Cloudflare runtime",
+  "jobs": [
+    {
+      "id": 121619289589,
+      "name": "virtual_browser_gate",
+      "conclusion": "success"
+    },
+    {
+      "id": 121619289984,
+      "name": "neon_build_tools",
+      "conclusion": "success"
+    },
+    {
+      "id": 121619290082,
+      "name": "cloudflare_adapter",
+      "conclusion": "success"
+    },
+    {
+      "id": 121619290171,
+      "name": "cloudflare_scanner_runtime",
+      "conclusion": "success"
+    },
+    {
+      "id": 121619290267,
+      "name": "rails_checks (postgresql)",
+      "conclusion": "success"
+    },
+    {
+      "id": 121619290288,
+      "name": "container_build",
+      "conclusion": "success"
+    },
+    {
+      "id": 121619290739,
+      "name": "rails_checks (sqlite)",
+      "conclusion": "success"
+    }
+  ],
+  "postgresql": {
+    "tests": 303,
+    "assertions": 2573,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "linux_browser": "Four API/rendered WebKit/Chromium mobile-profile cookie cases passed; full hosted mobile/PWA remains open",
+  "scanner": "Fresh clean/EICAR and exact 834-byte PDF fixture passed",
+  "production": "NO-GO"
+}

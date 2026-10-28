@@ -1,0 +1,10 @@
+Astra high source review — 26 October 2026
+Scope: upload durability and Cloudflare lifecycle/readiness/lease changes.
+Disposition: two findings corrected; no additional blocking finding in inspected edits, subject to exact commit CI and PostgreSQL concurrency. This is not runtime or production approval.
+
+P1 fixed: retain exact-key tombstones for uncertain PUT outcomes; commit the non-uploadable fence before external DELETE; require pending state for PUT; record cleanup attempt/result. Absence at one instant is not terminal PUT proof. Delayed object materialization and recovery winning before PUT (including failed DELETE) have deterministic regressions.
+P2 fixed: old transport/backend failures and caller cancellation cannot invalidate a newer lifecycle. Captured generation guards cover both paths; new regressions pass.
+
+Actual coordinator results after fixes: Rails296 tests/2465 assertions, zero failures/errors, three PostgreSQL-only skips; edge/staging42 passed. Earlier supervisor12/86, operations19, SDK compilation passed within their recorded scope. Exact new CI remains required.
+
+Open: restricted correlated diagnostics before another hosted run; unknown hosted503 cause; Linux browser security fixture and full hosted virtual mobile/PWA acceptance; production service/recovery/mail/operating gates. Original Cloudflare lease completed and stopped, US$5 ceiling retained, no new runtime authorization.

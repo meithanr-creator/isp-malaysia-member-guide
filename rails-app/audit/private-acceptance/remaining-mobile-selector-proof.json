@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "kind": "remaining_mobile_selector_and_timing_correction",
+  "status": "PASS_OFFLINE_ONLY_HOSTED_BACKEND_PENDING",
+  "source_frozen": true,
+  "owned_files_sha256": {
+    "script/virtual-mobile-journeys.mjs": "2c99887be0a80b9479c0992d909a95502b26c531be0528d7d8ecadcbe875ba64",
+    "script/virtual-mobile-acceptance.mjs": "bbca729cf418b8fb533be7a50e4bacec48981fda8c1ed72dcd564f6366e4091b",
+    "script/virtual-mobile-selector-contracts.test.mjs": "4766e028b4f6a1fad85b41e94ac5bbf44031b5ec15b58ac354f77ac2aae5a0d6",
+    "audit/private-acceptance/remaining-mobile-selector-matrix.json": "973b4520fc3aca4f58ba7c9dab669c08087c30c72243e539a9f1cf08a1197e38"
+  },
+  "matrix_counts": {
+    "required_rows_per_engine": 135,
+    "diagnostic_rows_per_engine": 4,
+    "total_rows_per_engine": 139,
+    "original_rows_closed_per_engine": 138,
+    "actual_rendered_pages": 22,
+    "covered_static_cases": 17
+  },
+  "unresolved_required_rows": {
+    "webkit": 0,
+    "chromium": 0
+  },
+  "unresolved_total_rows": {
+    "webkit": 0,
+    "chromium": 0
+  },
+  "compiled_asset_catalog_sha256": "608103434a02411543eabc001a6a997dcb1f3044bffc404dd9a46af74c3d8fb1",
+  "compiled_asset_files": 39,
+  "rendered_product_files": 96,
+  "focused_test": {
+    "command": "D:/Projects/isp-rails-tools/node24/node.exe --test script/virtual-mobile-selector-contracts.test.mjs",
+    "exit_code": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 182.6874,
+    "cases": [
+      "exact tested source and measured completion admitted",
+      "missing/unresolved required selector refused",
+      "source/descriptor/rendered-byte drift refused",
+      "page error/external attempt/cleanup gap/backend PASS claim refused"
+    ]
+  },
+  "browser_receipts": {
+    "webkit": {
+      "baseline": {
+        "path": "D:/Projects/isp-rails-tools/isp-mobile-qa/selector-audit/webkit-1793193812593/proof.json",
+        "sha256": "38aae53f9dfda938a637ecb327fa1c394be49da8a4d0ba0ad616319e6cca7ea7"
+      },
+      "supplement": {
+        "path": "D:/Projects/isp-rails-tools/isp-mobile-qa/selector-audit/webkit-1793194151042/proof.json",
+        "sha256": "dd1b5dadbea0636c9ca09e15cb016013499116b4df2aa47739cdeeed0723f417"
+      },
+      "timing": {
+        "path": "D:/Projects/isp-rails-tools/isp-mobile-qa/selector-audit/webkit-1793196858898/sync-proof.json",
+        "sha256": "155bc43312fda31f95a51cf53a4517fbaeb7829630ef761d5df95b1206401733"
+      },
+      "cleanup": {
+        "path": "D:/Projects/isp-rails-tools/isp-mobile-qa/selector-audit/webkit-1793196960637/sync-proof.json",
+        "sha256": "d919805c69ade07c0d73c549227663812845e253bbef5dfb74f7c75727d820e9"
+      },
+      "zero_javascript_errors": true,
+      "zero_external_attempts": true,
+      "browser_absent": true
+    },
+    "chromium": {
+      "baseline": {
+        "path": "D:/Projects/isp-rails-tools/isp-mobile-qa/selector-audit/chromium-1793193768256/proof.json",
+        "sha256": "83515c282eef1d13dbaeefdd84927c2ea1c2589d3e7016a895a8c9176190e9c5"
+      },
+      "supplement": {
+        "path": "D:/Projects/isp-rails-tools/isp-mobile-qa/selector-audit/chromium-1793194129776/proof.json",
+        "sha256": "6367fd6039e0237d6bc38c8fcd3183c095af7ab3f46a68fd6910949aa7c54687"
+      },
+      "timing": {
+        "path": "D:/Projects/isp-rails-tools/isp-mobile-qa/selector-audit/chromium-1793196825475/sync-proof.json",
+        "sha256": "22882d298c14ab7efbff970d77710b6c12140a5e075564a101f307a97e89c4bf"
+      },
+      "cleanup": {
+        "path": "D:/Projects/isp-rails-tools/isp-mobile-qa/selector-audit/chromium-1793196942236/sync-proof.json",
+        "sha256": "973114ae7032c6d313b33b89f52aeb97010e50645179c68e76d1abac397ba8f6"
+      },
+      "zero_javascript_errors": true,
+      "zero_external_attempts": true,
+      "browser_absent": true
+    }
+  },
+  "classification": {
+    "static": "STATIC_TEMPLATE_VERIFIED: templates/routes/controller branches/forms/file-response expectations; no backend execution",
+    "engine": "ACTUAL_OFFLINE_ENGINE_VERIFIED: actual Rails-rendered synthetic pages and exact compiled assets in pinned real WebKit/Chromium; locator resolution, changed control operations, initiated-render boundaries",
+    "backend": "BACKEND_UNVERIFIED: login/session/MFA, mutation persistence, storage/scanning, protected file authorization/bytes, actual logout/history restoration and independent reconciliation. No mobile business-case PASS earned offline."
+  },
+  "production_files_edited": false,
+  "current_stopped_private_packet_mutated": false,
+  "provider_calls": 0,
+  "hosted_database_calls": 0,
+  "hosted_storage_calls": 0,
+  "accepted_http_checks_replayed": 0,
+  "accepted_gate_menu_skip_assertions_replayed": 0,
+  "unchanged_unit_checks_replayed": 0,
+  "notes": [
+    "Initial135 resolved DOM rows per engine carried by identical descriptor/page source; only3 corrected required rows plus fourth diagnostic ran in supplements.",
+    "Password/Email/Question associated-label checks and all accessibility audits retained; strict duplicate negatives reject ambiguous targets.",
+    "Initiated render requires matching visit, nonpreview fresh render and final load, bound to matching form submission for Discover; no new navigation introduced.",
+    "Logout immediate private-DOM guard remains before allowed-URL wait. Synthetic transient-exposure negative is guard-level only; real history restoration remains hosted-unverified.",
+    "Original failed timing fixture receipts were not treated as proof. Successful exact helper proofs and separate timeout cleanup supplements retained unchanged.",
+    "Original Windows renderer LF hash and exact served CRLF byte hash both preserved. No rendered page bytes changed."
+  ]
+}

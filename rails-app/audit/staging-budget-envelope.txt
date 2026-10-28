@@ -1,0 +1,10 @@
+26 October 2026 — authorized incremental test ceiling US$5; no new subscription
+
+One standard-2 instance maximum, fixed <=55-minute admission window, independent deletion target around minute50. Production runtime has not started at preparation time.
+
+Current published container rates checked 26 October 2026:
+https://developers.cloudflare.com/containers/platform/pricing/
+1 vCPU,6GiB memory,12GB disk. Worst-case55minutes provisioned compute at full CPU before included usage:
+3300 seconds * (1*0.000020 +6*0.0000025 +12*0.00000007) = US$0.118272.
+
+This is a conservative compute estimate, not an invoice or universal billing cap. Worker/Durable Object, private object storage/operations, image build/registry and network charges are additional. Requests/files are bounded, one existing Workers Paid account is retained, Neon Free remains unchanged, and no paid browser service is used. Retain shutdown and provider usage evidence; do not report final invoice values before available. Stop the application even if ingress closure fails, then separately close ingress and verify both.

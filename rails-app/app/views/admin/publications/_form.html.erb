@@ -1,6 +1,7 @@
+<%= render "shared/admin_verification_notice" %>
 <%= render "shared/errors", record: publication %>
 <%= form_with model: [:admin, publication], class: "publication-form" do |form| %>
-  <%= form.hidden_field :lock_version %>
+  <%= form.hidden_field :lock_version, value: defined?(@submitted_lock_version) ? @submitted_lock_version : publication.lock_version %>
   <fieldset><legend>The publication</legend>
     <label class="field">Title<%= form.text_field :title, value: publication.draft_data["title"], maxlength: 160 %></label>
     <label class="field">Issue or subtitle<%= form.text_field :subtitle, value: publication.draft_data["subtitle"], maxlength: 200, placeholder: "For example, volume and issue number" %></label>

@@ -1,0 +1,1 @@
+{"ok":true,"operation":"--reconcile","reconciled":true,"application_present":false,"namespace_id":"8ff8ea955b644da5b0cb2759e3c01c65","mutations":false,"provider_requests":10,"emergency_provider_requests":0,"production_approved":false}

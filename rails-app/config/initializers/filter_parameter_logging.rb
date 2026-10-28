@@ -1,8 +1,7 @@
-# Be sure to restart your server when you modify this file.
-
-# Configure parameters to be partially matched (e.g. passw matches password) and filtered from the log file.
-# Use this to limit dissemination of sensitive information.
-# See the ActiveSupport::ParameterFilter documentation for supported notations and behaviors.
+# Partial key matches also protect nested fields. Never log enquiry text,
+# contact information, credentials, MFA secrets or financial references.
 Rails.application.config.filter_parameters += [
-  :passw, :email, :secret, :token, :_key, :crypt, :salt, :certificate, :otp, :ssn, :cvv, :cvc
+  :passw, :email, :secret, :token, :_key, :crypt, :salt, :certificate, :otp,
+  :ssn, :cvv, :cvc, :name, :phone, :company, :subject, :message, :body,
+  :bank, :account_number, :account_name, :receipt, :recovery, :totp, :membership_import, :membership_csv, :member_reference, :registry_rows
 ]

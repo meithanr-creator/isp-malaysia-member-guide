@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "@neon/config": "^1.9.4",
+    "@neon/env": "^1.6.5"
+  },
+  "name": "isp-member-rails",
+  "private": true,
+  "scripts": {
+    "start": "node script/neon-run.mjs start",
+    "verify:neon": "node script/neon-run.mjs verify-db",
+    "build": "node script/neon-run.mjs build",
+    "test:neon-tools": "node --test script/neon-run.test.mjs",
+    "migrate:neon": "node script/neon-run.mjs migrate",
+    "test:neon-e2e": "node script/neon-run.mjs e2e"
+  }
+}

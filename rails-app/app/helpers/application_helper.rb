@@ -32,8 +32,10 @@ module ApplicationHelper
     event_file_path(event_id: event.slug, key: file["signed_id"])
   end
   def receipt_email_link(data)
-    subject = ERB::Util.url_encode("Sample payment receipt — #{data['title']}")
-    body = ERB::Util.url_encode("Hello,\n\nEvent: #{data['title']}\nName: \nCompany: \n\nI will attach my sample payment receipt before sending.\n")
+    prefix = demo_mode? ? "Sample payment receipt" : "Payment receipt"
+    subject = ERB::Util.url_encode("#{prefix} — #{data['title'].to_s.gsub(/[\r\n]/, ' ')}")
+    body = ERB::Util.url_encode("Hello,\n\nEvent: #{data['title']}\nName: \nCompany: \n\nI will attach my #{demo_mode? ? 'sample payment receipt' : 'payment receipt'} before sending.\n")
     "mailto:#{ERB::Util.url_encode(data['receipt_email'])}?subject=#{subject}&body=#{body}"
   end
 end
+

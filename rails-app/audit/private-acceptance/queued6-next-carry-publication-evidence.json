@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "status": "SOURCE_REVIEWED_PENDING_EXACT_PUBLICATION_AND_HOSTED_REVIEW",
+  "parent_commit": "8610c40e83e9eec587f6a6d543cccc45d10ecda6",
+  "current_ci": "SKIPPED_NOT_A_NEW_PASS",
+  "ci_disposition": "SUCCESS_WITH_CARRY",
+  "baseline_ci": {
+    "commit": "8cbf1b2f85c85b8153f1d4bae3ef9531414e4fa1",
+    "run_id": 40591524444,
+    "unchanged_boundaries": 268
+  },
+  "closed_ui_audit_commit": "8610c40e83e9eec587f6a6d543cccc45d10ecda6",
+  "packet": {
+    "packet_sha256": "3dea1bffc157886acaf3f5b3bcd2e534bbb9a52e6f0dac50775b08d5be16113a",
+    "compiled_modules": [
+      {
+        "name": "index.js",
+        "sha256": "4da1b447243b80dec736a89954d4e86d56c7c32c317e7daf4e6cc2f5509203ed"
+      }
+    ],
+    "source_map": {
+      "name": "index.js.map",
+      "contract_sha256": "20645b55ebc25681e0eb49f5f3f710e9efea0003ac0e7d386442bcbf8e885bb6"
+    },
+    "files_sha256": {
+      "cloudflare/acceptance/index.js": "2a15592da3fb7bcf158d3180cce79e056370b65cac1213ec5a176aed1120bcb1",
+      "cloudflare/acceptance/package-files.json": "ac569c41d7c6980f0937c7c020fd46bc09e2492f6bd491b90a99a3a4b20ee47b",
+      "cloudflare/acceptance/wrangler.json": "12405a2962d81fa6327552583b69b0c34a44bee4172149b987f1b7d69727df97",
+      "cloudflare/src/diagnostics.js": "ad2cba751ca787bbd73ec1bc1bde71bf79f17d97913748cb257428800c0162ce",
+      "cloudflare/src/runtime.js": "3d8501dc6797aa36be0b0f9536a2ba7d52e44d5a1cfabfe7073e35064b7b6d8e",
+      "cloudflare/staging/browser-access.js": "137a5e220f6b12dfb92f9ea155122a2fcd5007471798bc256617e720e4e3608a",
+      "cloudflare/staging/diagnostics.js": "843e6d1d08d1842030876d2902abecf111a1fca8a8c6b6a85553723ef2d5b8a5",
+      "cloudflare/startup/index.js": "2670601874014ea8796aa56a392002e416140fa58a47597cda4bafb32bc1cbbd",
+      "script/active-staging-admission.mjs": "b205816406df75096b5e1a22ce4a98e97f93a29099c340d024b0e9ebcf2c3aa4",
+      "script/cloudflare-staging-ops.mjs": "d59945be1899fe099888bde801082b451c2ebbfc4aeef79a2b0a5a3093f33da3",
+      "script/cloudflare-staging-watchdog.mjs": "568657ad8357da04fb8576250d9fd3d31d8b3814340339a5237fb3c687e6df69",
+      "script/hosted-acceptance-fixtures.rb": "8b6893aa5f75b1bcdb739620a253fbf7a26be2a169d228fac7335a5e9c0688cf",
+      "script/hosted-acceptance-operator.mjs": "a0b1d778593ce93b852a9c097683890a48b5ca4b7b485adced0a77615817b345",
+      "script/hosted-acceptance.mjs": "2e377369204f46deb8d27594e0b569c5d0cf063167ca421f6431d78552eaaf17",
+      "script/hosted-execution-phase.mjs": "64aa09c78cbb68ebf45835840debe56e9a5a6487a2a282e115b95bb7c5d78dbb",
+      "script/immutable-acceptance-evidence.mjs": "935d7ccac7a4f5174ef0dc9921f2451adab896d6bc4f4080d95cf0934a6772d4",
+      "script/lease3-release-policy.mjs": "416c435b5eda707aeef352dad84fb70fc8b25a4a21dc88bcb64c9147e6c4e689",
+      "script/linux-webkit-connection.mjs": "493fa2171f9fcb95ed1841add88380e57ca79a14f4ebf2ea0f8cd7b54fe37b6f",
+      "script/linux-webkit-server.mjs": "2b0bbc02363a89fe7347e1c4a2695b3ed7c7e8c21bb86b8c98f47e541e48511e",
+      "script/offline-browser-preflight.mjs": "4bba63dd9055feecacd42466f6075649a9c6239c03f88729553c909b205cb3ee",
+      "script/private-acceptance-carry.mjs": "d9c0ef837cdffb712c8973c48bf3a5931cbdccd2d1ecca4dd6682e95c73c6daf",
+      "script/private-acceptance-context.mjs": "abb11dffafa0b6463bc4ae1572ef32ed1a95c42ff590d11493c4b91a3b8a6bb5",
+      "script/private-acceptance-health.mjs": "5e1d322cd4334505bba729eae314686364f8ce767aeed7b94cf7f7e4378e38d8",
+      "script/private-acceptance-mobile.mjs": "924216ed2793d38e04cc2af8ef1ded3a73e1242cc765c72f1c2d3c5a5866eca5",
+      "script/private-acceptance-tail.mjs": "2138270e9d43a6158f4798d08c632fc4a5463fa2b9d332ba05d80fd2ca99325f",
+      "script/private-acceptance.mjs": "6abc6d23d040848dd2c48695fc3ba779001313ba0827fef0c72435f05af40ea3",
+      "script/private-mobile-cleanup.mjs": "a04a7875fdd8920c3f339d0fc6c18e3a2a019defe349230456b61131dd8da743",
+      "script/run-hosted-mobile-acceptance.mjs": "06eb36f05425b8d2bda4c3c2c19331ad884b035b79dcff031c6973c5381e3072",
+      "script/run-private-mobile.mjs": "9490351e0cc79e89363a35d68adaeba62127ae504bcd54b7f430e20f894e2322",
+      "script/staging-credential-provider.mjs": "1e74cfdf814f18efc0a66fb8e061af4b344db7035da980ed3d89866957ef7db8",
+      "script/staging-lease-context.mjs": "542c5b8cd224d7a02ba235bc130639d26872c715378726c6f962683ef97d3a27",
+      "script/virtual-mobile-acceptance.mjs": "a686b350e8b58687c1522e2b67b2cf34f55cb2c025acb0be87bf27072f4106bf",
+      "script/virtual-mobile-failures.mjs": "2ca7967fb0ab958cfdf2507456c5bcc78363873a997c2490bdbb9d696e56fe48",
+      "script/virtual-mobile-journeys.mjs": "e0b66d8a5d30f0ad012560b10a4798a84ed8745862f9583ac3b65621a384e4d1",
+      "script/virtual-mobile-resources.mjs": "cbff086bdb9eefb5cc2e0c94eba2e67696a0a13411b7dd2f1fe869702c08a0ac"
+    },
+    "prepared_at": "2026-10-28T14:38:07.094Z",
+    "preflight_proof_sha256": "13d2558480b02d390aeb665885d6d94cd117c14ebd31650a890c4f28e56d3669",
+    "resource_model_sha256": "2095aa8abf725ef2349a49ff89b7e934aeaf891cd8808f397d0dd50cd5248e85",
+    "gateway_class": "ISPPrivateAcceptanceMobileQueued6NextContinuation",
+    "mobile_carry_sha256": "94c3d7be8a3bf6fc6e45057940b5d18b5ff9b6b5bddfbd48b4b19ba1140341dc",
+    "mobile_budget_sha256": "b5860fa8c4459a3b78560d5a0f5627e5f7594da84a12f055d4987c10713401e4",
+    "selector_binding_sha256": "92fe4891e127ca3b133916fac59d3343909c04319b7c4d780404e4f655496e17"
+  },
+  "proofs": {
+    "audit/private-acceptance/queued6-next-carry-proof.json": "69e8de63fc4654e66508520ad504d0993a16d8714ded64d9f758b085087e8d65",
+    "audit/private-acceptance/queued6-next-selector-binding.json": "92fe4891e127ca3b133916fac59d3343909c04319b7c4d780404e4f655496e17",
+    "audit/private-acceptance/queued6-next-portability-supplement.json": "93a02812aae954fb0c47971f79e208d1fc4b426a043749d2c52feed380661042"
+  },
+  "original_offline_audit": {
+    "matrix_sha256": "973b4520fc3aca4f58ba7c9dab669c08087c30c72243e539a9f1cf08a1197e38",
+    "proof_sha256": "c75ed37f68eba763f1808cce1bcb01b9da19e53b77e17fd8a5474e2d7825d295",
+    "replayed": false,
+    "source_adaptation": "Exact uniquely reversible carry-selection regions; original tested whole-file hashes and original matrix/proof preserved."
+  },
+  "new_contracts": {
+    "windows_carry": 6,
+    "linux_portable_carry_pass": 5,
+    "linux_private_evidence_skip": 1,
+    "affected_source_admission_windows": 2,
+    "affected_source_admission_linux": 2
+  },
+  "carried_http_cases": 42,
+  "carried_iphone_cases": [
+    "private_gate",
+    "landing_menu_keyboard"
+  ],
+  "resume_iphone": "member_login",
+  "remaining_iphone_cases": 15,
+  "remaining_android_cases": 17,
+  "budget": {
+    "ceiling_usd": 6,
+    "conservative_bound_usd": 5.86991776,
+    "actual_invoice": false,
+    "cumulative_runtime_bound_seconds": 3129,
+    "cumulative_runtime_ceiling_seconds": 3300,
+    "fresh_window_total_seconds": 1920,
+    "closure_reserve_seconds": 600,
+    "all_prior_full_transfer_and_other_allowances_retained": true
+  },
+  "preflight": {
+    "disposition": "CARRY_WITH_EXACT_SOURCE_ONLY_DELTA_REVIEW",
+    "sha256": "13d2558480b02d390aeb665885d6d94cd117c14ebd31650a890c4f28e56d3669",
+    "launcher_changed": false,
+    "browser_access_changed": false,
+    "replayed": false
+  },
+  "application_source_changed": false,
+  "image_changed": false,
+  "production_release_approved": false
+}

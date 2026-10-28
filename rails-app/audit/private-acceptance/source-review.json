@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "status": "SOURCE_GO",
+  "reviewer": "GPT-6 Astra high",
+  "source": "1dda060dd5972615cbd48649d7f69674eb4d14de",
+  "packet_sha256": "a2215ecd609d5d48e8a4de13c0bec04101deba18c68ad9d4ca441448b4f30abb",
+  "operator_sha256": "def5f8ab60664af74bc21e2752ed3038578f0118dacd61220f41a4efd2c2f401",
+  "material_source_findings_open": 0,
+  "local_adapter_tests": 133,
+  "local_operator_mobile_tests": 82,
+  "additional_final_logging_tests": 2,
+  "actual_browser_engine_preflight": "PASS",
+  "fixture_helper_roundtrip": "PASS",
+  "runtime_authorized": false,
+  "production_release_approved": false,
+  "ci_run_id": 40539798941,
+  "ci": "SUCCESS"
+}

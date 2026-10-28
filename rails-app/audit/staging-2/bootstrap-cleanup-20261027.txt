@@ -1,0 +1,1 @@
+{"error":"Bootstrap shutdown or uncertain creation outcome remains unconfirmed","phase":"--cleanup","automatic_retries":0}
