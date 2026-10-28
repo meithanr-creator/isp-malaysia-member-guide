@@ -32,5 +32,6 @@
   "script/staging-lease-context.mjs",
   "script/virtual-mobile-acceptance.mjs",
   "script/virtual-mobile-failures.mjs",
-  "script/virtual-mobile-journeys.mjs"
+  "script/virtual-mobile-journeys.mjs",
+  "script/virtual-mobile-resources.mjs"
 ]

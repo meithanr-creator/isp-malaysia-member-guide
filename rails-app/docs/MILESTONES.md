@@ -6,10 +6,10 @@ Current authority: [four-step checkpoint](PRODUCTION-STATUS-2026-10-28.md) and [
 
 | Gate | Current status | Remaining condition |
 | --- | --- | --- |
-| P0 Scope and guardrails | Maintained | Rails; all files on D; cumulativeUSD5 test cap; no demo expansion, real-member operation, outgoing identity mail, DNS change or public launch. |
-| P1 Source and CI | HTTP and mobile-tooling candidate59ad0ab reviewed; seven CI jobs passed | Preserve exact source/CI evidence. Verify only affected changes. Current gateway correction is being source-tested before review/publication. |
+| P0 Scope and guardrails | Maintained | Rails; all files on D; cumulativeUSD6 test cap (owner raised on28October); no demo expansion, real-member operation, outgoing identity mail, DNS change or public launch. |
+| P1 Source and CI | Queued6 source reviewed; new focused tests plus prior8cbf seven-job CI carry | Preserve exact source/CI evidence. Verify only affected changes. Current gateway correction is being source-tested before review/publication. |
 | P2 Hosting and recovery | Hosted Rails/Neon/private storage/scanner readiness and shutdown observed | Complete file/key/sequence/restored-write recovery and rollback. Earlier database restore evidence carries within its recorded scope. |
-| P3 Focused hosted acceptance | **42/42 selected HTTP cases accepted** | Both full virtual mobile profiles remain pending. The gateway two-stream limit reproduced asset429/cancellation failures offline; Step3 corrects bounded read admission. Further cloud runtime is on budget HOLD; no42-case replay. Full63-case inventory is not claimed complete. |
+| P3 Focused hosted acceptance | **42/42 selected HTTP cases accepted** | Both full mobile profiles remain pending. Request/transfer admission is corrected under theUS$6 plan; exact packet review precedes hosted testing. No42-case replay. Full63-case inventory is not claimed complete. |
 | P4 Production launch | **NO-GO** | Remaining mobile/recovery/mail/operational and owner-ready domain/TLS gates; Astra final release decision. |
 ## Narrow gap closure — 28 October, 01:58 Malaysia time
 

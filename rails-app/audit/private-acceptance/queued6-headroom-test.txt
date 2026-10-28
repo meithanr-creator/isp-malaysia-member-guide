@@ -1,0 +1,9 @@
+✔ queued6 headroom permits fully charged container memory while retaining complete fresh observations and other quota guards (147.8506ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 326.3385

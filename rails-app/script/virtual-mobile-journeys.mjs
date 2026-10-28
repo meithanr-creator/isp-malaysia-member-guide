@@ -1,5 +1,6 @@
 // Full rendered virtual-mobile coverage. Importing performs no I/O or network.
 import {createHash,createHmac} from 'node:crypto';
+export {QUEUED_MOBILE_MODE,QUEUED_MOBILE_LIMITS,MOBILE_RESOURCE_MODEL,RESOURCE_MODEL_SHA256,CASE_RESOURCE_DEMAND,PROFILE_RESOURCE_DEMAND,GLOBAL_RESOURCE_DEMAND} from './virtual-mobile-resources.mjs';
 import {MOBILE_ONLY_BATCHES,mobileOnlySelectionMatches,FINAL_TAIL_BATCHES,finalTailMobileSelectionMatches,CONTINUATION_BATCHES,continuationMobileSelectionMatches} from './hosted-execution-phase.mjs';
 export const ORIGIN=process.env.ISP_PRIVATE_ACCEPTANCE==='true'&&process.env.ISP_STAGING_LEASE==='rails-private-acceptance'?'https://isp-rails-startup.meithan-r.workers.dev':'https://isp-member-production.meithan-r.workers.dev';
 export const LIMITS=Object.freeze({requests:180,profile_ms:420000,reconcile_reserve_ms:120000,ordinary_ms:20000,upload_ms:45000,pdf_bytes:1048576});
@@ -20,8 +21,8 @@ export function profileWindow(runtime,now=Date.now()){
  if(now+LIMITS.profile_ms+LIMITS.reconcile_reserve_ms>cutoff)throw new CoverageDeferred('Full profile plus independent reconciliation no longer fits before cutoff');
  return Object.freeze({start,end,cutoff,deadline:Math.min(now+LIMITS.profile_ms,cutoff-LIMITS.reconcile_reserve_ms)});
 }
-export function admitCase({deadline,requests,now=Date.now(),reserveMs=20000,reserveRequests=4}){
- return Number.isSafeInteger(now)&&Number.isSafeInteger(requests)&&requests>=0&&requests+reserveRequests<=LIMITS.requests&&now+reserveMs<deadline;
+export function admitCase({deadline,requests,now=Date.now(),reserveMs=20000,reserveRequests=4,requestLimit=LIMITS.requests}){
+ return Number.isSafeInteger(now)&&Number.isSafeInteger(requests)&&requests>=0&&Number.isSafeInteger(requestLimit)&&requestLimit>0&&Number.isSafeInteger(reserveRequests)&&reserveRequests>=0&&requests+reserveRequests<=requestLimit&&now+reserveMs<deadline;
 }
 export function safeURL(value){
  const url=new URL(value,ORIGIN);ensure(url.origin===ORIGIN&&!url.username&&!url.password&&!url.hash&&url.href.length<=8192,'Only the fixed same-origin browser target is allowed');return url;

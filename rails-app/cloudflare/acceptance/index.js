@@ -1,4 +1,5 @@
 import {DurableObject} from 'cloudflare:workers';
+import {QUEUED_MOBILE_LIMITS,queuedResponseByteLimit} from '../../script/virtual-mobile-resources.mjs';
 import {runtimeConfiguration,requestForRails,privateResponse,unavailable,edgeClientIp,EDGE_IP_HEADER} from '../src/runtime.js';
 import {validUuid,TRACE_HEADER,className} from '../src/diagnostics.js';
 import {browserAccessEndpoint,validBrowserCookie,headersWithoutReviewCookie} from '../staging/browser-access.js';
@@ -47,28 +48,32 @@ export default {async fetch(request,env){
  return privateResponse(await env.ACCEPTANCE.get(env.ACCEPTANCE.idFromName(SINGLETON)).fetch(new Request(request,{headers})),id);
  }catch{return unavailable(id);}
 }};
-function checkedState(s){return s&&s.v===1&&Number.isSafeInteger(s.start)&&Number.isSafeInteger(s.end)&&s.end>s.start&&s.end-s.start<=LIMITS.window&&typeof s.attempted==='boolean'&&typeof s.stopped==='boolean'&&typeof s.ready==='boolean'&&Number.isSafeInteger(s.requests)&&s.requests>=0&&s.requests<=LIMITS.requests&&Number.isSafeInteger(s.bytes)&&s.bytes>=0&&s.bytes<=LIMITS.bytes&&['idle','startup','ready','stopped'].includes(s.stage);}
+function checkedState(s,requestLimit=LIMITS.requests,byteLimit=LIMITS.bytes){return s&&s.v===1&&Number.isSafeInteger(s.start)&&Number.isSafeInteger(s.end)&&s.end>s.start&&s.end-s.start<=LIMITS.window&&typeof s.attempted==='boolean'&&typeof s.stopped==='boolean'&&typeof s.ready==='boolean'&&Number.isSafeInteger(s.requests)&&s.requests>=0&&s.requests<=requestLimit&&Number.isSafeInteger(s.bytes)&&s.bytes>=0&&s.bytes<=byteLimit&&['idle','startup','ready','stopped'].includes(s.stage);}
 function failure(){return Error('Private acceptance unavailable.');}
 async function bounded(action,ms){let timer;try{return await Promise.race([Promise.resolve().then(action),new Promise((_,reject)=>{timer=setTimeout(()=>reject(failure()),Math.max(1,ms));})]);}finally{clearTimeout(timer);}}
 export class ISPPrivateAcceptance extends DurableObject {
  constructor(ctx,env){super(ctx,env);this.ctx=ctx;this.env=env;this.active=0;this.work=null;this.stopped=false;this.abort=new AbortController();this.stopWork=null;
- this.initialized=ctx.blockConcurrencyWhile(async()=>{const s=await ctx.storage.get(STATE);this.broken=s!==undefined&&!checkedState(s);if(ctx.container.running&&!checkedState(s)){this.broken=true;await this.stop('stop');return;}if(checkedState(s)){this.stopped=s.stopped;if(s.stopped&&ctx.container.running){await this.stop('stop');return;}if(!s.stopped&&ctx.container.running){if(Date.now()>=s.end){await this.stop('deadline');return;}await ctx.storage.setAlarm(s.end);await ctx.container.setInactivityTimeout(Math.max(1,s.end-Date.now()));this.monitor();}}});
+ this.initialized=ctx.blockConcurrencyWhile(async()=>{const s=await ctx.storage.get(STATE);this.broken=s!==undefined&&!this.validState(s);if(ctx.container.running&&!this.validState(s)){this.broken=true;await this.stop('stop');return;}if(this.validState(s)){this.stopped=s.stopped;if(s.stopped&&ctx.container.running){await this.stop('stop');return;}if(!s.stopped&&ctx.container.running){if(Date.now()>=s.end){await this.stop('deadline');return;}await ctx.storage.setAlarm(s.end);await ctx.container.setInactivityTimeout(Math.max(1,s.end-Date.now()));this.monitor();}}});
  }
+ get requestLimit(){return LIMITS.requests;}
+ get stateByteLimit(){return LIMITS.bytes;}
+ validState(s){return checkedState(s,this.requestLimit,this.stateByteLimit);}
+ responseByteLimit(){return Infinity;}
  identity(){return /^[a-f0-9]{64}$/.test(this.ctx.id.toString())&&this.ctx.id.toString()===this.env.ACCEPTANCE.idFromName(SINGLETON).toString();}
  monitor(){if(this.monitoring)return;this.monitoring=true;this.ctx.waitUntil(this.ctx.container.monitor().then(()=>this.stop('exit'),()=>this.stop('exit')).catch(()=>{}));}
- async live(){if(this.stopped||this.abort.signal.aborted||this.broken)throw failure();const window=acceptanceWindow(this.env),s=await this.ctx.storage.get(STATE);if(this.stopped||this.abort.signal.aborted||this.broken||!window||!checkedState(s)||s.stopped||s.start!==window.start||s.end!==window.end||Date.now()>=s.end)throw failure();return s;}
- async change(update){return this.ctx.storage.transaction(async txn=>{const s=await txn.get(STATE);if(!checkedState(s))throw failure();const result=update(s);await txn.put(STATE,s);return result;});}
+ async live(){if(this.stopped||this.abort.signal.aborted||this.broken)throw failure();const window=acceptanceWindow(this.env),s=await this.ctx.storage.get(STATE);if(this.stopped||this.abort.signal.aborted||this.broken||!window||!this.validState(s)||s.stopped||s.start!==window.start||s.end!==window.end||Date.now()>=s.end)throw failure();return s;}
+ async change(update){return this.ctx.storage.transaction(async txn=>{const s=await txn.get(STATE);if(!this.validState(s))throw failure();const result=update(s);await txn.put(STATE,s);return result;});}
  async stop(reason='stop'){
  this.stopped=true;this.abort.abort();if(this.stopWork)return this.stopWork;
  this.stopWork=(async()=>{const results=await Promise.allSettled([
-  bounded(async()=>{await this.ctx.storage.transaction(async txn=>{const s=await txn.get(STATE);if(checkedState(s)){s.stopped=true;s.ready=false;s.stage='stopped';await txn.put(STATE,s);}else await txn.put(STATE,{v:1,stopped:true});});},5000),
+  bounded(async()=>{await this.ctx.storage.transaction(async txn=>{const s=await txn.get(STATE);if(this.validState(s)){s.stopped=true;s.ready=false;s.stage='stopped';await txn.put(STATE,s);}else await txn.put(STATE,{v:1,stopped:true});});},5000),
   bounded(()=>this.ctx.container.destroy(),5000)
  ]);const stopped=!this.ctx.container.running,recorded=results[0].status==='fulfilled';if(stopped&&recorded)await this.ctx.storage.deleteAlarm().catch(()=>{});return {version:1,stopped,stop_recorded:recorded,status:stopped&&recorded?'PASS':'FAIL',reason:['stop','deadline','exit','startup','limit','transport'].includes(reason)?reason:'stop'};})();
  const result=await this.stopWork;if(result.status!=='PASS')this.stopWork=null;return result;
  }
  async alarm(){if((await this.stop('deadline')).status!=='PASS')throw failure();}
- async status(){const s=await this.ctx.storage.get(STATE);return {version:1,stage:checkedState(s)?s.stage:'unavailable',running:this.ctx.container.running===true,stopped:this.stopped||s?.stopped===true,rails_up:checkedState(s)&&s.ready&&!s.stopped&&Date.now()<s.end,requests:checkedState(s)?s.requests:null,bytes:checkedState(s)?s.bytes:null,active:this.active,expires_at:checkedState(s)?new Date(s.end).toISOString():null};}
- async record(id,fields){const now=Date.now(),s=await this.ctx.storage.get(STATE);if(!checkedState(s))throw failure();return this.ctx.storage.transaction(async txn=>{const rows=await txn.get(TRACES)??[],old=rows.find(t=>t.id===id);const trace=cleanTrace({id,revision:(old?.revision??-1)+1,started_at:old?.started_at??now,updated_at:now,stage:'backend_http',outcome:'pending',dispatched:false,response_received:false,status:null,operation_id:null,exception_class:null,...old,...fields,revision:(old?.revision??-1)+1,updated_at:now},s.end);if(!trace)throw failure();await txn.put(TRACES,[...rows.filter(t=>t.id!==id),trace].slice(-16));});}
+ async status(){const s=await this.ctx.storage.get(STATE);return {version:1,stage:this.validState(s)?s.stage:'unavailable',running:this.ctx.container.running===true,stopped:this.stopped||s?.stopped===true,rails_up:this.validState(s)&&s.ready&&!s.stopped&&Date.now()<s.end,requests:this.validState(s)?s.requests:null,bytes:this.validState(s)?s.bytes:null,active:this.active,expires_at:this.validState(s)?new Date(s.end).toISOString():null};}
+ async record(id,fields){const now=Date.now(),s=await this.ctx.storage.get(STATE);if(!this.validState(s))throw failure();return this.ctx.storage.transaction(async txn=>{const rows=await txn.get(TRACES)??[],old=rows.find(t=>t.id===id);const trace=cleanTrace({id,revision:(old?.revision??-1)+1,started_at:old?.started_at??now,updated_at:now,stage:'backend_http',outcome:'pending',dispatched:false,response_received:false,status:null,operation_id:null,exception_class:null,...old,...fields,revision:(old?.revision??-1)+1,updated_at:now},s.end);if(!trace)throw failure();await txn.put(TRACES,[...rows.filter(t=>t.id!==id),trace].slice(-16));});}
  get transferLimit(){return LIMITS.bytes;}
  async countBytes(size){if(!Number.isSafeInteger(size)||size<0)throw failure();try{await this.change(s=>{if(s.stopped||Date.now()>=s.end||s.bytes+size>this.transferLimit)throw failure();s.bytes+=size;});}catch{await this.stop('limit');throw failure();}}
  async ensureStarted(){
@@ -78,14 +83,14 @@ export class ISPPrivateAcceptance extends DurableObject {
  await this.ctx.storage.setAlarm(s.end);await this.live();if(this.stopped||this.abort.signal.aborted||Date.now()>=s.end)throw failure();
  this.ctx.container.start({image:this.ctx.container.images.rails,instance:'standard-2',enableInternet:true,env:config.containerEnv});this.monitor();
  const until=Math.min(s.end,Date.now()+LIMITS.startup);let up=false;
- while(Date.now()<until){await this.live();await this.change(s=>{if(s.requests>=LIMITS.requests)throw failure();s.requests++;});
+ while(Date.now()<until){await this.live();await this.change(s=>{if(s.requests>=this.requestLimit)throw failure();s.requests++;});
  try{const controller=new AbortController(),signal=AbortSignal.any([this.abort.signal,controller.signal]),probe=requestForRails(new Request('https://'+HOST+'/up',{signal}),HOST,null);let response;try{response=await bounded(()=>this.ctx.container.getTcpPort(3000).fetch(probe),Math.min(3000,until-Date.now()));}finally{controller.abort();}void response.body?.cancel().catch(()=>{});if(response.status===200){up=true;break;}}catch{if(this.stopped)throw failure();}
  if(Date.now()<until)await bounded(()=>new Promise(resolve=>setTimeout(resolve,250)),Math.max(1,until-Date.now()));}
  if(!up)throw failure();await this.live();await this.ctx.container.setInactivityTimeout(Math.max(1,s.end-Date.now()));await this.change(s=>{if(s.stopped||Date.now()>=s.end)throw failure();s.ready=true;s.stage='ready';});
  })().catch(async()=>{await this.stop('startup');throw failure();});return this.work;
  }
  async admitStream(){if(this.active>=LIMITS.concurrent)return null;this.active++;let held=true;return()=>{if(held){held=false;this.active--;}};}
- async reserveRequest(){await this.change(s=>{if(s.stopped||Date.now()>=s.end||s.requests>=LIMITS.requests)throw failure();s.requests++;});}
+ async reserveRequest(){await this.change(s=>{if(s.stopped||Date.now()>=s.end||s.requests>=this.requestLimit)throw failure();s.requests++;});}
  async fetch(request){const id=traceId(request);let release;
  try{if(!validTarget(request)||!keyMatches(request.headers.get('x-isp-staging-key'),this.env)||!this.identity())return unavailable(id);
  const ctl=control(request);if(ctl==='stop')return Response.json(await this.stop(),{headers:{'Cache-Control':'no-store'}});
@@ -104,8 +109,8 @@ export class ISPPrivateAcceptance extends DurableObject {
  const clean=new Request(request,{headers,body:meterUpload,signal:controller.signal,duplex:'half'}),backend=requestForRails(clean,HOST,clientIp);backend.headers.set(TRACE_HEADER,id);
  await this.record(id,{stage:u.pathname==='/ready'?'application_readiness':'backend_http',dispatched:true});await this.live();if(controller.signal.aborted)throw failure();
  const response=await bounded(()=>this.ctx.container.getTcpPort(3000).fetch(backend),Math.max(1,Math.min(600000,window.end-Date.now())));const correlated=response.headers.get(TRACE_HEADER)===id;await this.record(id,{outcome:'response',response_received:true,status:response.status,operation_id:correlated&&validUuid(response.headers.get('x-isp-diagnostic-operation'))?response.headers.get('x-isp-diagnostic-operation'):null,exception_class:correlated?className(response.headers.get('x-isp-diagnostic-exception')):null});
- if(response.status>=500&&writing)await this.stop('transport');const safe=privateResponse(response,id);if(!safe.body){release();return safe;}output=safe.body.getReader();let ended=false;
- const body=new ReadableStream({start(c){outputController=c;},pull:async c=>{try{if(controller.signal.aborted)throw failure();const part=await output.read();if(part.done){ended=true;c.close();release();return;}await this.countBytes(part.value.byteLength);if(controller.signal.aborted)throw failure();c.enqueue(part.value);}catch{ended=true;void output.cancel().catch(()=>{});c.error(failure());if(!['GET','HEAD','OPTIONS'].includes(request.method))await this.stop('transport');release();}},cancel:async()=>{if(!ended)await output.cancel().catch(()=>{});if(!['GET','HEAD','OPTIONS'].includes(request.method))await this.stop('transport');release();}});
+ if(response.status>=500&&writing)await this.stop('transport');const safe=privateResponse(response,id);if(!safe.body){release();return safe;}output=safe.body.getReader();let ended=false,outbound=0;const responseLimit=this.responseByteLimit(request,response);
+ const body=new ReadableStream({start(c){outputController=c;},pull:async c=>{try{if(controller.signal.aborted)throw failure();const part=await output.read();if(part.done){ended=true;c.close();release();return;}outbound+=part.value.byteLength;await this.countBytes(part.value.byteLength);if(outbound>responseLimit){await this.stop('limit');throw failure();}if(controller.signal.aborted)throw failure();c.enqueue(part.value);}catch{ended=true;void output.cancel().catch(()=>{});c.error(failure());if(!['GET','HEAD','OPTIONS'].includes(request.method))await this.stop('transport');release();}},cancel:async()=>{if(!ended)await output.cancel().catch(()=>{});if(!['GET','HEAD','OPTIONS'].includes(request.method))await this.stop('transport');release();}});
  return new Response(body,safe);
  }catch{release?.();try{await this.record(id,{stage:'transport',outcome:'failed'});}catch{}if(!['GET','HEAD','OPTIONS'].includes(request.method)&&this.work)await this.stop('transport');return unavailable(id);}
  }
@@ -149,7 +154,7 @@ export class ISPPrivateAcceptanceMobileQueued extends ISPPrivateAcceptanceMobile
   entry.timer=setTimeout(entry.cancel,Math.max(1,Math.min(limits.wait_ms,window.end-Date.now())));
   // Storage is shared by reads, writes, and startup probes. A canceled reservation
   // is never refunded or dispatched later, including after an uncertain commit.
-  void this.change(s=>{if(s.stopped||this.stopped||Date.now()>=s.end||s.requests>=LIMITS.requests)throw failure();s.requests++;}).then(()=>{entry.reserved=true;entry.promote();},entry.cancel);
+  void this.change(s=>{if(s.stopped||this.stopped||Date.now()>=s.end||s.requests>=this.requestLimit)throw failure();s.requests++;}).then(()=>{entry.reserved=true;entry.promote();},entry.cancel);
   if(request.signal.aborted||this.abort.signal.aborted)entry.cancel();
   return promise;
  }
@@ -157,4 +162,12 @@ export class ISPPrivateAcceptanceMobileQueued extends ISPPrivateAcceptanceMobile
   const limits=this.readAdmissionLimits;
   while(this.activeReaders<limits.readers&&this.readQueue.length){const entry=this.readQueue.shift();if(entry.settled)continue;if(this.stopped||this.abort.signal.aborted||entry.request.signal.aborted||Date.now()>=entry.end){entry.cancel();continue;}entry.hold();entry.promote();}
  }
+}
+
+// Budget6 is a fresh namespace; old class storage never gains these ceilings.
+export class ISPPrivateAcceptanceMobileQueued6 extends ISPPrivateAcceptanceMobileQueued {
+ get requestLimit(){return QUEUED_MOBILE_LIMITS.gateway_requests;}
+ get stateByteLimit(){return QUEUED_MOBILE_LIMITS.bytes;}
+ get transferLimit(){return QUEUED_MOBILE_LIMITS.bytes;}
+ responseByteLimit(request,response){return queuedResponseByteLimit(request,response);}
 }

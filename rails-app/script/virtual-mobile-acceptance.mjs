@@ -1,5 +1,6 @@
 // One explicit profile per run. Browser mutations are journalled before submission.
 import fs from 'node:fs';
+import {RESOURCE_CATALOG,RESOURCE_SOURCES,MOBILE_RESOURCE_MODEL,CASE_RESOURCE_DEMAND,PROFILE_RESOURCE_DEMAND,RESOURCE_MODEL_SHA256,profileRequestLimit,remainingCaseRequests,assertQueuedResourcePacket,assertQueuedFixtureEnvelope,resourceAttempt,settleResourceBodies} from './virtual-mobile-resources.mjs';
 import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 import {connectLinuxWebKit,closeLinuxWebKitConnection} from './linux-webkit-connection.mjs';
@@ -52,7 +53,7 @@ function readNativeMobileInputs(name,{watchdog,now}){
  return {runtime,fixtures,http,observations,prepared:n.prepared,admissionSnapshot:watchdog?n.snapshot:null,runtimeHash:sha256(r.raw),release:{...n.prepared,worker_version:seal.version_id,deployment_id:seal.deployment_id}};
 }
 export function publicReport(j){
- return {version:2,scope:'Virtual browser engines and mobile profiles; physical devices/native installation/native PDF viewer are unproved',status:aggregateStatus(j),run_marker:j.run_marker,release:j.release,profiles:Object.values(j.profiles).map(p=>({name:p.name,status:p.status,engine:p.engine,engine_version:p.engine_version,execution_platform:p.execution_platform,started_at:p.started_at,finished_at:p.finished_at,requests:p.requests,checks:p.checks,cases:p.cases,screenshots:p.screenshots,cleanup:p.cleanup,process_cleanup:p.process_cleanup,db_reconciled:p.db_reconciled,errors:p.errors,failure_phase:p.failure_phase,elapsed_ms:p.elapsed_ms})),deferred:['natural aged MFA step-up is a separate window','physical devices, native install, OS PDF viewer, assistive-technology/conformance audit'],production_release_approved:false};
+ return {version:2,scope:'Virtual browser engines and mobile profiles; physical devices/native installation/native PDF viewer are unproved',status:aggregateStatus(j),run_marker:j.run_marker,release:j.release,profiles:Object.values(j.profiles).map(p=>({name:p.name,status:p.status,engine:p.engine,engine_version:p.engine_version,execution_platform:p.execution_platform,started_at:p.started_at,finished_at:p.finished_at,requests:p.requests,...(p.resources?{resources:{...p.resources,paths:undefined}}:{}),checks:p.checks,cases:p.cases,screenshots:p.screenshots,cleanup:p.cleanup,process_cleanup:p.process_cleanup,db_reconciled:p.db_reconciled,errors:p.errors,failure_phase:p.failure_phase,elapsed_ms:p.elapsed_ms})),deferred:['natural aged MFA step-up is a separate window','physical devices, native install, OS PDF viewer, assistive-technology/conformance audit'],production_release_approved:false};
 }
 function save(j){durable(JOURNAL,j);durable(PUBLIC,publicReport(j));}
 function matchingJournal(j,input){ensure(j?.version===2&&j.lease_id===CONTEXT.leaseId&&j.run_marker===input.fixtures.run_marker&&j.runtime_sha256===input.runtimeHash&&JSON.stringify(j.release)===JSON.stringify(input.release),'Mobile journal release/run differs');}
@@ -60,18 +61,23 @@ export async function executeProfile(name,input){
  ensure(input.admissionSnapshot&&process.env.ISP_MOBILE_RUNTIME_SHA256===input.runtimeHash&&process.env.ISP_MOBILE_ADMISSION_SHA256===sha256(encode(input.admissionSnapshot)),'Original wrapper admission binding required');
  if(CONTEXT.native)assertPrivateAcceptanceAdmission(input.runtime,0,input.admissionSnapshot);else assertLeaseMutationAllowed(CONTEXT);
  ensure(input?.runtime?.ISP_STAGING_LEASE===CONTEXT.leaseId&&input.fixtures?.lease_id===CONTEXT.leaseId&&input.release?.lease_id===CONTEXT.leaseId,'Matching selected mobile execution tuple required');
- const {runtime,fixtures,http,observations}=input,profile=PROFILES[name],window=profileWindow(runtime);
+ const {runtime,fixtures,http,observations}=input,profile=PROFILES[name],window=profileWindow(runtime),queued=assertQueuedResourcePacket(input.prepared),requestLimit=profileRequestLimit(input.prepared);
+ if(queued){
+  for(const entry of [...RESOURCE_CATALOG,...RESOURCE_SOURCES]){const target=ROOT+'/'+entry.path;ensure(fixed(target).isFile()&&sha256(fs.readFileSync(target))===entry.sha256,'Pinned cold-demand catalog/source changed');}
+  assertQueuedFixtureEnvelope(name,observations);ensure(PROFILE_RESOURCE_DEMAND.requests<=requestLimit,'Whole cold profile cannot fit request envelope');
+ }
  let journal;
  if(fs.existsSync(JOURNAL)){journal=readPrivate('acceptance-mobile.json').value;matchingJournal(journal,input);}else journal={version:2,lease_id:CONTEXT.leaseId,run_marker:fixtures.run_marker,runtime_sha256:input.runtimeHash,release:input.release,profiles:{}};
  ensure(!Object.hasOwn(journal.profiles,name),'A started profile is never replayed; reconcile unknown outcomes before a new reviewed run');
  if(name==='android-chromium')ensure(journal.profiles['iphone-webkit']?.status==='PASS'&&journal.profiles['iphone-webkit'].db_reconciled===true&&journal.profiles['iphone-webkit'].process_cleanup==='pass','Capture/status and reconcile iPhone before Android');
  const result={name,lease_id:CONTEXT.leaseId,admin:profile.admin,controller_pid:process.pid,server_id:name==='iphone-webkit'?process.env.ISP_LINUX_WEBKIT_SERVER_ID:null,status:'OPEN',started_at:new Date().toISOString(),checks:[],screenshots:[],errors:[],requests:0,cleanup:'pending',db_reconciled:false,process_cleanup:'pending',cases:Object.fromEntries(REQUIRED_CASES.map(id=>[id,{status:'NOT_RUN'}])),actions:{},expected:{},baseline_sessions:Object.fromEntries(['member_b',profile.admin].map(alias=>[alias,observations.actors[alias].sessions.map(s=>s.id)]))};
+ if(queued)result.resources={model_sha256:RESOURCE_MODEL_SHA256,requests:0,documents:0,prefetch:0,paths:{},auxiliary:0,dynamic:0,api:0,files:0,writes:0};
  journal.profiles[name]=result;save(journal);
  const tmp=PRIVATE+'/virtual-browser-tmp';try{fs.mkdirSync(tmp,{mode:0o700});}catch(e){ensure(e.code==='EEXIST');}fixed(tmp,true);process.env.TMP=tmp;process.env.TEMP=tmp;process.env.TMPDIR=tmp;
  process.env.PLAYWRIGHT_BROWSERS_PATH='D:/Projects/isp-rails-tools/virtual-browsers';
  for(const k of Object.keys(process.env))if(['DEBUG','PWDEBUG','NODE_OPTIONS','NODE_PATH','NODE_COMPILE_CACHE'].includes(k.toUpperCase()))delete process.env[k];
  const require=createRequire('D:/Projects/isp-rails-tools/virtual-browser-tools/package.json'),{chromium,webkit,devices}=require('playwright');ensure(require('playwright/package.json').version==='1.64.1');
- let browser,browserServer,page,phase='browser_setup',deadlineHit=false,timer,stopPoll;const contexts=[],offlineState={armed:false,consumed:false},requestPhases=new WeakMap();let failedResolve,closing=false;
+ let browser,browserServer,page,phase='browser_setup',deadlineHit=false,timer,stopPoll;const contexts=[],responseBodies=new Set(),offlineState={armed:false,consumed:false},requestPhases=new WeakMap();let failedResolve,closing=false;
  const requestFacts=request=>{let main=false;try{const frame=request.frame();main=frame===frame.page().mainFrame();}catch{}return {url:request.url(),method:request.method(),resourceType:request.resourceType(),isNavigationRequest:request.isNavigationRequest(),isMainFrame:main,phase,requestPhase:requestPhases.get(request),cleanup:closing};};
  const noteFailure=(category,facts={},fatal=true)=>{retainPrivateFailureFact(result,privateRequestFailureFact({phase,cleanup:closing,...facts},category),{fatal});if(fatal)result.errors.push(category);};
  const remaining=(cap=20000)=>{const ms=Math.min(cap,window.deadline-Date.now());ensure(ms>0&&!deadlineHit,'Profile deadline reached');return ms;};
@@ -80,24 +86,24 @@ export async function executeProfile(name,input){
  const check=(ok,label)=>{ensure(ok,label);result.checks.push(label);};
  const evaluate=(p,fn,arg)=>operation(()=>p.evaluate(fn,arg));
  const verifyWatchdog=()=>CONTEXT.native?assertPrivateAcceptanceAdmission(runtime,0,input.admissionSnapshot):readActiveStagingAdmission(CONTEXT,{expectedRuntime:runtime,prepared:input.prepared,expectedSnapshot:input.admissionSnapshot});
- const admit=()=>{verifyWatchdog();ensure(Date.now()<window.deadline&&!deadlineHit&&result.requests<LIMITS.requests,'Mobile request/time budget reached');};
+ const admit=()=>{verifyWatchdog();ensure(Date.now()<window.deadline&&!deadlineHit&&result.requests<requestLimit,'Mobile request/time budget reached');};
  async function role(label,gate,{page:withPage=true,cookies}={}){
   admit();const ctx=await operation(()=>browser.newContext({...devices[profile.device],reducedMotion:'reduce'}),15000);contexts.push(ctx);
-  ctx.on('request',request=>{result.requests++;requestPhases.set(request,phase);});
+  ctx.on('request',request=>{result.requests++;requestPhases.set(request,phase);if(queued)try{const facts=requestFacts(request),headers=request.headers();resourceAttempt(result.resources,{...facts,navigation:facts.isNavigationRequest,accept:headers.accept,prefetch:headers['x-sec-purpose']==='prefetch',expectedOffline:offlineState.armed});}catch{noteFailure('Cold mobile resource envelope exceeded');deadlineHit=true;for(const c of contexts)void c.close().catch(()=>{});}});
   ctx.on('requestfailed',r=>{const facts=requestFacts(r),kind=classifyRequestFailure({...facts,errorText:r.failure()?.errorText},offlineState);if(kind==='expected-offline-navigation'){noteFailure(kind,facts,false);offlineState.consumed=true;result.expected_offline_failures=(result.expected_offline_failures||0)+1;failedResolve?.();}else noteFailure(kind,facts);});
-  ctx.on('response',response=>{const request=response.request(),facts=requestFacts(request);if(response.status()>=400&&['script','stylesheet','font','image'].includes(facts.resourceType)){try{if(new URL(facts.url).origin===ORIGIN)noteFailure('Asset HTTP failure',{...facts,httpStatus:response.status()});}catch{}}});
+  ctx.on('response',response=>{if(queued){const body=response.finished().then(error=>ensure(!error,'Incomplete browser response body'));responseBodies.add(body);void body.catch(()=>{noteFailure('Incomplete browser response body');deadlineHit=true;}).finally(()=>responseBodies.delete(body));}const request=response.request(),facts=requestFacts(request);if(response.status()>=400&&['script','stylesheet','font','image'].includes(facts.resourceType)){try{if(new URL(facts.url).origin===ORIGIN)noteFailure('Asset HTTP failure',{...facts,httpStatus:response.status()});}catch{}}});
   ctx.on('page',p=>{p.setDefaultTimeout(12000);p.setDefaultNavigationTimeout(20000);p.on('pageerror',()=>noteFailure('Application JavaScript error'));});
-  await ctx.route('**/*',route=>{const u=new URL(route.request().url());try{if(['http:','https:'].includes(u.protocol))verifyWatchdog();return Date.now()>=window.deadline||result.requests>LIMITS.requests||!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==ORIGIN?route.abort():route.continue();}catch{noteFailure('Active browser admission unavailable');return route.abort();}});
+  await ctx.route('**/*',route=>{const u=new URL(route.request().url());try{if(['http:','https:'].includes(u.protocol))verifyWatchdog();return deadlineHit||Date.now()>=window.deadline||result.requests>requestLimit||!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==ORIGIN?route.abort():route.continue();}catch{noteFailure('Active browser admission unavailable');return route.abort();}});
   if(cookies)await operation(()=>ctx.addCookies(cookies));else if(gate)await operation(()=>ctx.addCookies([gate]));
   return {context:ctx,page:withPage?await operation(()=>ctx.newPage()):undefined};
  }
- async function api(ctx,url){admit();result.requests++;return operation(()=>ctx.request.get(safeURL(url).href,{maxRedirects:0,timeout:remaining()}));}
+ async function api(ctx,url){admit();if(queued)ensure(++result.resources.api<=15,'Exact API attempt envelope exceeded');result.requests++;return operation(()=>ctx.request.get(safeURL(url).href,{maxRedirects:0,timeout:remaining()}));}
  async function go(p,url,selector){admit();const target=safeURL(url);const turbo=new URL(p.url()).origin===ORIGIN&&await evaluate(p,()=>!!window.Turbo?.visit);
   if(turbo)await evaluate(p,u=>window.Turbo.visit(u),target.href);else{const r=await p.goto(target.href,{timeout:remaining()});check(r?.status()===200,'Rendered same-origin page loads');}
   await p.waitForURL(u=>u.pathname===target.pathname,{timeout:remaining()});await p.locator(selector).first().waitFor({timeout:remaining()});
  }
  async function submit(id,p,button,{upload=false}={}){
-  admit();verifyWatchdog();ensure(!Object.hasOwn(result.actions,id),'Mutation intent already exists; no replay');
+  admit();verifyWatchdog();if(queued)ensure(++result.resources.writes<=17,'Exact mutation attempt envelope exceeded');ensure(!Object.hasOwn(result.actions,id),'Mutation intent already exists; no replay');
   const form=await operation(()=>button.evaluate(el=>{const f=el.form;return f?{action:f.action,method:f.method,override:f.querySelector('[name="_method"]')?.value,csrf:!!f.querySelector('[name="authenticity_token"]')?.value,review_key:!!f.querySelector('input[name="access_key"][type="password"][maxlength="64"][autocomplete="off"]'),lock_version:f.querySelector('[name$="[lock_version]"],[name="lock_version"]')?.value??null,revision:f.querySelector('[name="revision"]')?.value??null}:null;}));
   return submitOnce({id,form,writeIntent:async(action,contract)=>{result.actions[action]={status:'intent',at:new Date().toISOString(),...contract};save(journal);},
    perform:async()=>{const path=safeURL(form.action).pathname,cap=upload?45000:20000;
@@ -109,7 +115,7 @@ export async function executeProfile(name,input){
   });
  }
  async function file(p,url,hash,type,label){
-  admit();const target=safeURL(url).href,download=await operation(()=>p.evaluate(async({url,max})=>{
+  admit();if(queued)ensure(++result.resources.files<=4,'Exact file attempt envelope exceeded');const target=safeURL(url).href,download=await operation(()=>p.evaluate(async({url,max})=>{
    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);let reader;
    try{const r=await fetch(url,{credentials:'same-origin',cache:'no-store',redirect:'error',signal:controller.signal});reader=r.body.getReader();const chunks=[];let length=0;
     for(;;){const {done,value}=await reader.read();if(done)break;length+=value.length;if(length>max)throw Error('File bound');chunks.push(value);}
@@ -146,9 +152,10 @@ export async function executeProfile(name,input){
   admit();result.requests++;const ready=await operation(()=>member.context.request.get(ORIGIN+'/ready',{headers:{'x-isp-staging-key':runtime.ISP_STAGING_KEY},maxRedirects:0,timeout:remaining(120000)}),120000);check(ready.status()===200,'Bounded full readiness succeeds before navigation');
   await runRenderedJourneys({name,profile,page,context:member.context,viewport:devices[profile.device].viewport,runtime,fixtures,http,baseline:observations,check,evaluate,submit,go,audit,file,role,offline,api,
    scenario:async(id,reserveMs,reserveRequests,run)=>{phase=id;verifyWatchdog();
-    if(!admitCase({deadline:window.deadline,requests:result.requests,reserveMs,reserveRequests})){result.cases[id]={status:'DEFERRED',reason:'Insufficient complete-case time/request budget'};save(journal);throw new CoverageDeferred();}
-    const start=Date.now();result.cases[id]={status:'RUNNING',started_at:new Date().toISOString()};save(journal);
-    try{await bounded(run,Math.min(reserveMs,remaining(reserveMs)));ensure(result.errors.length===0&&Date.now()<window.deadline&&!deadlineHit&&result.requests<=LIMITS.requests);result.cases[id]={...result.cases[id],status:'PASS',elapsed_ms:Date.now()-start};save(journal);}
+    const requiredRequests=queued?remainingCaseRequests(id):reserveRequests;
+    if(!admitCase({deadline:window.deadline,requests:result.requests,reserveMs,reserveRequests:requiredRequests,requestLimit})){result.cases[id]={status:'DEFERRED',reason:'Insufficient complete-case time/request budget'};save(journal);throw new CoverageDeferred();}
+    const start=Date.now();result.cases[id]={status:'RUNNING',started_at:new Date().toISOString(),...(queued?{request_admission:requiredRequests,case_request_bound:CASE_RESOURCE_DEMAND[id].requests}:{})};save(journal);
+    try{await bounded(run,Math.min(reserveMs,remaining(reserveMs)));if(queued)await operation(()=>settleResourceBodies(responseBodies,ms=>new Promise(resolve=>setTimeout(resolve,ms)),()=>ensure(!deadlineHit&&Date.now()<window.deadline,'Resource body drain exceeded deadline')));ensure(result.errors.length===0&&Date.now()<window.deadline&&!deadlineHit&&result.requests<=requestLimit);result.cases[id]={...result.cases[id],status:'PASS',elapsed_ms:Date.now()-start};save(journal);}
     catch(e){deadlineHit=true;result.cases[id]={...result.cases[id],status:e instanceof CoverageDeferred?'DEFERRED':'FAIL',elapsed_ms:Date.now()-start};save(journal);throw e;}},
    capture:(key,value)=>{result.expected[key]=value;save(journal);},
    shot:async(p,label)=>{const path=CONTEXT.auditRoot+'/'+name+'-'+label+'.png';await operation(()=>p.screenshot({path,fullPage:true}),20000);result.screenshots.push(path);save(journal);},

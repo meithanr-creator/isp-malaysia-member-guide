@@ -1,0 +1,9 @@
+✔ queued6 seal parity accepts its exact Astra CI carry review while historical seals retain strict SUCCESS (2.2947ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 40.6452

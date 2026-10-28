@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "status": "ASTRA_APPROVED_RUN_ONLY_HEADROOM_DELTA",
+  "prior_packet_sha256": "c52a412a06e9214fdc20e861173421437feab476fe18629f7ee3d8639e769913",
+  "new_packet_sha256": "115a42b434d63b415316521d6fd93f77f75fd1b1ae1d725ad5da1433b293759b",
+  "changed_source": "script/private-acceptance.mjs",
+  "old_source_sha256": "10859530d105f0ed5a3ca379bebcc9abdbcdaba0a723fd029bf3c1c6d90e238c",
+  "new_source_sha256": "b29fd1058a14a53df3b85de6de5e9327e9a4e1682303af25d72cfae4c96e5e5c",
+  "operator_proof_sha256": "70f3c28e07207fc37ef878d8030e2e5e17a891d8ac6b24b5471664aefe39ea72",
+  "new_focused_contracts": 1,
+  "compiled_module_unchanged": "89f1b24bc7b17ac07262c0a80eebb4c1e06d49bd706b9e2cec31ddbc8e7a7f0d",
+  "source_map_unchanged": "bdac306c12dff7b7133cc8608284c005166373edacdb86dd713d4976c65b8599",
+  "engine_preflight_carried": true,
+  "engine_launch_code_changed": false,
+  "historical_guards_preserved": true,
+  "truthful_account_free_usage_flag": false,
+  "full_compute_cost_already_budgeted": true,
+  "headroom_observation_sha256": "1518c503533a6eac01baddc813379ffeb4c6848de74733538857529b226639a7",
+  "no_cloud_activation": true
+}
