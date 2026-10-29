@@ -29,7 +29,7 @@ export function membershipReference(value: string): string {
 export async function createOwnAccount(email: string, password: string, confirmation: string, session: Session): Promise<void> {
   const input = signupInput(email, password, confirmation), { auth } = connection();
   if (session.status !== 'signed-out' || session.user || !sessionResultIsCurrent(session) || auth.currentUser) throw Error('ISP_IDENTITY_CHANGED');
-  // Firebase creates only the visitor's password identity. The existing observer owns session admission.
+  // The server admits eligible registry emails; the observer owns session admission.
   const credential = await createUserWithEmailAndPassword(auth, input.email, input.password);
   if (connection().auth.currentUser?.uid !== credential.user.uid) throw Error('ISP_IDENTITY_CHANGED');
 }
@@ -48,7 +48,9 @@ export async function activateMembership(value: string, session: Session): Promi
   }
 }
 export function enrollmentError(error: unknown): string {
-  const code = (error as { code?: string })?.code || (error instanceof Error ? error.message : '');
+  const details = error as { code?: string; message?: string } | null;
+  const code = details?.code || (error instanceof Error ? error.message : '');
+  if (code === 'ISP_INVITATION_REQUIRED' || code === 'auth/isp-invitation-required' || (code === 'auth/internal-error' && typeof details?.message === 'string' && details.message.includes('ISP_INVITATION_REQUIRED'))) return 'Registration is invitation-only. Use the exact email address on your ISP membership record, or contact ISP for help.';
   if (code === 'ISP_SIGNUP_INVALID') return 'Enter your email address and matching passwords of 12 to 128 characters.';
   if (code === 'auth/email-already-in-use') return 'If you already have an account, sign in or use password help.';
   if (['auth/weak-password', 'auth/password-does-not-meet-requirements'].includes(code)) return 'Choose a stronger password that meets the account requirements.';

@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-29T13:53:02.627Z",
+  "status": "LOCAL_MOCK_PASS_HOSTED_GATE_PENDING",
+  "purpose": "User-requested mock CSV invitation-only registration acceptance",
+  "sourceHashes": {
+    "functions/src/invitation.ts": "88b4c510569cb14cf1c2371442b1a5ab44478ddce6fa6dabee023551fc739b1c",
+    "functions/src/index.ts": "1d652723142c2962c747a1d4813e2d997d497599e1ce5d2839f861329d84c3a5",
+    "functions/test/membership-invitation.test.mjs": "61a653dddd0869f53270d92221f8085ce0f1535f5458e3f63fcfbb6b38774516",
+    "src/enrollment.ts": "5efe19ce07a86b43e6feb6c486c54ac3fcf8433283541a7b2a9de2b06668a973",
+    "src/ActivateAccount.tsx": "71b38f960845f5ffa1cba10760ed2b4725e7988a9d657782faca902fa86df284"
+  },
+  "fixture": "docs/membership-import-mock.csv",
+  "testGroupsPassed": 5,
+  "testGroupsFailed": 0,
+  "coverage": [
+    "actual CSV preview/confirm leading-zero reference",
+    "eligible invitation and verified activation saves approved profile plus UID binding",
+    "repeat activation creates no duplicate",
+    "absent/ineligible registration denied",
+    "suspension/duplicate/existing-binding/missing-registry denied",
+    "unverified/mismatched/absent/ineligible activation denied without member writes",
+    "password/project/tenant guards"
+  ],
+  "backendBuildPassed": true,
+  "frontendBuildPassed": true,
+  "providerCallsForMock": 0,
+  "liveCsvImported": false,
+  "realUsersTouched": false,
+  "emailsSent": 0,
+  "unrelatedPassedAreasReplayed": false,
+  "semantics": "CSV eligible unsuspended row is invitation authorization; verification and exact-reference activation remain required.",
+  "beforeChangeGap": "Unlisted people could create Auth identities although membership activation was denied.",
+  "hostedDirectSignupProofPending": true,
+  "budget": {
+    "priorConservativeReservationsUsd": 9.93624768,
+    "newEnvelopeUsd": 0.05,
+    "projectedConservativeReservationsUsd": 9.98624768,
+    "testCeilingUsd": 10,
+    "notInvoice": true
+  }
+}

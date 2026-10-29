@@ -1,3 +1,5 @@
+import { beforeUserCreated } from 'firebase-functions/v2/identity';
+import { requireMembershipInvitationHandler } from './invitation.js';
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { onCall, onRequest } from 'firebase-functions/v2/https';
 import * as content from './content.js';
@@ -31,3 +33,6 @@ export const downloadContentFile=onRequest({cors:DOWNLOAD_ORIGINS,concurrency:1}
 
 export const activateMyMembership=onCall(activateMyMembershipHandler);
 
+
+// Only account creation is gated; existing owner/admin sign-in is unchanged.
+export const requireMembershipInvitation = beforeUserCreated({ timeoutSeconds: 7 }, requireMembershipInvitationHandler);

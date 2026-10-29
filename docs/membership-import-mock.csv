@@ -1,0 +1,3 @@
+name,email,member_reference,status
+MOCK Eligible Planter,member@example.invalid,00001,eligible
+MOCK Ineligible Planter,ineligible@example.invalid,00002,ineligible
