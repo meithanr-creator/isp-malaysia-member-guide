@@ -1,0 +1,5 @@
+title: ISP Event Workflow Start Only
+description: Execution-create only at the supported dedicated ISP project scope. Review before adding any workflow.
+stage: GA
+includedPermissions:
+- workflows.executions.create

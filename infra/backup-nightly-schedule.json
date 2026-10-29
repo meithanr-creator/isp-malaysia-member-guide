@@ -1,0 +1,22 @@
+{
+  "name": "projects/isp-planter-app/locations/asia-southeast1/jobs/isp-drive-backup-daily",
+  "schedule": "30 2 * * *",
+  "timeZone": "Asia/Kuala_Lumpur",
+  "attemptDeadline": "180s",
+  "retryConfig": {
+    "retryCount": 0,
+    "maxRetryDuration": "0s"
+  },
+  "httpTarget": {
+    "uri": "https://run.googleapis.com/v2/projects/isp-planter-app/locations/asia-southeast1/jobs/isp-drive-backup:run",
+    "httpMethod": "POST",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "e30=",
+    "oauthToken": {
+      "serviceAccountEmail": "isp-backup-scheduler@isp-planter-app.iam.gserviceaccount.com",
+      "scope": "https://www.googleapis.com/auth/cloud-platform"
+    }
+  }
+}

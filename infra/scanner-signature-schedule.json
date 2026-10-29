@@ -1,0 +1,22 @@
+{
+  "name": "projects/isp-planter-app/locations/asia-southeast1/jobs/isp-clamav-updater-daily",
+  "schedule": "30 1 * * *",
+  "timeZone": "Asia/Kuala_Lumpur",
+  "attemptDeadline": "180s",
+  "retryConfig": {
+    "retryCount": 0,
+    "maxRetryDuration": "0s"
+  },
+  "httpTarget": {
+    "uri": "https://run.googleapis.com/v2/projects/isp-planter-app/locations/asia-southeast1/jobs/isp-clamav-updater:run",
+    "httpMethod": "POST",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "e30=",
+    "oauthToken": {
+      "serviceAccountEmail": "isp-clamav-updater-scheduler@isp-planter-app.iam.gserviceaccount.com",
+      "scope": "https://www.googleapis.com/auth/cloud-platform"
+    }
+  }
+}

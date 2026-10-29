@@ -117,7 +117,10 @@ export function markInterruptedMutations(journal) {
 export const SCAN_JOB = `projects/${PROJECT}/locations/${REGION}/jobs/isp-attachment-scan`;
 export const SCAN_WORKFLOW = `projects/${PROJECT}/locations/${REGION}/workflows/isp-attachment-dispatch`;
 export function ownedScanResource(name, kind) {
+  // Google control APIs may return this same fixed project by number. Canonicalize only this exact alias.
+  if (typeof name === 'string') name = name.replace(/^projects\/606528057827\//, `projects/${PROJECT}/`);
   const patterns = {
+    job: new RegExp(`^${SCAN_JOB}$`),
     workflow: new RegExp(`^${SCAN_WORKFLOW}/executions/[A-Za-z0-9_-]{1,128}$`),
     operation: new RegExp(`^projects/${PROJECT}/locations/${REGION}/operations/[A-Za-z0-9_-]{1,256}$`),
     execution: new RegExp(`^${SCAN_JOB}/executions/isp-attachment-scan-[a-z0-9-]{1,80}$`),
@@ -128,17 +131,18 @@ export function scanCancellationMarker(marker, fenceId) {
   return marker ? { ...marker, cancelled: true, cleanupFenceId: fenceId } : { id: `cleanup-${fenceId}`, cleanupOnly: true, cancelled: true, cleanupFenceId: fenceId, launchOutcome: 'not_launched' };
 }
 export async function reconcileOwnedScanDispatch({ binding, marker, api, persist, deadlineMs, readMarker = async () => marker, sleep = pause, clock = Date.now }) {
-  check(marker.id === binding.dispatchId && marker.jobName === SCAN_JOB && marker.generation === binding.generation && marker.sha256 === binding.sha256 && marker.cancelled === true, 'scan_dispatch_cleanup_binding_changed');
+  check(marker.id === binding.dispatchId && ownedScanResource(marker.jobName, 'job') === SCAN_JOB && marker.generation === binding.generation && marker.sha256 === binding.sha256 && marker.cancelled === true, 'scan_dispatch_cleanup_binding_changed');
   const workflowName = ownedScanResource(marker.workflowExecution, 'workflow');
   check(workflowName === `${SCAN_WORKFLOW}/executions/${binding.dispatchId}`, 'scan_workflow_dispatch_mismatch');
   const state = { dispatchId: binding.dispatchId, workflowExecution: workflowName, terminal: false };
   const request = async (method, kind, name) => { check(clock() + 10000 < deadlineMs, 'scan_terminal_observation_deadline'); return api(method, kind, ownedScanResource(name, kind)); };
   let workflow = await request('GET', 'workflow', workflowName);
-  check(workflow.name === workflowName && workflow.workflowRevisionId === binding.workflowRevision, 'scan_workflow_revision_changed');
+  check(ownedScanResource(workflow.name, 'workflow') === workflowName && workflow.workflowRevisionId === binding.workflowRevision, 'scan_workflow_revision_changed');
   if (['ACTIVE', 'QUEUED'].includes(workflow.state)) {
     await request('POST', 'workflow', workflowName);
     do { await sleep(2000); workflow = await request('GET', 'workflow', workflowName); } while (['ACTIVE', 'QUEUED'].includes(workflow.state));
   }
+  check(ownedScanResource(workflow.name, 'workflow') === workflowName && workflow.workflowRevisionId === binding.workflowRevision, 'scan_workflow_revision_changed');
   check(['SUCCEEDED', 'FAILED', 'CANCELLED'].includes(workflow.state), 'scan_workflow_terminal_unknown');
   state.workflowState = workflow.state; await persist(state);
   let result = {};
@@ -146,7 +150,7 @@ export async function reconcileOwnedScanDispatch({ binding, marker, api, persist
   let operationName = '', executionName = '';
   for (;;) {
     const fresh = await readMarker();
-    check(fresh?.id === binding.dispatchId && fresh.jobName === SCAN_JOB && fresh.generation === binding.generation && fresh.sha256 === binding.sha256 && fresh.cancelled === true, 'scan_dispatch_refresh_binding_changed');
+    check(fresh?.id === binding.dispatchId && ownedScanResource(fresh.jobName, 'job') === SCAN_JOB && fresh.generation === binding.generation && fresh.sha256 === binding.sha256 && fresh.cancelled === true, 'scan_dispatch_refresh_binding_changed');
     if (fresh.operationName && result.operationName) check(ownedScanResource(fresh.operationName, 'operation') === ownedScanResource(result.operationName, 'operation'), 'scan_operation_receipts_differ');
     if (fresh.executionName && result.executionName) check(ownedScanResource(fresh.executionName, 'execution') === ownedScanResource(result.executionName, 'execution'), 'scan_execution_receipts_differ');
     operationName = fresh.operationName || result.operationName || operationName;
@@ -154,9 +158,8 @@ export async function reconcileOwnedScanDispatch({ binding, marker, api, persist
     if (operationName) {
       operationName = ownedScanResource(operationName, 'operation'); state.operationName = operationName; await persist(state);
       const operation = await request('GET', 'operation', operationName);
-      check(operation.name === operationName, 'scan_operation_identity_changed');
-      const candidate = operation.response?.name || operation.metadata?.name;
-      if (candidate && candidate.startsWith(`${SCAN_JOB}/executions/`)) {
+      check(ownedScanResource(operation.name, 'operation') === operationName, 'scan_operation_identity_changed');
+      for (const candidate of [operation.response?.name, operation.metadata?.name].filter(Boolean)) {
         const fromOperation = ownedScanResource(candidate, 'execution');
         if (executionName) check(ownedScanResource(executionName, 'execution') === fromOperation, 'scan_operation_execution_mismatch');
         executionName = fromOperation;
@@ -174,7 +177,7 @@ export async function reconcileOwnedScanDispatch({ binding, marker, api, persist
     const execution = await request('GET', 'execution', executionName);
     const container = execution.template?.containers?.find(item => item.name === 'scanner');
     const environment = Object.fromEntries((container?.env ?? []).map(item => [item.name, item.value]));
-    check(execution.name === executionName && environment.ISP_ATTACHMENT_ID === binding.attachmentId && environment.ISP_ATTACHMENT_GENERATION === binding.generation && environment.ISP_ATTACHMENT_SHA256 === binding.sha256 && environment.ISP_SCAN_DISPATCH_ID === binding.dispatchId && container.image?.endsWith(`@${binding.imageDigest}`), 'scan_execution_binding_changed');
+    check(ownedScanResource(execution.name, 'execution') === executionName && environment.ISP_ATTACHMENT_ID === binding.attachmentId && environment.ISP_ATTACHMENT_GENERATION === binding.generation && environment.ISP_ATTACHMENT_SHA256 === binding.sha256 && environment.ISP_SCAN_DISPATCH_ID === binding.dispatchId && container.image?.endsWith(`@${binding.imageDigest}`), 'scan_execution_binding_changed');
     return execution;
   };
   let execution = await readExecution();

@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-29T11:36:08.050Z",
+  "projectId": "isp-planter-app",
+  "hostingUrl": "https://isp-planter-app.web.app",
+  "status": "FOCUSED_TECHNICAL_ACCEPTANCE_COMPLETE_LAUNCH_ACTIONS_PENDING",
+  "acceptedApplicationSourceCommit": "183b052ad97da58cfafe82f5c20329a9b20ccee8",
+  "cleanupToolSourceSha256": "6c4e4fdb33346013de91bb9e2fd99ff47fe0149a95c429d0d353cd89183f1bec",
+  "milestones": [
+    {
+      "number": 1,
+      "name": "Hosting",
+      "status": "COMPLETE",
+      "basis": "Accepted exact frontend/PWA evidence carried; no redesign or repeated website test."
+    },
+    {
+      "number": 2,
+      "name": "Login",
+      "status": "TECHNICAL_ACCEPTANCE_COMPLETE",
+      "basis": "Accepted 7 core checks and4 synthetic-administrator MFA checks carried.",
+      "remaining": "Owner authenticator setup deferred by user."
+    },
+    {
+      "number": 3,
+      "name": "Database, files and admin workflows",
+      "status": "FOCUSED_ACCEPTANCE_COMPLETE",
+      "areas": [
+        "enrollment_registry",
+        "events_interest",
+        "discover",
+        "consultation",
+        "suspension_restoration",
+        "private_files"
+      ],
+      "carriedWithoutReplay": 5,
+      "newArea": "private_files",
+      "privateFileEvidence": {
+        "exactGenerationCleanAttachments": 2,
+        "privatePublication": true,
+        "authenticatedBinaryDownload": true,
+        "guestDenied": true,
+        "actualUnsafeFormatRejected": true,
+        "mirrorAntivirusSelfTest": "root-sealed PASS receipt",
+        "finalizedAttachments": 3
+      },
+      "scannerJobsSucceeded": 3,
+      "workflowExecutionsSucceeded": 26,
+      "allOwnedCleanupComplete": true,
+      "basis": "Two prior failed file attempts preserved; third file attempt PASS. Cleanup-only project-number comparison correction did not repeat any functional check."
+    },
+    {
+      "number": 4,
+      "name": "Private Drive backup and handover",
+      "status": "BACKUP_RESTORE_AND_SCHEDULE_CONFIG_COMPLETE",
+      "basis": "Actual private Drive backup and one isolated database/file restore passed; owned cleanup complete.",
+      "backupArtifacts": 7,
+      "sourceFiles": 95,
+      "exportFiles": 3,
+      "exportBytes": 931,
+      "restoredProbeBytes": 82,
+      "nightlyBackupMalaysia": "02:30",
+      "dailySignatureRefreshMalaysia": "01:30",
+      "firstOrdinaryScheduledRunsObserved": false,
+      "automatedOverdueOrFreshnessAlertsImplemented": false
+    }
+  ],
+  "budget": {
+    "testCeilingUsd": 10,
+    "conservativeReservationsUsd": 9.92624768,
+    "notInvoice": true,
+    "finalFileAttemptAllowanceUsd": 0.18,
+    "cleanupInsideThatAllowanceUsd": 0.01,
+    "operationsPlanningUsdPerMonth": 50,
+    "operatingAlertsNotHardCap": true
+  },
+  "launchActions": [
+    "Owner completes authenticator enrollment before privileged administration.",
+    "Approve live ISP content and the first real membership list; none imported during acceptance.",
+    "Owner acknowledges manual backup/signature freshness and capacity duties, or approves a separate alerting change.",
+    "Observe the first ordinary schedules; configuration is verified but those future runs are not claimed complete.",
+    "Approve controlled launch. planterapp.co can be connected when the owner is ready; no domain changes made."
+  ],
+  "explicitLimits": [
+    "Shop and jobs remain frozen DEMO references; Academy, forum and CPD excluded.",
+    "No native-device installation or 10000-user load result claimed.",
+    "Database/file restore proved; Auth passwords, TOTP and full-application recovery not proved.",
+    "Drive/staging/signature history can grow; payload garbage collection is off. No fixed long-term storage bound.",
+    "Only focused changed-area acceptance; no claim of full regression or independent penetration test."
+  ],
+  "evidenceHashes": {
+    "privateFileCompletion": "adaa923085429f606ef5495d8948b6f41efdb18c8935bea752a95746778a956b",
+    "nightlyBackupConfiguration": "1f2d9b485ad6481c36c2a4ce707a49a1562e2d716f8f8ff896883a8798b08447",
+    "signatureScheduleConfiguration": "54aeaf7d527db17137f41a2dd87300ffd848d343dbc385b4d2bf298d1713bf20",
+    "backupComplete": "1699ddff9bdda1e2ead5534c452e68288c3174278b2aaa999569821a5e9ba5d3",
+    "restoreComplete": "a41d3389359636c85bef5ad7d71bda66f973267e28d160c29224c23a2ce94c7e",
+    "restoreCleanup": "c407144f6cb4b00c2f73f817a8d1c1d74f0bd8c72ef2f4b63723c69af02dca67"
+  }
+}

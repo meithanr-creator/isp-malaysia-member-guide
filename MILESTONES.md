@@ -1,72 +1,27 @@
-# Firebase plan and numbered milestones
+# ISP Firebase milestones
 
-Date: 29 October 2026, Malaysia time.
+Updated 29 October 2026, Malaysia time. This is the current status; earlier receipts remain preserved on drive D.
 
-## Approved choices
+1. **Hosting — COMPLETE.** Firebase Hosting serves the approved mobile layout at https://isp-planter-app.web.app. Existing frontend/PWA evidence carries without replay.
+2. **Login — TECHNICAL ACCEPTANCE COMPLETE.** Accepted core login/profile/access and synthetic-administrator TOTP proofs carry. The owner deferred personal authenticator enrollment; privileged access still requires it.
+3. **Database, files and admin workflows — FOCUSED ACCEPTANCE COMPLETE.** Membership registry/import, events/interest, Discover editing, consultation and suspension/restoration PASS carry. The final private-files attempt passed clean cover/PDF scanning, exact-generation authenticated binary download, guest denial and actual unsafe-format rejection. All three scan Jobs succeeded; 26 Workflow executions succeeded, within the 64 bound. All owned fixtures are cleaned. The cleanup-only correction accepts the fixed Google project-number alias while preserving ownership, revision, image and file-tuple checks. No functional area was repeated for cleanup.
+4. **Private Drive backup and handover — BACKUP, RESTORE AND SCHEDULE CONFIGURATION COMPLETE.** The real private backup contains 7 artifacts, 95 source files, 3 export files (931 bytes) and an 82-byte owned file. One isolated database/file restore and all fixture cleanup passed. Daily signature refresh is configured for 01:30 Malaysia and private Drive backup for 02:30, beginning 30 October. No forced run was used to verify the schedules. Future ordinary executions and automated overdue/freshness alerts are not claimed complete.
 
-- One dedicated project: ISP Planter App (isp-planter-app), under the owner's Google account.
-- Regional Firestore, Storage and backend functions: Singapore (asia-southeast1). Authentication, Hosting CDN and personal Drive are not represented as Singapore-only.
-- Firebase email/password sign-in; verified approved-member access; authenticator-app TOTP for administrators. No SMS authentication.
-- Firestore Standard/native database; private Cloud Storage; static Firebase Hosting PWA. Optional Google Analytics and Gemini are off.
-- Google-managed runtime identities and encryption; no downloaded service-account keys. Local deployment uses a Google sign-in. Automated Drive backup needs one narrow OAuth consent, with its managed credentials in Secret Manager.
-- US$50/month initial operating planning budget with alerts at25/50/75/90/100percent. This is not a quote or hard billing cap; actual usage can cost more. Testing/setup remains within the separately approved US$10 cumulative authorization.
-- Approved design/features remain fixed. All files/tools onD. No new demo work.
+## Launch actions
 
-## 1. Hosting foundation — COMPLETE
+- Owner completes authenticator enrollment before privileged administration.
+- Approve live ISP content and provide the first real membership list; no real members were imported for these checks.
+- Acknowledge the manual operations duties in OPERATIONS.md, or approve a separate alerting change. Observe the first ordinary scheduled runs.
+- Approve controlled launch. Domain planterapp.co remains unchanged until the owner is ready.
 
-Create the dedicated project, link the owner-approved Blaze billing account, configure regional services and prepare the approved frontend for Firebase Hosting. Preserve existing projects.
+## Guardrails and practical limits
 
-Evidence: project isp-planter-app created with Analytics off; Blaze billing linked; default Firestore Standard/native database created in asia-southeast1 with deletion protection. ISP Mobile Web registered. The initial hosted member dashboard sign-in/sign-out was observed. The current frontend release is sealed to source commit 5ca54cca21781ec1b5ea6a351052903d6295ae97 at https://isp-planter-app.web.app. audit/frontend-provider-seal.json records HTTP 200 and exact matching SHA256 for index.html, manifest.webmanifest and service-worker.js. Those are deployment/PWA-file checks; native-device installation and the new business workflows have not been claimed from them. This is a hosted app foundation, not a full production launch.
+All local source, tools, credentials and evidence remain on D. Firebase is the selected platform; no Rails, Neon or Cloudflare work was resumed. Shop/jobs stay frozen DEMO references; Academy/forum/CPD are excluded. No new design or broad test programme was introduced.
 
-Exit: the existing visual shell has a real Firebase Hosting URL; no fabricated live URL or working-backend claim.
+Accepted application configuration is based on 183b052ad97da58cfafe82f5c20329a9b20ccee8; the later source change is confined to the cleanup tool. Existing deployed application, rules, scanner images and Workflow were preserved. The scanner's obsolete HTTP destination remains preserved with invocation denied; the replacement uses Eventarc, Workflow and one bounded Job per authoritative dispatch.
 
-## 2. Login — TECHNICAL ACCEPTANCE COMPLETE; OWNER MFA DEFERRED
+Cumulative conservative test reservations remain US$9.92624768 within US$10; this is an allowance, not an invoice. The final file attempt allowance was US$0.18, including cleanup. The US$50/month operating plan uses alerts, not a billing cap.
 
-Connect existing login/dashboard controls to Firebase Authentication and member/admin records. Member access requires verified email and members/{uid}.status approved. Administrative operations require server-owned admin claim, active staff record and TOTP. Missing records stay unapproved. Retain password recovery/verification as managed Firebase flows.
+No native iOS/Android installation,10,000-user load test, complete regression or independent penetration test is claimed. The recovery proof covered database records and file bytes; Auth password/TOTP/full-application restoration was not proved. Payload collection remains off and historical storage may grow.
 
-Exit: one real hosted sign-in/sign-out and approved-member access check, plus denial for an unapproved identity. No broad regression suite.
-
-Evidence: audit/core-connection-proof.json records one live scoped run with seven successful member persistence/access checks. Hosted UI signed in, displayed the persisted profile and signed out. audit/admin-mfa-proof.json records four successful TOTP enrollment/challenge/authorized-roster/bounded-query checks. The initial MFA proof enrolled successfully but failed its subsequent code check; its failed receipt is retained separately. Astra reviewed the corrected MFA-only attempt using a later window. The seven core checks were not repeated. All three disposable identities and their records were removed after proof. Recovery/verification controls are implemented. At the owner's instruction, the temporary first administrator uses the owner's account; the unused official-address setup is disabled. Firebase accepted its one setup-email request and the owner reported resetting the password. A routing-only correction sends verified active staff to authenticator enrollment rather than the unapproved-member screen. The owner explicitly deferred their authenticator setup; this does not block independent work. No password was chosen by an agent and verification was not bypassed.
-
-## 3. Database and files — DEPLOYED; NEW WORKFLOW AND FILE PROOF PENDING
-
-Connect existing screens to Firestore and private Storage. Member record server-owned fields: status, membershipReference and email. Own-profile writable fields only: displayName, company, branch, phone, updatedAt. Administrator lists use25-row document-ID cursor pages; no10,000-row browser reads or unbounded listeners. Preserve events/interest, Discover, publication and consultation field structures. Public visitors can view published events; interest requires sign-in. Publication metadata/files and consultation require approved membership.
-
-Exit: a representative saved record survives a fresh read; cross-user/guest access is denied; the hosted screens use the real database. Uploads remain private/unpublishable until their required validation/scanning is implemented; Storage rules alone are not antivirus.
-
-Evidence: reviewed Firestore/Storage rules are deployed. The accepted seven core Auth/profile/access checks and four MFA checks carry without replay. Private default Storage bucket isp-planter-app.firebasestorage.app is in Singapore. Existing event/Discover/publication/consultation/admin-import screens preserve the approved layouts and fields; the latest frontend/PWA files are hosted and hash-sealed.
-
-The first backend deployment completed its original 18 exports in one 28-second build. The subsequent four-callable release is now deployed and ACTIVE: activateMyMembership, previewRegistryImport, getRegistryImportPreview and confirmRegistryImport. audit/enrollment-provider-seal.json binds all four to source commit 5ca54cca21781ec1b5ea6a351052903d6295ae97 and the dedicated keyless isp-functions identity. The other fourteen callables and download endpoint retain their previous release; accepted core proof remains carried. Activation uses the fresh verified identity and exact eligible registry pairing; imports do not create Auth accounts, send invitations or grant administrator access. Registry preview/confirmation, immutable staged versions and one atomic active-version switch preserve omitted rows; suspension restoration requires an explicit reviewed option.
-
-The scanner image has one successful build from source edad270e4cadb69619edf814d80176a3440a54d0. audit/scanner-build-seal.json records immutable image sha256:37ec03dd689d4bfae43ec1dcac8c2689a93962b62a0a00987bf1dbe92ad59d03, 95,400,434 logical image bytes and 18,607 source-archive bytes. The single signature seed execution isp-clamav-updater-tgxqx succeeded in 2 minutes 19.88 seconds. audit/scanner-seed-execution.json and audit/scanner-signature-manifest.json record the signed definition set, daily version 28167, engine 1.4.6, and the actual container-only EICAR antivirus self-test PASS before mirror activation. This proves the seed/self-test, not attachment scanning.
-
-Eventarc's first trigger creation failed during documented first-use propagation; the managed service-agent role is present and no customer permissions were widened. audit/scanner-eventarc-issue.json records the propagation wait, zero triggers and zero proof attachments finalized at that checkpoint. Trigger readiness and the one focused six-area workflow, including real clean cover/PDF scans, unsafe-format rejection, publication/download denial and owned-fixture cleanup, remain pending. Unscanned files remain private/unpublishable. Milestone 3 is not complete.
-
-## 4. Google Drive backup and handover — PERMISSION AND BUILD COMPLETE; BACKUP/RESTORE PENDING
-
-Create the backup folder using the SAME narrow OAuth backup app, or explicitly grant that app folder access through the picker. The connected chat Drive account alone is not a deployed scheduled worker credential. Prefer nightly resumable export/copy, with failure reporting and one restoration demonstration.
-
-Coverage: Firestore exports and their metadata, Storage objects and metadata, supported Auth account exports, rules/indexes, app/config and source version. No live OAuth credentials, deployment secrets or service-account keys in archives. Password/MFA restoration limitations must be documented; administrator TOTP may require verified re-enrollment. Do not claim complete backup until tested. Retention defaults remain proposed30 daily copies; file versions are copied once rather than needlessly duplicating unchanged PDFs.
-
-Exit: a private Drive backup and manifest exist and one sample restore is demonstrated. Then report the focused login/database/hosting results and actual remaining launch decisions.
-
-Evidence: owner accepted Google's User Data Policy and approved production audience for the dedicated backup OAuth app after automatic approval review requested that exact expansion. The owner completed drive.file consent. The same app created the private "ISP Planter App - Private Backups" folder; its credential stays private on D and in Secret Manager for the dedicated backup identity. No public sharing, manual token pasting or service-account key downloads were used.
-
-The separate keyless backup worker has source approval for its hard deadline, exact nonsecret source archive and 30-date manifest retention. One build succeeded from source 5a372322f0f9f5d12941f27bd69d3e4c4e8f2b43. audit/backup-build-provider.json records immutable image sha256:5645338f6f87b439c0b61f93079f1d460d8ae416295dcf472f0fadb854cd7b46; the observed logical image size is 95,614,191 bytes. Build success does not prove a backup execution, Drive archive, working schedule or restoration. Those remain pending.
-
-Bucket metadata access stays scoped to the two ISP buckets. Payload garbage collection remains off, and the exports/ lifecycle prefix does not match firestore/ output; no automatic payload-retention claim is made. Owner authenticator setup remains explicitly deferred. Milestone 4 and the full production handover are not complete.
-
-## Guardrails
-
-The old hosted app is off and its raw evidence is preserved. Do not resume Rails investigations, restart Cloudflare tests, delete legacy resources or import real membership lists while establishing Firebase. Keep only the focused changed-area checks above. Update this numbered list when a milestone closes.
-
-Budget evidence: project-only RM200/month alerts are configured; these do not cap billing. Setup/test conservative reservations remain US$9.92624768 within US$10, retaining the historical US$6.07624768 bound. Reservations are not a current invoice. All functions use zero minimum instances; no paid always-on function is deployed.
-
-## Current closure update (29 October, Malaysia time)
-
-1. Hosting remains COMPLETE at https://isp-planter-app.web.app; exact built PWA file receipts carry.
-2. Login technical acceptance remains COMPLETE. Accepted Auth/profile/TOTP evidence carries. Owner authenticator enrollment is explicitly deferred to launch preparation.
-3. Five hosted areas PASS: enrollment/registry, events/interest, Discover, consultation and explicit suspension restoration. Both private-file attempts failed to obtain a trusted scan; both completed cleanup. The second attempt proved the receiver parsed and selected the exact attachment, but the HTTP delivery still stopped after five seconds despite configured480s service/600s acknowledgement. Astra selected the documented Eventarc→Workflow→one durable Cloud Run Job approach. Only this dispatch/entry delta is being implemented; the accepted engine mirror self-test, five business areas and older login/access checks carry. No third file run is admitted until source/image/IAM/cost review.
-4. The covered Auth snapshot, managed Firestore export and immutable file inventory are COMPLETE and preserved. The resume stopped before the source archive because the old recursive reader encountered an unlisted file. Astra approved the exact bounded explicit-path reader; the actual image build will run that same reader before another execution. A separate sourceVersion-only CAS migration must preserve the completed stages. Drive completion, one owned restore and scheduling remain pending.
-
-Budget: the durable Job and one combined image build fit inside the existing scanner1.50USD and backup0.40USD allowances. No ceiling increase or paid always-on capacity is proposed. No real member import, domain cutover, public production launch or new demo work is included.
+Current machine-readable summary: audit/firebase-closure-summary.json. Full raw/private receipts stay on D; credentials, raw Auth exports, synthetic passwords and MFA secrets must never be committed.
