@@ -21,4 +21,8 @@ Daily refresh plus backup compute/Scheduler planning baseline is approximately U
 
 The actual private Drive backup and one isolated database/file restoration are proven. Preserve original backup/source receipts. Full Auth-password, TOTP and application restoration were not proved. Recovery must target an explicitly owned isolated database and objects until a separate production restoration is approved.
 
-The owner still needs personal authenticator enrollment. Real membership eligibility is imported only from an approved list; client code cannot grant member/admin access. No real-member import or domain cutover was performed during acceptance.
+The owner has completed personal authenticator enrollment and confirmed fresh administrator access. Real membership eligibility is imported only from an approved list; client code cannot grant member/admin access. No real-member import or domain cutover was performed during acceptance.
+
+## Current-code recovery companion
+
+The QR frontend source commit 4275752799056167a1383562bb73cf77d4702813 is retained as an immutable private Drive source supplement (SHA-256 d114ffeb12fa55c5683b97c12710eec8f824dccebc6a6d5a408bac15bdb01d8b; 1,695,889 bytes). Retain its paired manifest beside the completed data backup. Main scheduled backups still embed source 183b; the code supplement is a required current-code companion until a separately reviewed update supersedes it. No new data backup or restore was run for this frontend change.

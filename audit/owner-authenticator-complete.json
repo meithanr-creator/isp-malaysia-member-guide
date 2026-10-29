@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "status": "OWNER_AUTHENTICATOR_COMPLETE",
+  "observedAt": "2026-10-29T12:25:39.262Z",
+  "projectId": "isp-planter-app",
+  "humanConfirmedQrEnrollmentAndAdministratorPage": true,
+  "enrolledTotpMetadataConfirmed": true,
+  "freshSignInAfterEnrollmentConfirmed": true,
+  "verifiedActiveAdministratorConfirmed": true,
+  "realSecretPasswordOrCodeRead": false,
+  "realSecretScreenCaptured": false,
+  "priorCoreAndSyntheticMfaChecksNotRepeated": true,
+  "metadataReceiptSha256": "e01f5ee787fb102c4093f0e37070c931597383c56d1b786bbb1e7786a3c6fe7a",
+  "frontendQrCommit": "4275752799056167a1383562bb73cf77d4702813"
+}

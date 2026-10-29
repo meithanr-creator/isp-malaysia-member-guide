@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-29T11:36:08.050Z",
+  "updatedAt": "2026-10-29T12:29:41.865Z",
   "projectId": "isp-planter-app",
   "hostingUrl": "https://isp-planter-app.web.app",
-  "status": "FOCUSED_TECHNICAL_ACCEPTANCE_COMPLETE_LAUNCH_ACTIONS_PENDING",
+  "status": "OWNER_ONBOARDED_CONTENT_APPROVED_OPERATIONS_AND_PILOT_DECISIONS_PENDING",
   "acceptedApplicationSourceCommit": "183b052ad97da58cfafe82f5c20329a9b20ccee8",
   "cleanupToolSourceSha256": "6c4e4fdb33346013de91bb9e2fd99ff47fe0149a95c429d0d353cd89183f1bec",
   "milestones": [
@@ -11,14 +11,14 @@
       "number": 1,
       "name": "Hosting",
       "status": "COMPLETE",
-      "basis": "Accepted exact frontend/PWA evidence carried; no redesign or repeated website test."
+      "basis": "Accepted exact frontend/PWA evidence carried; no redesign or repeated website test.",
+      "latestChange": "Owner-requested local QR rendering; Hosting-only exact changed files verified."
     },
     {
       "number": 2,
       "name": "Login",
-      "status": "TECHNICAL_ACCEPTANCE_COMPLETE",
-      "basis": "Accepted 7 core checks and4 synthetic-administrator MFA checks carried.",
-      "remaining": "Owner authenticator setup deferred by user."
+      "status": "COMPLETE",
+      "basis": "Accepted login/MFA proofs carried; actual owner TOTP enrollment metadata and fresh sign-in plus human-confirmed administrator access now complete."
     },
     {
       "number": 3,
@@ -61,24 +61,30 @@
       "nightlyBackupMalaysia": "02:30",
       "dailySignatureRefreshMalaysia": "01:30",
       "firstOrdinaryScheduledRunsObserved": false,
-      "automatedOverdueOrFreshnessAlertsImplemented": false
+      "automatedOverdueOrFreshnessAlertsImplemented": false,
+      "sourceRecoveryCompanion": {
+        "commit": "4275752799056167a1383562bb73cf77d4702813",
+        "privateReadbackVerified": true,
+        "requiredAlongsideDataBackup": true,
+        "scheduledEmbeddedSourceStill": "183b052ad97da58cfafe82f5c20329a9b20ccee8"
+      }
     }
   ],
   "budget": {
     "testCeilingUsd": 10,
-    "conservativeReservationsUsd": 9.92624768,
+    "conservativeReservationsUsd": 9.93624768,
     "notInvoice": true,
     "finalFileAttemptAllowanceUsd": 0.18,
     "cleanupInsideThatAllowanceUsd": 0.01,
     "operationsPlanningUsdPerMonth": 50,
-    "operatingAlertsNotHardCap": true
+    "operatingAlertsNotHardCap": true,
+    "ownerQrHostingArtifactAllowanceUsd": 0.01
   },
   "launchActions": [
-    "Owner completes authenticator enrollment before privileged administration.",
-    "Approve live ISP content and the first real membership list; none imported during acceptance.",
-    "Owner acknowledges manual backup/signature freshness and capacity duties, or approves a separate alerting change.",
-    "Observe the first ordinary schedules; configuration is verified but those future runs are not claimed complete.",
-    "Approve controlled launch. planterapp.co can be connected when the owner is ready; no domain changes made."
+    "Choose and acknowledge operations ownership: failure emails plus manual missed-run/freshness review, or manual-only.",
+    "Owner grants or holds controlled pilot approval on the existing Firebase address.",
+    "Observe first ordinary signature/backup schedules on30October; no forced run or repeated proof.",
+    "Owner uploads the approved membership list and actual event/publication material when available."
   ],
   "explicitLimits": [
     "Shop and jobs remain frozen DEMO references; Academy, forum and CPD excluded.",
@@ -94,5 +100,17 @@
     "backupComplete": "1699ddff9bdda1e2ead5534c452e68288c3174278b2aaa999569821a5e9ba5d3",
     "restoreComplete": "a41d3389359636c85bef5ad7d71bda66f973267e28d160c29224c23a2ce94c7e",
     "restoreCleanup": "c407144f6cb4b00c2f73f817a8d1c1d74f0bd8c72ef2f4b63723c69af02dca67"
-  }
+  },
+  "deployedFrontendSourceCommit": "4275752799056167a1383562bb73cf77d4702813",
+  "ownerAuthenticator": {
+    "status": "COMPLETE",
+    "humanConfirmedAdministratorPage": true,
+    "metadataConfirmed": true,
+    "secretOrCodeCaptured": false
+  },
+  "contentApproval": {
+    "approved": true,
+    "scope": "Current homepage/Discover/About copy and empty events/publications until owner uploads approved content"
+  },
+  "membershipImportResponsibility": "Owner uploads approved list through administration; no real member import by agent."
 }
