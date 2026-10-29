@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "projectId": "isp-planter-app",
+  "observedAt": "2026-10-29T12:52:11.229Z",
+  "humanExplicitlyApprovedEmailAlerts": true,
+  "recipient": "Owner-approved address; private receipt retained",
+  "manualMissedRunCompletionFreshnessDutyAcknowledged": true,
+  "planSha256": "3890bdd40e8efb0895608cb4517b1ff48f66877e66adb8c2b9b5ffcfa5e66eae",
+  "source": "Human response in this chat: Enable failure emails plus manual fallback (Recommended)",
+  "controlledPilotApproved": true,
+  "pilotUrl": "https://isp-planter-app.web.app",
+  "scope": "Approved current copy and empty event/publication listings; owner imports members through administration; first ordinary scheduled runs pending; planterapp.co unchanged",
+  "testMailOrForcedFailureApproved": false
+}

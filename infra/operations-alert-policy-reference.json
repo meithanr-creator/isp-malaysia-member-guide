@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "projectId": "isp-planter-app",
+  "status": "REFERENCE_TEMPLATES_LIVE_ENABLED_SETTINGS_RECORDED_IN_AUDIT",
+  "reviewedPlanSha256": "678f1d9fcad7f99c89dc12a5cad7d4e1f11b0fdd660ae3fdd8cc06a435b4ccb9",
+  "notificationChannel": "Inject the exact owner-approved channel from private deployment evidence; no recipient address or credential stored here.",
+  "policies": [
+    {
+      "displayName": "ISP / backup and signature Job failure",
+      "enabled": false,
+      "combiner": "OR",
+      "notificationChannels": [],
+      "userLabels": {
+        "isp_app": "planter",
+        "managed_by": "isp_launch",
+        "policy_key": "job_failure"
+      },
+      "documentation": {
+        "mimeType": "text/markdown",
+        "content": "A non-success terminal result was reported for the ISP backup or signature updater. Inspect the exact Job execution. Do not force a retry or bypass cooldown. This alert does not prove that a daily private Drive COMPLETE manifest exists or signatures remain fresh."
+      },
+      "conditions": [
+        {
+          "displayName": "Non-success isp-drive-backup execution reported within five minutes",
+          "conditionThreshold": {
+            "filter": "resource.type = \"cloud_run_job\" AND resource.labels.project_id = \"isp-planter-app\" AND resource.labels.location = \"asia-southeast1\" AND resource.labels.job_name = \"isp-drive-backup\" AND metric.type = \"run.googleapis.com/job/completed_execution_count\" AND metric.labels.result != \"succeeded\"",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 0,
+            "duration": "0s",
+            "aggregations": [
+              {
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_SUM"
+              }
+            ],
+            "trigger": {
+              "count": 1
+            }
+          }
+        },
+        {
+          "displayName": "Non-success isp-clamav-updater execution reported within five minutes",
+          "conditionThreshold": {
+            "filter": "resource.type = \"cloud_run_job\" AND resource.labels.project_id = \"isp-planter-app\" AND resource.labels.location = \"asia-southeast1\" AND resource.labels.job_name = \"isp-clamav-updater\" AND metric.type = \"run.googleapis.com/job/completed_execution_count\" AND metric.labels.result != \"succeeded\"",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 0,
+            "duration": "0s",
+            "aggregations": [
+              {
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_SUM"
+              }
+            ],
+            "trigger": {
+              "count": 1
+            }
+          }
+        }
+      ],
+      "alertStrategy": {
+        "autoClose": "1800s"
+      }
+    },
+    {
+      "displayName": "ISP / backup or signature Job running too long",
+      "enabled": false,
+      "combiner": "OR",
+      "notificationChannels": [],
+      "userLabels": {
+        "isp_app": "planter",
+        "managed_by": "isp_launch",
+        "policy_key": "job_prolonged"
+      },
+      "documentation": {
+        "mimeType": "text/markdown",
+        "content": "The aggregate running count remains positive beyond the expected window. Inspect the exact executions before acting; queued, startup or overlapping work can affect this signal. No automatic cancellation or retry is configured. Missing dispatch, backup COMPLETE status and signed-definition freshness remain manual checks."
+      },
+      "conditions": [
+        {
+          "displayName": "Backup running count positive for 35 minutes",
+          "conditionThreshold": {
+            "filter": "resource.type = \"cloud_run_job\" AND resource.labels.project_id = \"isp-planter-app\" AND resource.labels.location = \"asia-southeast1\" AND resource.labels.job_name = \"isp-drive-backup\" AND metric.type = \"run.googleapis.com/job/running_executions\"",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 0,
+            "duration": "2100s",
+            "aggregations": [
+              {
+                "alignmentPeriod": "60s",
+                "perSeriesAligner": "ALIGN_MIN"
+              }
+            ],
+            "evaluationMissingData": "EVALUATION_MISSING_DATA_INACTIVE",
+            "trigger": {
+              "count": 1
+            }
+          }
+        },
+        {
+          "displayName": "Signature updater running count positive for 25 minutes",
+          "conditionThreshold": {
+            "filter": "resource.type = \"cloud_run_job\" AND resource.labels.project_id = \"isp-planter-app\" AND resource.labels.location = \"asia-southeast1\" AND resource.labels.job_name = \"isp-clamav-updater\" AND metric.type = \"run.googleapis.com/job/running_executions\"",
+            "comparison": "COMPARISON_GT",
+            "thresholdValue": 0,
+            "duration": "1500s",
+            "aggregations": [
+              {
+                "alignmentPeriod": "60s",
+                "perSeriesAligner": "ALIGN_MIN"
+              }
+            ],
+            "evaluationMissingData": "EVALUATION_MISSING_DATA_INACTIVE",
+            "trigger": {
+              "count": 1
+            }
+          }
+        }
+      ],
+      "alertStrategy": {
+        "autoClose": "1800s"
+      }
+    }
+  ],
+  "liveReadback": "audit/operations-alerts-configured.json"
+}

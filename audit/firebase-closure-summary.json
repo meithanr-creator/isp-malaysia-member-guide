@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-29T12:29:41.865Z",
+  "updatedAt": "2026-10-29T13:00:33.388Z",
   "projectId": "isp-planter-app",
   "hostingUrl": "https://isp-planter-app.web.app",
-  "status": "OWNER_ONBOARDED_CONTENT_APPROVED_OPERATIONS_AND_PILOT_DECISIONS_PENDING",
+  "status": "CONTROLLED_PILOT_APPROVED",
   "acceptedApplicationSourceCommit": "183b052ad97da58cfafe82f5c20329a9b20ccee8",
   "cleanupToolSourceSha256": "6c4e4fdb33346013de91bb9e2fd99ff47fe0149a95c429d0d353cd89183f1bec",
   "milestones": [
@@ -51,7 +51,7 @@
     {
       "number": 4,
       "name": "Private Drive backup and handover",
-      "status": "BACKUP_RESTORE_AND_SCHEDULE_CONFIG_COMPLETE",
+      "status": "CONTROLLED_PILOT_BACKUP_AND_OPERATIONS_CONFIG_COMPLETE",
       "basis": "Actual private Drive backup and one isolated database/file restore passed; owned cleanup complete.",
       "backupArtifacts": 7,
       "sourceFiles": 95,
@@ -67,7 +67,9 @@
         "privateReadbackVerified": true,
         "requiredAlongsideDataBackup": true,
         "scheduledEmbeddedSourceStill": "183b052ad97da58cfafe82f5c20329a9b20ccee8"
-      }
+      },
+      "failureAndProlongedRunningAlertsEnabled": true,
+      "manualFallbackAcknowledged": true
     }
   ],
   "budget": {
@@ -81,10 +83,10 @@
     "ownerQrHostingArtifactAllowanceUsd": 0.01
   },
   "launchActions": [
-    "Choose and acknowledge operations ownership: failure emails plus manual missed-run/freshness review, or manual-only.",
-    "Owner grants or holds controlled pilot approval on the existing Firebase address.",
-    "Observe first ordinary signature/backup schedules on30October; no forced run or repeated proof.",
-    "Owner uploads the approved membership list and actual event/publication material when available."
+    "Owner uploads approved membership list through administration, then approved events/publications when ready.",
+    "Owner observes the first ordinary signature refresh at01:30 and backup at02:30 on30October2026 Malaysia time; review signed freshness/COMPLETE manifest.",
+    "Maintain manual missed-run, backup-completion, signed-definition freshness and capacity review.",
+    "Connect planterapp.co only when separately ready; no DNS change performed."
   ],
   "explicitLimits": [
     "Shop and jobs remain frozen DEMO references; Academy, forum and CPD excluded.",
@@ -112,5 +114,24 @@
     "approved": true,
     "scope": "Current homepage/Discover/About copy and empty events/publications until owner uploads approved content"
   },
-  "membershipImportResponsibility": "Owner uploads approved list through administration; no real member import by agent."
+  "membershipImportResponsibility": "Owner uploads approved list through administration; no real member import by agent.",
+  "controlledPilot": {
+    "approved": true,
+    "url": "https://isp-planter-app.web.app",
+    "approvedBy": "Human owner",
+    "directorGo": true,
+    "domainCutover": false
+  },
+  "operations": {
+    "failureAndProlongedRunningEmailPoliciesEnabled": true,
+    "policies": 2,
+    "conditions": 4,
+    "manualMissedCompletionAndFreshnessDutyAcknowledged": true,
+    "emailDeliveryTested": false,
+    "firstOrdinaryRunsObserved": false
+  },
+  "pendingHumanChoices": [],
+  "alertsOrEmailEnabledByAgent": true,
+  "pilotApproved": true,
+  "directorReview": "Astra final controlled-pilot GO after exact policy readbacks and explicit human decisions; ordinary first runs remain pending."
 }

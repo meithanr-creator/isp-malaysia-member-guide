@@ -1,0 +1,29 @@
+{
+  "status": "CONTROLLED_PILOT_GO",
+  "observedAt": "2026-10-29T13:00:33.385Z",
+  "director": "Astra high",
+  "projectId": "isp-planter-app",
+  "url": "https://isp-planter-app.web.app",
+  "basis": [
+    "Owner TOTP enrolled and fresh administration access confirmed.",
+    "Current copy and empty event/publication listings explicitly approved.",
+    "Owner explicitly approved email alerts plus manual missed-run/completion/freshness responsibility.",
+    "Exact two enabled alert policies and owner email channel read back; email delivery not tested.",
+    "Actual backup/restore and focused workflows previously passed; evidence carried.",
+    "Human explicitly approved controlled pilot at the existing Firebase address."
+  ],
+  "evidenceSha256": {
+    "alerts": "3b168c6f8136c380e1c0566b597f9508fc2ee24455c05c1e5b5ac823784e122e",
+    "ownerApproval": "1a0846595335bf67cf780f5996d17b67199f649e66f9a956d9fa3a53044b4a11",
+    "ownerMfa": "3e20be88f16d6f6af27b7e00d7d2d0cf2d62e8b4bd5f517491fa08e7a22a0331",
+    "content": "143515241d0bc39dfd4f7d451c98505f25e33d324aa345a038cddaa3a9a1e5eb"
+  },
+  "limits": [
+    "First ordinary signature and backup runs on30October2026 remain pending owner observation.",
+    "Automatic missed-COMPLETE and signed-definition freshness detection are not implemented; manual fallback acknowledged.",
+    "Real membership list and actual events/publications will be uploaded by owner.",
+    "Email delivery not tested; no forced failure or test email.",
+    "No domain cutover, full regression,10,000-user load or native-device installation claim."
+  ],
+  "newProviderTestsRequired": false
+}

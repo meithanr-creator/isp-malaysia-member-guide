@@ -1,0 +1,30 @@
+{
+  "status": "APPROVED_OPERATIONS_ALERTS_CONFIGURED",
+  "observedAt": "2026-10-29T12:56:50.316Z",
+  "projectId": "isp-planter-app",
+  "recipient": "Owner-approved address; private receipt retained",
+  "channel": "Owner email channel; private ID retained",
+  "channelVerificationStatus": "NOT_REPORTED",
+  "policies": [
+    {
+      "name": "projects/isp-planter-app/alertPolicies/3768065978191730015",
+      "key": "job_failure",
+      "enabled": true,
+      "conditions": 2
+    },
+    {
+      "name": "projects/isp-planter-app/alertPolicies/13780742570678374549",
+      "key": "job_prolonged",
+      "enabled": true,
+      "conditions": 2
+    }
+  ],
+  "providerWriteAttempts": 2,
+  "policyPlanSha256": "678f1d9fcad7f99c89dc12a5cad7d4e1f11b0fdd660ae3fdd8cc06a435b4ccb9",
+  "originalHumanApprovalPlanSha256": "3890bdd40e8efb0895608cb4517b1ff48f66877e66adb8c2b9b5ffcfa5e66eae",
+  "representationAmendmentReviewed": true,
+  "forcedRunsOrTestMail": false,
+  "mailDeliveryNotTested": true,
+  "manualMissedCompletionAndSignedFreshnessReviewAcknowledged": true,
+  "firstOrdinaryScheduledRunsObserved": false
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "projectId": "isp-planter-app",
+  "observedAt": "2026-10-29T12:55:51.900Z",
+  "originalHumanReviewedPlanSha256": "3890bdd40e8efb0895608cb4517b1ff48f66877e66adb8c2b9b5ffcfa5e66eae",
+  "amendedPlanSha256": "678f1d9fcad7f99c89dc12a5cad7d4e1f11b0fdd660ae3fdd8cc06a435b4ccb9",
+  "directorReviewedEquivalentRepresentation": true,
+  "scopeRecipientsThresholdsUnchanged": true,
+  "reason": "Google rejects mixed AND/OR resource-label restrictions. Two exact-Job failure conditions combined with policy OR preserve the original intended predicate.",
+  "policies": 2,
+  "conditions": 4,
+  "newReadOnlyQueryValidation": {
+    "queriesPassed": 4,
+    "providerWrites": 0,
+    "applicationTestsRepeated": 0
+  },
+  "originalHumanApprovalReceiptPreserved": true,
+  "newUserApprovalRequired": false
+}

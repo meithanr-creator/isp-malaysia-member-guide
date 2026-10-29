@@ -1,6 +1,6 @@
 # ISP Firebase operations handover
 
-Configured 29 October 2026. The existing project owner is the assigned operator; duty acknowledgement remains pending. No credentials or tokens belong in this document.
+Configured 29 October 2026. The existing project owner is the assigned operator; manual fallback responsibility was explicitly acknowledged on 29 October 2026. No credentials or tokens belong in this document.
 
 ## Daily maintenance
 
@@ -11,7 +11,7 @@ Both schedules use separate dedicated identities with invoker permission on only
 
 ## Failure and capacity
 
-Automatic backup-overdue and signature-freshness alerts are not implemented. Missing/failed/unknown execution or manifest is an operator action, never an automatic retry. Preserve exact Job/Workflow operation evidence; do not bypass updater cooldown or launch another scan to resolve an ambiguous receipt.
+Two enabled email policies now report non-success completion and prolonged-running counts for the backup and signature updater, using the owner-approved address. Failure is a five-minute sum with immediate triggering; prolonged-running thresholds are 35 minutes for backup and 25 minutes for updater. Email delivery was not artificially tested. Automatic missed-backup/COMPLETE-deadline and signed-definition freshness alerts are not implemented. Missing/failed/unknown execution or manifest is an operator action, never an automatic retry. Preserve exact Job/Workflow operation evidence; do not bypass updater cooldown or launch another scan to resolve an ambiguous receipt.
 
 Review Drive, staging, signatures and artifacts against actual volume and the project budget alerts. Thirty complete manifest dates do not cap retained payload bytes. Payload garbage collection remains off; do not use blind age-based deletion on referenced exports, manifests, active signature files or checkpoints. Current signature state including soft-deleted bytes is 266,935,620 bytes, below the 2 GiB review bound; retained artifact evidence is 770,926,507 bytes, below its separate 2 GiB bound. Continued retention was admitted to ongoing operations after the final file PASS and cleanup. These are observed sizes, not guaranteed steady-state caps.
 
@@ -26,3 +26,7 @@ The owner has completed personal authenticator enrollment and confirmed fresh ad
 ## Current-code recovery companion
 
 The QR frontend source commit 4275752799056167a1383562bb73cf77d4702813 is retained as an immutable private Drive source supplement (SHA-256 d114ffeb12fa55c5683b97c12710eec8f824dccebc6a6d5a408bac15bdb01d8b; 1,695,889 bytes). Retain its paired manifest beside the completed data backup. Main scheduled backups still embed source 183b; the code supplement is a required current-code companion until a separately reviewed update supersedes it. No new data backup or restore was run for this frontend change.
+
+## Controlled pilot approval
+
+The owner approved the pilot at https://isp-planter-app.web.app with existing copy and empty event/publication listings, and will upload the membership list through administration. Astra reviewed the actual enabled channel/policies and issued controlled-pilot GO. First ordinary scheduled runs remain pending for 30 October 2026 Malaysia; observe their outcomes without forcing another proof run. No domain change, real-member import, test mail or repeated functional check was performed for this closure.
