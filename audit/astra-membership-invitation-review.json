@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-29T14:02:24.325Z",
+  "status": "MEMBERSHIP_INVITATION_CHANGE_COMPLETE",
+  "sourceCommit": "569938cdf11b0882fdd7ee929ea6673d0f9bc402",
+  "director": "Astra high",
+  "sourceReview": "GO",
+  "finalEvidenceReview": "GO",
+  "mock": {
+    "testGroupsPassed": 5,
+    "failed": 0,
+    "actualCsvPreviewConfirmationAndActivationHandlers": true,
+    "persistence": "in-memory SDK-substituted test store; not hosted eligible-user persistence",
+    "leadingZeroReferencePreserved": true,
+    "eligibleMemberSaved": true,
+    "idempotentActivation": true,
+    "absentIneligibleSuspendedMismatchDenied": true,
+    "receipt": "audit/membership-invitation-mock.json"
+  },
+  "hosted": {
+    "directNonmemberSignupDenied": true,
+    "authAccountAbsent": true,
+    "invitationMarkerReturned": true,
+    "contactGuidanceHashVerified": true,
+    "eligibleSignupRetested": false,
+    "receipt": "audit/membership-invitation-hosted-proof.json"
+  },
+  "supersedesHistoricalHostedPendingIn": "audit/membership-invitation-mock.json",
+  "semantics": "An eligible unsuspended approved CSV entry authorizes registration. No separate invitation link/email subsystem. Email ownership and exact membership reference are verified before server-created approved profile and binding.",
+  "realMembershipListImported": false,
+  "emailsSent": 0,
+  "unrelatedChecksReplayed": false,
+  "sourceRecoveryCompanion": "9cec93f5a90a1837eb46ca38cce728e5c492abd98ac311b45c671c44fbc907eb",
+  "budget": {
+    "reservedUsd": 9.98624768,
+    "remainingUsd": 0.01375232,
+    "ceilingUsd": 10,
+    "notInvoice": true
+  },
+  "preflightCorrectionsPreserved": "audit/membership-invitation-deployment.json",
+  "domainChanged": false
+}

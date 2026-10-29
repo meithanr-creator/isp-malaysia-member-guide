@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-29T13:00:33.388Z",
+  "updatedAt": "2026-10-29T14:02:24.325Z",
   "projectId": "isp-planter-app",
   "hostingUrl": "https://isp-planter-app.web.app",
   "status": "CONTROLLED_PILOT_APPROVED",
@@ -18,7 +18,8 @@
       "number": 2,
       "name": "Login",
       "status": "COMPLETE",
-      "basis": "Accepted login/MFA proofs carried; actual owner TOTP enrollment metadata and fresh sign-in plus human-confirmed administrator access now complete."
+      "basis": "Accepted login/MFA proofs carried; actual owner TOTP enrollment metadata and fresh sign-in plus human-confirmed administrator access now complete.",
+      "invitationOnlyRegistration": "COMPLETE: actual direct signup denied before Auth persistence; generic Contact ISP guidance published."
     },
     {
       "number": 3,
@@ -63,7 +64,7 @@
       "firstOrdinaryScheduledRunsObserved": false,
       "automatedOverdueOrFreshnessAlertsImplemented": false,
       "sourceRecoveryCompanion": {
-        "commit": "4275752799056167a1383562bb73cf77d4702813",
+        "commit": "569938cdf11b0882fdd7ee929ea6673d0f9bc402",
         "privateReadbackVerified": true,
         "requiredAlongsideDataBackup": true,
         "scheduledEmbeddedSourceStill": "183b052ad97da58cfafe82f5c20329a9b20ccee8"
@@ -74,13 +75,14 @@
   ],
   "budget": {
     "testCeilingUsd": 10,
-    "conservativeReservationsUsd": 9.93624768,
+    "conservativeReservationsUsd": 9.98624768,
     "notInvoice": true,
     "finalFileAttemptAllowanceUsd": 0.18,
     "cleanupInsideThatAllowanceUsd": 0.01,
     "operationsPlanningUsdPerMonth": 50,
     "operatingAlertsNotHardCap": true,
-    "ownerQrHostingArtifactAllowanceUsd": 0.01
+    "ownerQrHostingArtifactAllowanceUsd": 0.01,
+    "invitationGateAllowanceUsd": 0.05
   },
   "launchActions": [
     "Owner uploads approved membership list through administration, then approved events/publications when ready.",
@@ -103,7 +105,7 @@
     "restoreComplete": "a41d3389359636c85bef5ad7d71bda66f973267e28d160c29224c23a2ce94c7e",
     "restoreCleanup": "c407144f6cb4b00c2f73f817a8d1c1d74f0bd8c72ef2f4b63723c69af02dca67"
   },
-  "deployedFrontendSourceCommit": "4275752799056167a1383562bb73cf77d4702813",
+  "deployedFrontendSourceCommit": "569938cdf11b0882fdd7ee929ea6673d0f9bc402",
   "ownerAuthenticator": {
     "status": "COMPLETE",
     "humanConfirmedAdministratorPage": true,
@@ -133,5 +135,18 @@
   "pendingHumanChoices": [],
   "alertsOrEmailEnabledByAgent": true,
   "pilotApproved": true,
-  "directorReview": "Astra final controlled-pilot GO after exact policy readbacks and explicit human decisions; ordinary first runs remain pending."
+  "directorReview": "Astra final controlled-pilot GO after exact policy readbacks and explicit human decisions; ordinary first runs remain pending.",
+  "membershipInvitation": {
+    "status": "COMPLETE",
+    "sourceCommit": "569938cdf11b0882fdd7ee929ea6673d0f9bc402",
+    "localMockPassed": 5,
+    "hostedNonmemberDenied": true,
+    "unlistedAuthAccountAbsent": true,
+    "liveCsvImported": false,
+    "approvedCsvIsInvitationAuthority": true,
+    "verifiedActivationStillRequired": true
+  },
+  "additionalBackendSource": {
+    "requireMembershipInvitation": "569938cdf11b0882fdd7ee929ea6673d0f9bc402"
+  }
 }

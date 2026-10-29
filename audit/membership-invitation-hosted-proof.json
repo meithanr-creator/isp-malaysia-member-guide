@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-29T13:59:43.043Z",
+  "projectId": "isp-planter-app",
+  "sourceCommit": "569938cdf11b0882fdd7ee929ea6673d0f9bc402",
+  "status": "PASS",
+  "liveCsvImported": false,
+  "emailsSent": 0,
+  "realMemberRecordsTouched": false,
+  "backendGateRevision": "requiremembershipinvitation-00001-den",
+  "hookRegistered": true,
+  "passwordOnly": true,
+  "beforeSignInAdded": false,
+  "localCsvAdmissionPersistenceProof": "audit/membership-invitation-mock.json",
+  "localStorageIsMocked": true,
+  "hostedAllowCaseRetested": false,
+  "nonmemberDirectSignupDenied": true,
+  "denialCode": "auth/internal-error",
+  "invitationMarkerReturned": true,
+  "authAccountAbsent": true,
+  "hostedGuidanceHashVerified": true,
+  "assets": [
+    {
+      "path": "/activate-account",
+      "sha256": "3345f4616ae474cb264d8ca8c246904cb65dabccb5fff44540b7d25fd81dce6f"
+    },
+    {
+      "path": "/assets/index-BWMNL75-.js",
+      "sha256": "b18f6ab1225d7d08d3a1acd414f5363e51532d2a3065047d820b7c5dd40bc57f"
+    }
+  ],
+  "finishedAt": "2026-10-29T13:59:45.908Z"
+}

@@ -1,0 +1,49 @@
+{
+  "startedAt": "2026-10-29T13:55:44.343Z",
+  "sourceCommit": "569938cdf11b0882fdd7ee929ea6673d0f9bc402",
+  "projectId": "isp-planter-app",
+  "scope": [
+    "functions:isp-core:requireMembershipInvitation",
+    "hosting"
+  ],
+  "newReservationUsd": 0.05,
+  "priorConservativeReservationsUsd": 9.93624768,
+  "newConservativeReservationsUsd": 9.98624768,
+  "maxBuildActiveSecondsBeforeCancellation": 180,
+  "cancellationReserveSeconds": 60,
+  "allowedMachines": [
+    "DEFAULT",
+    "UNSPECIFIED",
+    "E2_MEDIUM",
+    "E2_STANDARD_2"
+  ],
+  "privatePoolAllowed": false,
+  "automaticRetry": false,
+  "directorSourceAndBudgetReview": "Astra GO 2026-10-29",
+  "finishedAt": "2026-10-29T13:58:54.763Z",
+  "exitCode": 0,
+  "cancelled": false,
+  "controllerError": null,
+  "build": {
+    "name": "projects/606528057827/locations/asia-southeast1/builds/ee05bf53-a260-4ab1-b3d0-9b5e4971ea15",
+    "status": "SUCCESS",
+    "machine": "DEFAULT",
+    "pool": null,
+    "startedAt": "2026-10-29T13:57:34.383453919Z",
+    "finishedAt": "2026-10-29T13:58:35.831229Z",
+    "activeSeconds": 61.448
+  },
+  "passed": true,
+  "triggerRegistration": {
+    "functionUrl": "https://asia-southeast1-isp-planter-app.cloudfunctions.net/requireMembershipInvitation",
+    "registeredBeforeCreate": "https://asia-southeast1-isp-planter-app.cloudfunctions.net/requireMembershipInvitation",
+    "canonicalFunctionUrlMatches": true,
+    "runServiceUrlIsSeparate": true
+  },
+  "preflightCorrections": [
+    "Cloud Build query field create_time corrected before any cloud build was created; original aborted intent preserved.",
+    "Readback compares registered trigger to authoritative Cloud Function url rather than separate Run service uri; no signup attempt had yet run."
+  ],
+  "oneCloudBuildOnly": true,
+  "oneActualHostedSignupOnly": true
+}

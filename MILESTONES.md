@@ -17,9 +17,9 @@ Updated 29 October 2026, Malaysia time. **Controlled pilot approved by the owner
 
 All local source, tools, credentials and evidence remain on D. Firebase is the selected platform; no Rails, Neon or Cloudflare work was resumed. Shop/jobs stay frozen DEMO references; Academy/forum/CPD are excluded. No new design or broad test programme was introduced.
 
-Accepted backend/workflow configuration remains based on 183b052ad97da58cfafe82f5c20329a9b20ccee8. Frontend commit 4275752799056167a1383562bb73cf77d4702813 adds local authenticator QR rendering with manual fallback; only Hosting was deployed. Backend, rules, scanner images and Workflow were preserved. The scanner's obsolete HTTP destination remains preserved with invocation denied; the replacement uses Eventarc, Workflow and one bounded Job per authoritative dispatch.
+Accepted backend/workflow configuration remains based on 183b052ad97da58cfafe82f5c20329a9b20ccee8. Frontend commit 4275752799056167a1383562bb73cf77d4702813 adds local authenticator QR rendering with manual fallback; only Hosting was deployed. Other existing backend functions, rules, scanner images and Workflow were preserved. The scanner's obsolete HTTP destination remains preserved with invocation denied; the replacement uses Eventarc, Workflow and one bounded Job per authoritative dispatch.
 
-Cumulative conservative test reservations remain US$9.93624768 within US$10; this is an allowance, not an invoice. The final file attempt allowance was US$0.18, including cleanup. The US$50/month operating plan uses alerts, not a billing cap.
+Cumulative conservative test reservations remain US$9.98624768 within US$10; this is an allowance, not an invoice. The final file attempt allowance was US$0.18, including cleanup. The US$50/month operating plan uses alerts, not a billing cap.
 
 No native iOS/Android installation,10,000-user load test, complete regression or independent penetration test is claimed. The recovery proof covered database records and file bytes; Auth password/TOTP/full-application restoration was not proved. Payload collection remains off and historical storage may grow.
 
@@ -28,3 +28,11 @@ Current machine-readable summary: audit/firebase-closure-summary.json. Full raw/
 Owner onboarding update: QR frontend build and synthetic local rendering contract passed; the owner completed the actual QR enrollment/sign-in. The exact published QR source is also saved as a hash-verified private Drive code companion. Main scheduled backup embedded source remains 183b; retain the companion for current-code recovery. No data export or restore was repeated.
 
 Final operations record: Google required the two Job filters to be represented as separate all-AND conditions combined by policy OR. Coverage, recipient and thresholds are unchanged. The original approval and terminal validation error are retained. Corrected queries and actual saved policies are verified; no application checks, forced runs or test emails were repeated.
+
+## User-requested invitation-only registration delta
+
+The CSV mock passed five focused groups using actual import/activation handlers with substituted local storage/Auth. It proves eligible verified activation saves the expected profile and permanent binding, preserves leading zeros, avoids duplicates and denies absent/ineligible/suspended/mismatched identities. This local persistence is not a new hosted eligible-user end-to-end claim.
+
+Astra approved the new read-only beforeCreate gate. One scoped Firebase deployment published source 569938cdf11b0882fdd7ee929ea6673d0f9bc402 (gate and two changed Hosting files); its single default-pool build succeeded in 61.448 seconds. One actual direct nonmember signup returned ISP_INVITATION_REQUIRED and no Auth account was saved. Existing owner sign-in, rules, data and unrelated features were not retested. The approved CSV entry is the invitation authority; no invitation emails or separate links are sent.
+
+The exact changed source is also a private Drive recovery companion with verified bytes/hash. No data backup/export/restore was repeated. Budget ledger: US$9.98624768 conservative reservations within US$10, leaving US$0.01375232; not an invoice. Two test-tool preflight/comparison corrections were retained; neither required an app fix or repeated signup/build.

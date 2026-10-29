@@ -30,3 +30,5 @@ The QR frontend source commit 4275752799056167a1383562bb73cf77d4702813 is retain
 ## Controlled pilot approval
 
 The owner approved the pilot at https://isp-planter-app.web.app with existing copy and empty event/publication listings, and will upload the membership list through administration. Astra reviewed the actual enabled channel/policies and issued controlled-pilot GO. First ordinary scheduled runs remain pending for 30 October 2026 Malaysia; observe their outcomes without forcing another proof run. No domain change, real-member import, test mail or repeated functional check was performed for this closure.
+
+Current-code recovery update29October2026: retain the private source companion for569938cdf11b0882fdd7ee929ea6673d0f9bc402 (invitation-only gate plus earlier QR code), alongside an approved completed data backup. Its archive SHA256 is 9cec93f5a90a1837eb46ca38cce728e5c492abd98ac311b45c671c44fbc907eb. Scheduled embedded source remains183b; the new companion is source only, with no repeated data export or restoration proof.
