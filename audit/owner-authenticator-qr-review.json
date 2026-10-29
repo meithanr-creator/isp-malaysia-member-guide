@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "status": "SOURCE_BUILD_AND_LOCAL_CONTRACT_PASS_ASTRA_HOSTING_GO",
+  "observedAt": "2026-10-29T12:07:57.949Z",
+  "baseCommit": "b56604a54b9a07ce75d0fc9764274f416f81b6a7",
+  "scope": "Owner-requested authenticator QR only",
+  "firebaseProject": "isp-planter-app",
+  "sourceSha256": {
+    "package.json": "0b8e3d8de166729673285e1399f97bf2cfe00c8ddcd63e112fae225087c7a3b6",
+    "package-lock.json": "fb81564f93eaf7494d5c972756a4fbc9206f41f662e46e4c1351ce3ef396cfa6",
+    "src/App.tsx": "b60e63d527a997e2c5f5b7551942ee90d0d20f95a10b018deab65bf949058f4f",
+    "src/firebase.ts": "7437bdb901397eef8d20404231f04e65521c387150e7a7d225b19457c8fd9fa8",
+    "src/styles.css": "228bae02122a41f6d7d1050451b9ce9a8ec57db470c933f0955139beb10721fd"
+  },
+  "dependency": {
+    "name": "qrcode.react",
+    "version": "4.2.0",
+    "addedPackages": 1,
+    "integrity": "sha512-QpgqWi8rD9DsS9EP3z7BT+5lY5SFhsqGjpgW5DY/i3mK4M9DTBNz3ErMi8BWYEfI3L0d8GIbGmcdFAS1uIRGjA==",
+    "installScriptsDisabled": true
+  },
+  "build": {
+    "command": "npm run build",
+    "exitCode": 0,
+    "typescriptNoEmitPassed": true,
+    "viteBuildPassed": true,
+    "modules": 57,
+    "bundleBytesApprox": 951540,
+    "warning": "Main JS chunk exceeds500kB; no unrelated bundle refactor performed."
+  },
+  "localSyntheticContract": {
+    "passed": true,
+    "proofSha256": "02f108ea6e67ffcffc1fe0ad4158d7a6b2e11c467a44437823c708305ebc5de7",
+    "realOwnerSecretUsed": false,
+    "providerCalls": 0,
+    "phoneScanNotYetObserved": true
+  },
+  "director": "Astra high",
+  "directorDecision": "Exact source/dependency and local proof GO; Hosting-only after build PASS.",
+  "privacy": {
+    "renderer": "inline client SVG",
+    "externalQrService": false,
+    "qrOrSecretLogging": false,
+    "persistentQrStorage": false,
+    "realSecretScreenshotCaptured": false
+  },
+  "unchanged": [
+    "password confirmation",
+    "verification and sign-in requirement",
+    "manual key fallback",
+    "member/admin permissions",
+    "backend functions",
+    "Firestore/Storage rules",
+    "schedules",
+    "demo areas"
+  ],
+  "budget": {
+    "newArtifactAllowanceUsd": 0.01,
+    "totalConservativeReservationsUsd": 9.93624768,
+    "ceilingUsd": 10,
+    "notInvoice": true
+  },
+  "humanEnrollmentPending": true
+}

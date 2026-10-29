@@ -1,0 +1,24 @@
+{
+  "dateMalaysia": "2026-10-29",
+  "kind": "conservative_reservations_not_invoice_or_billing_cap",
+  "ceilingUsd": 10,
+  "historicalRetainedBoundUsd": 6.07624768,
+  "firebaseFoundationReservationUsd": 0.05,
+  "coreBackendDeploymentAndFocusedProofReservationUsd": 1.9,
+  "backupBuildAndOneRestoreReservationUsd": 0.4,
+  "totalReservedUsd": 9.93624768,
+  "unallocatedUsd": 0.06375232,
+  "conditions": [
+    "Reservations are allowances; no current invoice total is claimed from delayed reporting.",
+    "Scanner and backup runtime require exact source and bounded-trial review before activation.",
+    "No free-tier credits are used to justify paid runtime reservations.",
+    "Only the dedicated ISP Firebase project is used; no other project build may be cancelled.",
+    "Core first deployment completed18 exports in one28-second build. The remaining activation/import delta is limited to4 functions and12 minutes plus owned-build cancellation reserve, within the existing core1.90 allowance.",
+    "Record actual owned build durations and artifact size before admitting subsequent paid phases.",
+    "Do not repeat accepted Auth/profile/MFA checks; only newly connected features and safety/restore gates are assessed.",
+    "Operating budget alerts are separate: project-only RM200/month, not a hard billing cap.",
+    "One owner-requested client-only QR deployment and immutable source supplement; no new backend build, scan, backup export or restore."
+  ],
+  "scannerBuildSeedAndThreeBoundedScansReservationUsd": 1.5,
+  "ownerAuthenticatorQrHostingArtifactAllowanceUsd": 0.01
+}

@@ -255,7 +255,7 @@ export async function requestEmailVerification(): Promise<void> {
   await sendEmailVerification(user);
   assertIdentity(stamp);
 }
-export async function beginTotpEnrollment(password: string): Promise<{ secretKey: string; account: string }> {
+export async function beginTotpEnrollment(password: string): Promise<{ secretKey: string; account: string; qrCodeUri: string }> {
   cancelTotpEnrollment();
   const attempt = enrollmentGeneration, user = connect().auth.currentUser;
   if (!user?.email) throw new Error('ISP_ADMIN_REQUIRED');
@@ -271,7 +271,7 @@ export async function beginTotpEnrollment(password: string): Promise<{ secretKey
   assertIdentity(stamp);
   if (attempt !== enrollmentGeneration) throw new Error('ISP_IDENTITY_CHANGED');
   enrollment = { identity: stamp, secret, expires: Date.now() + 300000 };
-  return { secretKey: secret.secretKey, account: user.email };
+  return { secretKey: secret.secretKey, account: user.email, qrCodeUri: secret.generateQrCodeUrl(user.email, 'ISP Member Portal') };
 }
 export async function finishTotpEnrollment(code: string, clearPrivateView: (session: Session) => void): Promise<void> {
   const pending = enrollment, user = connect().auth.currentUser;

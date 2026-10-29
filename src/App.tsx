@@ -1,4 +1,5 @@
 import { flushSync } from 'react-dom';
+import { QRCodeSVG } from 'qrcode.react';
 import ActivateAccount from './ActivateAccount';
 import { ConnectedDiscover, ConnectedInterests, ContentRoute, HomeEvents, HomePublications } from './ContentPages';
 import { useCallback, useEffect, useRef, useState, type AnchorHTMLAttributes, type FormEvent, type ReactNode } from 'react';
@@ -326,7 +327,7 @@ function Recovery({ session }: { session: Session }) {
 }
 
 function TotpEnrollment({ clearPrivateView, checking }: { clearPrivateView: (session: Session) => void; checking: boolean }) {
-  const [setup, setSetup] = useState<{ secretKey: string; account: string } | null>(null);
+  const [setup, setSetup] = useState<Awaited<ReturnType<typeof beginTotpEnrollment>> | null>(null);
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
   useEffect(() => () => cancelTotpEnrollment(), []);
   async function begin(event: FormEvent<HTMLFormElement>) {
@@ -351,7 +352,8 @@ function TotpEnrollment({ clearPrivateView, checking }: { clearPrivateView: (ses
   return <section className="page account-login"><span className="eyebrow">Administrator access</span><h1>Set up your authenticator.</h1>{checking ? <p role="status">Checking administrator access…</p> : <section className="signin-panel">
     {error && <div className="validation-errors" role="alert">{error}</div>}
     {!setup ? <><p>Confirm your password before adding an authenticator to your account.</p><form className="signin-form" onSubmit={event => void begin(event)} aria-busy={busy}><label className="field">Current password<input name="password" type="password" required maxLength={128} autoComplete="current-password" /></label><button type="submit" className="primary full" disabled={busy}>{busy ? 'Please wait…' : 'Continue'}<Icon name="chevron-right" /></button></form></> : <>
-      <p>Add this account to your authenticator app using the setup key below, then enter the current six-digit code. Keep this key private.</p>
+      <p>Scan this QR code with your authenticator app, or add the account using the private setup key below. Then enter the current six-digit code. Keep the QR code and key private.</p>
+      <div className="auth-setup-qr"><QRCodeSVG value={setup.qrCodeUri} size={264} level="M" marginSize={4} bgColor="#ffffff" fgColor="#000000" role="img" aria-label="Private authenticator setup QR code" title="Scan with your authenticator app" /></div>
       <div className="field"><span className="auth-setup-key-label">Private setup key</span><code className="auth-setup-key">{setup.secretKey}</code></div>
       <p className="form-hint">Issuer: ISP Member Portal<br />Account: {setup.account}<br />Time based · six digits · 30-second interval</p>
       <form className="signin-form" onSubmit={event => void finish(event)} aria-busy={busy}><label className="field">Authenticator code<input name="code" required inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" minLength={6} maxLength={6} /></label><button type="submit" className="primary full" disabled={busy}>{busy ? 'Verifying…' : 'Verify and continue'}</button></form>

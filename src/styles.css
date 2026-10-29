@@ -343,6 +343,8 @@ input.full{text-align:center}
 
 .auth-setup-key { display: block; overflow-wrap: anywhere; white-space: normal; }
 .auth-setup-key-label { display: block; font-weight: 600; margin-bottom: .5rem; }
+.auth-setup-qr { width: 264px; max-width: 100%; margin: 20px auto; background: #fff; }
+.auth-setup-qr svg { display: block; width: 100%; height: auto; }
 
 .publication-list{display:grid;gap:20px;margin-top:26px}.publication-admin-card{padding:22px;background:#fff;border:1px solid var(--line);border-radius:6px}.publication-admin-card h2{margin-bottom:9px}
 .publication-form fieldset{min-width:0;margin:0 0 24px;padding:20px 16px;border:1px solid var(--line);border-radius:6px;background:#fff}.publication-form legend{padding:0 8px;font:500 1.3rem Newsreader,Georgia,serif;color:var(--deep)}.publication-form .field:last-child{margin-bottom:0}.publication-form input[type=file]{width:100%;max-width:100%;font-size:16px}.publication-form input[type=file]::file-selector-button{min-height:44px;margin-right:8px;padding:8px;border:1px solid var(--line);border-radius:4px;background:var(--pale);color:var(--deep);font:inherit}
