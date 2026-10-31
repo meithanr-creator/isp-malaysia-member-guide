@@ -1,0 +1,32 @@
+{
+  "observedAt": "2026-10-31T02:10:38.982Z",
+  "sourceCommit": "55a839b72900dc69a95d950988f9ab6a6c7eee3d",
+  "scope": "Only new same-origin route dispatch and Authorization forwarding; no member/file fixtures.",
+  "checks": [
+    {
+      "name": "missing-header",
+      "status": 401,
+      "messageMatched": true,
+      "cacheControl": "private, no-store",
+      "passed": true
+    },
+    {
+      "name": "forwarded-invalid-header",
+      "status": 401,
+      "messageMatched": true,
+      "cacheControl": "private, no-store",
+      "passed": true
+    }
+  ],
+  "realSignInTested": false,
+  "authenticatedFileThroughNewRouteTested": false,
+  "queryForwarding": "Documented Firebase behavior and source review; not proven by these denial responses",
+  "recordsModified": 0,
+  "assets": {
+    "htmlSha256": "2aab2ad1335f5f3f9bdffcee41620f1c8ef1fcef294b4f1ab463105646a832d1",
+    "scriptPath": "/assets/index-hcTlDilz.js",
+    "scriptSha256": "8c0c9922a468b03198135605c2ff67afeab924c0c0c2d81a735ba52c30a4a073",
+    "exactMatch": true
+  },
+  "status": "PASS"
+}

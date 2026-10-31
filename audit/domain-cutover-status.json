@@ -1,0 +1,66 @@
+{
+  "observedAt": "2026-10-31T02:20:17.931Z",
+  "status": "BRANDED_DOMAIN_LIVE_HTTPS_VERIFIED",
+  "domain": "planterapp.co",
+  "url": "https://planterapp.co",
+  "wwwRedirectTo": "https://planterapp.co",
+  "projectId": "isp-planter-app",
+  "sourceCommit": "55a839b72900dc69a95d950988f9ab6a6c7eee3d",
+  "domains": [
+    {
+      "domain": "planterapp.co",
+      "hostState": "HOST_ACTIVE",
+      "ownershipState": "OWNERSHIP_ACTIVE",
+      "certState": "CERT_PROPAGATING",
+      "issues": []
+    },
+    {
+      "domain": "www.planterapp.co",
+      "hostState": "HOST_ACTIVE",
+      "ownershipState": "OWNERSHIP_ACTIVE",
+      "certState": "CERT_PROPAGATING",
+      "issues": []
+    }
+  ],
+  "dns": [
+    {
+      "name": "authoritativeA",
+      "data": [
+        "199.36.158.100"
+      ]
+    },
+    {
+      "name": "authoritativeTXT",
+      "data": [
+        [
+          "hosting-site=isp-planter-app"
+        ]
+      ]
+    },
+    {
+      "name": "authoritativeWWW",
+      "data": [
+        "isp-planter-app.web.app"
+      ]
+    }
+  ],
+  "nameserversChanged": false,
+  "mailAndUnrelatedRecordsPreserved": true,
+  "authDomainAuthorized": true,
+  "storageOriginAdded": true,
+  "hostingOnlyRelease": true,
+  "functionsRebuilt": 0,
+  "localBuildPassed": true,
+  "newRouteDispatchAndAuthorizationForwardingPassed": true,
+  "customDomainSignInTested": false,
+  "positiveAuthenticatedFileThroughNewRouteTested": false,
+  "noContentOrMemberFixturesCreated": true,
+  "directorReview": "Astra final GO for domain connection closure; real sign-in and positive authenticated file on custom domain remain untested.",
+  "currentSourcePrivateDriveCompanionSha256": "712aff445d880564ed34f766a583555a4e34fc15b57175536b570497e7d8a7e3",
+  "allLocalFilesOnD": true,
+  "httpsValidated": true,
+  "exactAppHtmlVerified": true,
+  "wwwRedirectVerified": true,
+  "privateRouteUnsignedDenied": true,
+  "globalCertificatePropagationClaimed": false
+}

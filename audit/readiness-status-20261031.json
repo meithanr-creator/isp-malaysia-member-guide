@@ -1,0 +1,211 @@
+{
+  "observedAt": "2026-10-31T01:51:11.204Z",
+  "projectId": "isp-planter-app",
+  "purpose": "Read-only readiness status; no passed test replay or job execution",
+  "results": [
+    {
+      "name": "hosting",
+      "data": {
+        "url": "https://isp-planter-app.web.app/",
+        "http": 200
+      }
+    },
+    {
+      "name": "isp-drive-backup",
+      "data": [
+        {
+          "name": "projects/isp-planter-app/locations/asia-southeast1/jobs/isp-drive-backup/executions/isp-drive-backup-22gxc",
+          "createdAt": "2026-10-30T18:30:03.547234Z",
+          "completedAt": "2026-10-30T18:31:31.470587Z",
+          "succeeded": 1,
+          "failed": 0,
+          "conditions": [
+            {
+              "type": "Started",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "Completed",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "ContainerReady",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "ResourcesAvailable",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            }
+          ]
+        },
+        {
+          "name": "projects/isp-planter-app/locations/asia-southeast1/jobs/isp-drive-backup/executions/isp-drive-backup-zrjlt",
+          "createdAt": "2026-10-29T18:30:00.940328Z",
+          "completedAt": "2026-10-29T18:31:50.052586Z",
+          "succeeded": 1,
+          "failed": 0,
+          "conditions": [
+            {
+              "type": "Started",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "Completed",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "ContainerReady",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "ResourcesAvailable",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            }
+          ]
+        },
+        {
+          "name": "projects/isp-planter-app/locations/asia-southeast1/jobs/isp-drive-backup/executions/isp-drive-backup-c5ws6",
+          "createdAt": "2026-10-28T23:41:34.922663Z",
+          "completedAt": "2026-10-28T23:42:41.012725Z",
+          "succeeded": 1,
+          "failed": 0,
+          "conditions": [
+            {
+              "type": "Started",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "Completed",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "ContainerReady",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "ResourcesAvailable",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "isp-clamav-updater",
+      "data": [
+        {
+          "name": "projects/isp-planter-app/locations/asia-southeast1/jobs/isp-clamav-updater/executions/isp-clamav-updater-htkvn",
+          "createdAt": "2026-10-30T17:30:05.749929Z",
+          "completedAt": "2026-10-30T17:33:06.789671Z",
+          "succeeded": 1,
+          "failed": 0,
+          "conditions": [
+            {
+              "type": "Started",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "Completed",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "ContainerReady",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "ResourcesAvailable",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            }
+          ]
+        },
+        {
+          "name": "projects/isp-planter-app/locations/asia-southeast1/jobs/isp-clamav-updater/executions/isp-clamav-updater-6rcr5",
+          "createdAt": "2026-10-29T17:30:00.897394Z",
+          "completedAt": "2026-10-29T17:33:01.443022Z",
+          "succeeded": 1,
+          "failed": 0,
+          "conditions": [
+            {
+              "type": "Started",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "Completed",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "ContainerReady",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "ResourcesAvailable",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            }
+          ]
+        },
+        {
+          "name": "projects/isp-planter-app/locations/asia-southeast1/jobs/isp-clamav-updater/executions/isp-clamav-updater-tgxqx",
+          "createdAt": "2026-10-28T21:00:50.343598Z",
+          "completedAt": "2026-10-28T21:03:13.234488Z",
+          "succeeded": 1,
+          "failed": 0,
+          "conditions": [
+            {
+              "type": "Started",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "Completed",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "ContainerReady",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            },
+            {
+              "type": "ResourcesAvailable",
+              "state": "CONDITION_SUCCEEDED",
+              "reason": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "membershipAndContent",
+      "data": {
+        "activeRegistry": false,
+        "approvedMemberProfiles": 0,
+        "publishedEvents": 0,
+        "publishedPublications": 0,
+        "eligibleRegistryEntries": 0
+      }
+    }
+  ],
+  "newTestsRun": 0,
+  "recordsModified": 0,
+  "jobsStarted": 0
+}

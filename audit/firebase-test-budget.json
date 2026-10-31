@@ -1,13 +1,13 @@
 {
-  "dateMalaysia": "2026-10-29",
+  "dateMalaysia": "2026-10-31",
   "kind": "conservative_reservations_not_invoice_or_billing_cap",
   "ceilingUsd": 10,
   "historicalRetainedBoundUsd": 6.07624768,
   "firebaseFoundationReservationUsd": 0.05,
   "coreBackendDeploymentAndFocusedProofReservationUsd": 1.9,
   "backupBuildAndOneRestoreReservationUsd": 0.4,
-  "totalReservedUsd": 9.98624768,
-  "unallocatedUsd": 0.01375232,
+  "totalReservedUsd": 9.99124768,
+  "unallocatedUsd": 0.00875232,
   "conditions": [
     "Reservations are allowances; no current invoice total is claimed from delayed reporting.",
     "Scanner and backup runtime require exact source and bounded-trial review before activation.",
@@ -18,9 +18,11 @@
     "Do not repeat accepted Auth/profile/MFA checks; only newly connected features and safety/restore gates are assessed.",
     "Operating budget alerts are separate: project-only RM200/month, not a hard billing cap.",
     "One owner-requested client-only QR deployment and immutable source supplement; no new backend build, scan, backup export or restore.",
-    "User-requested invitation-only registration delta: one default-pool61.448-second build, two changed Hosting files, one direct nonmember signup denial, immutable code companion; max0.05 reservation. No live CSV, mail, real member mutation or unrelated feature replay."
+    "User-requested invitation-only registration delta: one default-pool61.448-second build, two changed Hosting files, one direct nonmember signup denial, immutable code companion; max0.05 reservation. No live CSV, mail, real member mutation or unrelated feature replay.",
+    "Custom-domain cutover: Hosting-only update, two denial/header-forwarding requests, changed asset reads, exact DNS/Auth/Storage settings, source-only recovery companion; no function build, real member data, file fixture, backup/export/restore replay."
   ],
   "scannerBuildSeedAndThreeBoundedScansReservationUsd": 1.5,
   "ownerAuthenticatorQrHostingArtifactAllowanceUsd": 0.01,
-  "invitationGateBuildHostingAndFocusedDenialReservationUsd": 0.05
+  "invitationGateBuildHostingAndFocusedDenialReservationUsd": 0.05,
+  "domainHostingCompatibilityAndDnsProofReservationUsd": 0.005
 }

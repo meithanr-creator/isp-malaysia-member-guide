@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-31T02:18:09.566Z",
+  "domain": "planterapp.co",
+  "certificateValidationBypassed": false,
+  "checks": [
+    {
+      "name": "apex",
+      "http": 200,
+      "exactHtmlMatch": true,
+      "sha256": "2aab2ad1335f5f3f9bdffcee41620f1c8ef1fcef294b4f1ab463105646a832d1",
+      "passed": true
+    },
+    {
+      "name": "www",
+      "http": 301,
+      "location": "https://planterapp.co/",
+      "passed": true
+    }
+  ],
+  "status": "BRANDED_HTTPS_PASS"
+}

@@ -2,9 +2,9 @@
 
 Approved 29 October 2026 by the owner, with Astra director GO.
 
-Open: https://isp-planter-app.web.app
-Administrator: https://isp-planter-app.web.app/admin/members
-Membership import: https://isp-planter-app.web.app/admin/members/import
+Open: https://planterapp.co
+Administrator: https://planterapp.co/admin/members
+Membership import: https://planterapp.co/admin/members/import
 
 Owner authenticator enrollment is complete. Approved homepage/Discover/About copy stays in place. Events and publications remain empty until the owner uploads actual approved material. Membership is imported by the owner from the approved list using the existing private preview flow.
 

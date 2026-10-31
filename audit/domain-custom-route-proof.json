@@ -1,0 +1,10 @@
+{
+  "observedAt": "2026-10-31T02:19:08.033Z",
+  "url": "https://planterapp.co/api/member-file",
+  "http": 401,
+  "unauthenticatedDenied": true,
+  "privateNoStore": true,
+  "normalTlsValidated": true,
+  "noIdentityOrFileDataUsed": true,
+  "authenticatedSuccessNotTested": true
+}

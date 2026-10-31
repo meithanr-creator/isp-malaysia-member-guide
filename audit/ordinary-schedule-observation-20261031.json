@@ -1,0 +1,47 @@
+{
+  "observedAt": "2026-10-31T01:52:08.461Z",
+  "status": "FIRST_TWO_ORDINARY_SCHEDULED_RUNS_CONFIRMED",
+  "scope": "Read existing completed outputs only; no job execution, data restore, or accepted test replay.",
+  "backupManifests": [
+    {
+      "utcDate": "2026-10-30",
+      "startedAt": "2026-10-30T18:30:13.451Z",
+      "finishedAt": "2026-10-30T18:31:23.495Z",
+      "status": "COMPLETE",
+      "manifestSha256": "18cb9b3f5be2dab47262a65e192cdb29c906e8dcd5f346777308090093693b67",
+      "privateOwnerAndHashVerified": true,
+      "firestoreComplete": true,
+      "artifactCount": 6,
+      "allArtifactReadbackAssertions": true,
+      "passwordExportCovered": true,
+      "restoreRepeated": false
+    },
+    {
+      "utcDate": "2026-10-29",
+      "startedAt": "2026-10-29T18:30:19.440Z",
+      "finishedAt": "2026-10-29T18:31:42.222Z",
+      "status": "COMPLETE",
+      "manifestSha256": "b80c62fb432fd2efb3e6c3fa2b4567f60a200eebefd65748adcd1d6199aba1e1",
+      "privateOwnerAndHashVerified": true,
+      "firestoreComplete": true,
+      "artifactCount": 6,
+      "allArtifactReadbackAssertions": true,
+      "passwordExportCovered": true,
+      "restoreRepeated": false
+    }
+  ],
+  "signature": {
+    "generation": "1793381583473792",
+    "manifestSha256": "38d6b0922e1e1b628d9152018aaa3b414bcf29f8b11789490ab035e15485764e",
+    "checkedAt": "2026-10-30T17:32:47.278355+00:00",
+    "dailyVersion": 28169,
+    "dailySignedBuildTime": "2026-10-30T06:26:48.000Z",
+    "dailySignedAgeHours": 19.42,
+    "within48Hours": true,
+    "updaterSelfTestReportedPassed": true,
+    "noSignatureDownloadOrScanRerun": true
+  },
+  "newJobsStarted": 0,
+  "emailsSent": 0,
+  "recordsModified": 0
+}

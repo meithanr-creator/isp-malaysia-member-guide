@@ -1,0 +1,28 @@
+{
+  "status": "PRIVATE_CODE_SUPPLEMENT_VERIFIED",
+  "observedAt": "2026-10-31T02:11:43.727Z",
+  "projectId": "isp-planter-app",
+  "commit": "55a839b72900dc69a95d950988f9ab6a6c7eee3d",
+  "tree": "b2d18909cc99faa9beaf2a288fad0b64760f9e31",
+  "source": {
+    "size": 1713231,
+    "sha256": "712aff445d880564ed34f766a583555a4e34fc15b57175536b570497e7d8a7e3",
+    "privateOwnerVerified": true,
+    "readbackVerified": true
+  },
+  "manifest": {
+    "size": 1920,
+    "sha256": "c16ea2aee73eb5c624c4b8e34ddb76857c27db1e7a3d88d9599eae39438baeef",
+    "privateOwnerVerified": true,
+    "readbackVerified": true
+  },
+  "baseBackup": {
+    "completedManifestSha256": "b933119d299f688e21d251f7eb0b0096c546cb6b8d3ef049d54ae4333145dcf3",
+    "completedSourceCommit": "4fcc5f2469bf440919d816aeb376e608ba508570",
+    "scheduledEmbeddedSourceCommit": "183b052ad97da58cfafe82f5c20329a9b20ccee8"
+  },
+  "requiredCurrentCodeRecoveryCompanion": true,
+  "scheduledEmbeddedSourceUnchanged": true,
+  "privateOwnerVerified": true,
+  "noDataExportBackupOrRestoreRepeated": true
+}

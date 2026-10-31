@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-29T14:02:24.325Z",
+  "updatedAt": "2026-10-31T02:20:17.931Z",
   "projectId": "isp-planter-app",
-  "hostingUrl": "https://isp-planter-app.web.app",
+  "hostingUrl": "https://planterapp.co",
   "status": "CONTROLLED_PILOT_APPROVED",
   "acceptedApplicationSourceCommit": "183b052ad97da58cfafe82f5c20329a9b20ccee8",
   "cleanupToolSourceSha256": "6c4e4fdb33346013de91bb9e2fd99ff47fe0149a95c429d0d353cd89183f1bec",
@@ -12,7 +12,7 @@
       "name": "Hosting",
       "status": "COMPLETE",
       "basis": "Accepted exact frontend/PWA evidence carried; no redesign or repeated website test.",
-      "latestChange": "Owner-requested local QR rendering; Hosting-only exact changed files verified."
+      "latestChange": "planterapp.co live over normally verified HTTPS; www redirects to apex; Hosting-only same-origin file route published."
     },
     {
       "number": 2,
@@ -61,34 +61,36 @@
       "restoredProbeBytes": 82,
       "nightlyBackupMalaysia": "02:30",
       "dailySignatureRefreshMalaysia": "01:30",
-      "firstOrdinaryScheduledRunsObserved": false,
+      "firstOrdinaryScheduledRunsObserved": true,
       "automatedOverdueOrFreshnessAlertsImplemented": false,
       "sourceRecoveryCompanion": {
-        "commit": "569938cdf11b0882fdd7ee929ea6673d0f9bc402",
+        "commit": "55a839b72900dc69a95d950988f9ab6a6c7eee3d",
         "privateReadbackVerified": true,
         "requiredAlongsideDataBackup": true,
         "scheduledEmbeddedSourceStill": "183b052ad97da58cfafe82f5c20329a9b20ccee8"
       },
       "failureAndProlongedRunningAlertsEnabled": true,
-      "manualFallbackAcknowledged": true
+      "manualFallbackAcknowledged": true,
+      "ordinaryScheduledEvidence": "audit/ordinary-schedule-observation-20261031.json"
     }
   ],
   "budget": {
     "testCeilingUsd": 10,
-    "conservativeReservationsUsd": 9.98624768,
+    "conservativeReservationsUsd": 9.99124768,
     "notInvoice": true,
     "finalFileAttemptAllowanceUsd": 0.18,
     "cleanupInsideThatAllowanceUsd": 0.01,
     "operationsPlanningUsdPerMonth": 50,
     "operatingAlertsNotHardCap": true,
     "ownerQrHostingArtifactAllowanceUsd": 0.01,
-    "invitationGateAllowanceUsd": 0.05
+    "invitationGateAllowanceUsd": 0.05,
+    "domainCompatibilityAllowanceUsd": 0.005
   },
   "launchActions": [
     "Owner uploads approved membership list through administration, then approved events/publications when ready.",
-    "Owner observes the first ordinary signature refresh at01:30 and backup at02:30 on30October2026 Malaysia time; review signed freshness/COMPLETE manifest.",
+    "Continue routine owner review of backup completion and signature freshness; initial ordinary runs on30and31October are now confirmed.",
     "Maintain manual missed-run, backup-completion, signed-definition freshness and capacity review.",
-    "Connect planterapp.co only when separately ready; no DNS change performed."
+    "Use https://planterapp.co for member onboarding; owner uploads the approved membership list and content."
   ],
   "explicitLimits": [
     "Shop and jobs remain frozen DEMO references; Academy, forum and CPD excluded.",
@@ -105,7 +107,7 @@
     "restoreComplete": "a41d3389359636c85bef5ad7d71bda66f973267e28d160c29224c23a2ce94c7e",
     "restoreCleanup": "c407144f6cb4b00c2f73f817a8d1c1d74f0bd8c72ef2f4b63723c69af02dca67"
   },
-  "deployedFrontendSourceCommit": "569938cdf11b0882fdd7ee929ea6673d0f9bc402",
+  "deployedFrontendSourceCommit": "55a839b72900dc69a95d950988f9ab6a6c7eee3d",
   "ownerAuthenticator": {
     "status": "COMPLETE",
     "humanConfirmedAdministratorPage": true,
@@ -119,10 +121,11 @@
   "membershipImportResponsibility": "Owner uploads approved list through administration; no real member import by agent.",
   "controlledPilot": {
     "approved": true,
-    "url": "https://isp-planter-app.web.app",
+    "url": "https://planterapp.co",
     "approvedBy": "Human owner",
     "directorGo": true,
-    "domainCutover": false
+    "domainCutover": true,
+    "domainHttpsReady": true
   },
   "operations": {
     "failureAndProlongedRunningEmailPoliciesEnabled": true,
@@ -130,7 +133,7 @@
     "conditions": 4,
     "manualMissedCompletionAndFreshnessDutyAcknowledged": true,
     "emailDeliveryTested": false,
-    "firstOrdinaryRunsObserved": false
+    "firstOrdinaryRunsObserved": true
   },
   "pendingHumanChoices": [],
   "alertsOrEmailEnabledByAgent": true,
@@ -148,5 +151,84 @@
   },
   "additionalBackendSource": {
     "requireMembershipInvitation": "569938cdf11b0882fdd7ee929ea6673d0f9bc402"
-  }
+  },
+  "savedAt": "2026-10-31T02:20:17.931Z",
+  "latestReadinessObservation": {
+    "at": "2026-10-31T01:52:08.461Z",
+    "hostingHttp": 200,
+    "scheduledRuns30And31OctoberConfirmed": true,
+    "privateCompleteManifestsVerified": 2,
+    "signatureFresh": true,
+    "realMembershipListUploaded": false,
+    "publishedEvents": 0,
+    "publishedPublications": 0,
+    "scope": "Read existing results only; no test replay."
+  },
+  "domainConnection": {
+    "observedAt": "2026-10-31T02:20:17.931Z",
+    "status": "BRANDED_DOMAIN_LIVE_HTTPS_VERIFIED",
+    "domain": "planterapp.co",
+    "url": "https://planterapp.co",
+    "wwwRedirectTo": "https://planterapp.co",
+    "projectId": "isp-planter-app",
+    "sourceCommit": "55a839b72900dc69a95d950988f9ab6a6c7eee3d",
+    "domains": [
+      {
+        "domain": "planterapp.co",
+        "hostState": "HOST_ACTIVE",
+        "ownershipState": "OWNERSHIP_ACTIVE",
+        "certState": "CERT_PROPAGATING",
+        "issues": []
+      },
+      {
+        "domain": "www.planterapp.co",
+        "hostState": "HOST_ACTIVE",
+        "ownershipState": "OWNERSHIP_ACTIVE",
+        "certState": "CERT_PROPAGATING",
+        "issues": []
+      }
+    ],
+    "dns": [
+      {
+        "name": "authoritativeA",
+        "data": [
+          "199.36.158.100"
+        ]
+      },
+      {
+        "name": "authoritativeTXT",
+        "data": [
+          [
+            "hosting-site=isp-planter-app"
+          ]
+        ]
+      },
+      {
+        "name": "authoritativeWWW",
+        "data": [
+          "isp-planter-app.web.app"
+        ]
+      }
+    ],
+    "nameserversChanged": false,
+    "mailAndUnrelatedRecordsPreserved": true,
+    "authDomainAuthorized": true,
+    "storageOriginAdded": true,
+    "hostingOnlyRelease": true,
+    "functionsRebuilt": 0,
+    "localBuildPassed": true,
+    "newRouteDispatchAndAuthorizationForwardingPassed": true,
+    "customDomainSignInTested": false,
+    "positiveAuthenticatedFileThroughNewRouteTested": false,
+    "noContentOrMemberFixturesCreated": true,
+    "directorReview": "Astra final GO for domain connection closure; real sign-in and positive authenticated file on custom domain remain untested.",
+    "currentSourcePrivateDriveCompanionSha256": "712aff445d880564ed34f766a583555a4e34fc15b57175536b570497e7d8a7e3",
+    "allLocalFilesOnD": true,
+    "httpsValidated": true,
+    "exactAppHtmlVerified": true,
+    "wwwRedirectVerified": true,
+    "privateRouteUnsignedDenied": true,
+    "globalCertificatePropagationClaimed": false
+  },
+  "firebaseFallbackUrl": "https://isp-planter-app.web.app"
 }

@@ -1,6 +1,6 @@
 # Membership-list upload
 
-The owner will upload the approved membership list through https://isp-planter-app.web.app/admin/members/import after authenticator sign-in. Do not paste records or passwords in chat.
+The owner will upload the approved membership list through https://planterapp.co/admin/members/import after authenticator sign-in. Do not paste records or passwords in chat.
 
 Use membership-import-template.csv with exact columns: name,email,member_reference,status. Status is eligible or ineligible. Preserve references as text, including leading zeros. Use UTF-8 CSV with no extra password/role columns, at most 2 MiB and 5,000 rows per file.
 
