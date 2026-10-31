@@ -1,0 +1,38 @@
+{
+  "projectId": "isp-planter-app",
+  "domain": "planterapp.co",
+  "wwwRedirectTarget": "planterapp.co",
+  "authorizedBy": "Human user on31October2026",
+  "hostingOnlyDeploy": true,
+  "existingBackendUnchanged": true,
+  "pinTag": false,
+  "dnsProvider": "GoDaddy",
+  "nameserversUnchanged": true,
+  "mailAndUnrelatedRecordsPreserved": true,
+  "authenticationAuthorizedDomain": "planterapp.co",
+  "storageCorsOrigin": "https://planterapp.co",
+  "sameOriginFileRoute": "/api/member-file",
+  "dns": [
+    {
+      "type": "A",
+      "host": "@",
+      "value": "199.36.158.100"
+    },
+    {
+      "type": "TXT",
+      "host": "@",
+      "value": "hosting-site=isp-planter-app"
+    },
+    {
+      "type": "CNAME",
+      "host": "www",
+      "value": "isp-planter-app.web.app"
+    }
+  ],
+  "director": "Astra high reviewed scope; no broad re-testing",
+  "newSetupAllowanceUsd": 0.005,
+  "previousConservativeReservationsUsd": 9.98624768,
+  "newConservativeReservationsUsd": 9.99124768,
+  "testCeilingUsd": 10,
+  "status": "CUSTOM_DOMAINS_ADDED_DNS_AND_TLS_IN_PROGRESS"
+}

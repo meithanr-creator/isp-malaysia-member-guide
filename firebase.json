@@ -3,7 +3,10 @@
     "site": "isp-planter-app",
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [{ "source": "**", "destination": "/index.html" }],
+    "rewrites": [
+      { "source": "/api/member-file", "function": { "functionId": "downloadContentFile", "region": "asia-southeast1" } },
+      { "source": "**", "destination": "/index.html" }
+    ],
     "headers": [
       { "source": "**", "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },

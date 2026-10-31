@@ -116,7 +116,7 @@ async function checkedBlob(kind: ContentKind, id: string, metadata: FileMetadata
   } else {
     if (!user) throw Error('Sign in to open this member file.');
     const token = await user.getIdToken(); check(session, 'public');
-    const target = new URL('https://asia-southeast1-isp-planter-app.cloudfunctions.net/downloadContentFile');
+    const target = new URL('/api/member-file', window.location.origin);
     target.searchParams.set('kind', kind); target.searchParams.set('id', id); target.searchParams.set('attachmentId', metadata.attachmentId);
     const response = await fetch(target, { method: 'GET', headers: { Authorization: 'Bearer ' + token }, credentials: 'omit', cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(60000) });
     check(session, 'public');

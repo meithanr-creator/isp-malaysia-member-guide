@@ -1,0 +1,33 @@
+{
+  "source": "D:\\Projects\\isp-firebase\\src\\content.ts",
+  "sourceSha256": "CDAAA97AA6399B3A1E25804CFDDA487E61C93AD6D16589856FC4DB6E0B47D779",
+  "changedSourceLine": 119,
+  "buildExitCode": 0,
+  "buildRuns": 1,
+  "urlContractPassed": true,
+  "networkRequests": 0,
+  "realTokensUsed": 0,
+  "cloudChanges": 0,
+  "distFileCount": 37,
+  "distManifestSha256": "6530ACAF7383D70DDD3E0C46F916102A15E977A1777FDB01ACA1B05043DB682B",
+  "builtSameOriginRoute": true,
+  "builtOldDownloadEndpointPresent": false,
+  "mainBuildFiles": [
+    {
+      "path": "assets/index-CEX5qi8E.css",
+      "bytes": 40218,
+      "sha256": "A5DC492AE194F8EF0D1E8B00465263F2BC96A4F4C612A1B81C0F0BF101FD2AAD"
+    },
+    {
+      "path": "assets/index-hcTlDilz.js",
+      "bytes": 952048,
+      "sha256": "8C0C9922A468B03198135605C2FF67AFEAB924C0C0C2D81A735BA52C30A4A073"
+    },
+    {
+      "path": "index.html",
+      "bytes": 997,
+      "sha256": "2AAB2AD1335F5F3F9BDFFCEE41620F1C8EF1FCEF294B4F1AB463105646A832D1"
+    }
+  ],
+  "evidenceFolder": "D:\\Projects\\isp-firebase-tools\\domain-connect-20261031\\frontend"
+}
