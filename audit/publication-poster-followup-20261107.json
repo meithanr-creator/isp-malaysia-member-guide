@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-07",
+  "status": "COMPLETE_AND_LIVE_VERIFIED",
+  "sourceCommit": "4b02ca2",
+  "url": "https://planterapp.co",
+  "changes": [
+    "Administrator homepage publication previews using existing bounded administrator query",
+    "Complete natural-ratio event detail and gallery posters",
+    "Official selected board leadership and Chief Executive montage"
+  ],
+  "build": "PASS",
+  "astra": "RELEASE GO",
+  "backendOrRulesChanged": false,
+  "montage": {
+    "scanStatus": "clean",
+    "attachment": "dfd452da8ad84ad04df5e5c688485992",
+    "sha256": "d376f6266b8e17685f7e73322be3643b0b7db049a299d1889f37eeb5a662bf2e",
+    "discoverRevision": 5
+  },
+  "focusedChecks": {
+    "publicationBranches": 10,
+    "posterGeometry": "920x1300 natural -> 390x551 detail, 342x483 gallery; contain, no max-height",
+    "harnessLimitation": "Automatic poster check stopped on offscreen lazy gallery; manually scrolled and verified actual proportions; no claim entire runner passed"
+  },
+  "hosted": {
+    "adminHomepage": "Magazine cover/card visible; Preview publication opens existing normal administrator preview",
+    "poster": "Live natural920x1300 rendered480x678, object-fit contain, max-height none; full title and footer retained"
+  }
+}
