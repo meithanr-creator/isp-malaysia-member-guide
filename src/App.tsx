@@ -281,7 +281,7 @@ function Roster() {
 
 type HomeSlide = { tag: string; title: string; description: string; href: string; image: string; alt: string; caption?: string; secondaryImage?: string };
 const slides: HomeSlide[] = [
-  { tag: 'People and professional fellowship', title: 'Bridging experience. Inspiring the next generation.', description: 'Seasoned planters and emerging professionals, sharing knowledge to move the profession forward.', href: 'https://isp.org.my/v4/', image: 'discover-board.jpg', alt: 'Official ISP board member portraits, 2025–2027', caption: 'Selected board members · 2025–2027' },
+  { tag: 'People and professional fellowship', title: 'Bridging experience. Inspiring the next generation.', description: 'Seasoned planters and emerging professionals, sharing knowledge to move the profession forward.', href: 'https://isp.org.my/v4/', image: 'discover-board.jpg', alt: 'Official ISP board leadership and Chief Executive portraits', caption: 'Selected board leadership & Chief Executive' },
   { tag: 'Knowledge worth sharing', title: 'A profession that keeps learning.', description: 'Explore The Planter, ISP publications and seminars, connecting field experience with fresh perspectives from the plantation profession.', href: 'https://isp.org.my/v4/library/', image: 'planter-cover.jpg', alt: 'The Planter professional publication cover', secondaryImage: 'discover-seminar.jpg' },
   { tag: 'Ideas grow in good company', title: 'Make a connection. Share a new perspective.', description: 'Discover workshops, field visits and conversations that bring the plantation community together.', href: 'https://isp.org.my/v4/event/', image: 'member-events.jpg', alt: 'Plantation professionals exchanging ideas' },
 ];
