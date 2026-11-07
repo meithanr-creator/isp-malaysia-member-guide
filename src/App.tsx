@@ -17,7 +17,7 @@ function go(path: string) {
   let destination = path;
   if (path === '/member/dashboard' && window.location.pathname === '/login') {
     const requested = new URLSearchParams(window.location.search).get('returnTo');
-    if (requested && /^\/events\/[A-Za-z0-9_-]{1,80}\/interest$/.test(requested)) destination = requested;
+    if (requested && /^\/events\/[A-Za-z0-9_-]{1,80}(?:\/interest|\?read=brochure)$/.test(requested)) destination = requested;
   }
   window.history.pushState({ postLoginReturn: destination !== path }, '', destination);
   window.dispatchEvent(new PopStateEvent('popstate'));
@@ -92,7 +92,7 @@ export default function App() {
   } else if (path.startsWith('/member/')) {
     content = session.status === 'ready' && session.memberAccess && session.member
       ? path === '/member/profile' ? <Profile member={session.member} updated={receiveSession} />
-        : path === '/member/dashboard' || path === '/member/membership' ? <Dashboard member={session.member} membership={path === '/member/membership'} interests={<ConnectedInterests key={session.identity.epoch + ':' + session.user!.uid} session={session} />} />
+        : path === '/member/dashboard' || path === '/member/membership' ? <Dashboard member={session.member} membership={path === '/member/membership'} interests={<ConnectedInterests key={session.identity.epoch + ':' + session.user!.uid} session={session} />} events={<HomeEvents session={session} />} />
           : <ContentRoute key={session.identity.epoch + ':' + session.user!.uid + ':' + path} path={path} session={session} />
       : <Access key={session.identity.epoch + ':' + (session.user?.uid ?? '')} session={session} refresh={receiveSession} />;
   } else if (path === '/events' || path.startsWith('/events/')) content = <ContentRoute key={session.identity.epoch + ':' + (session.user?.uid ?? '') + ':' + path} path={path} session={session} />;
@@ -208,7 +208,7 @@ function Access({ session, refresh, admin = false }: { session: Session; refresh
       <button type="button" className="secondary full" onClick={() => void check()} disabled={checking}>{checking ? 'Checking…' : 'Check access again'}</button><Link href="/about" className="link-button">Contact ISP<Icon name="chevron-right" /></Link></div></section>;
 }
 
-function Dashboard({ member, membership, interests }: { member: Member; membership: boolean; interests?: ReactNode }) {
+function Dashboard({ member, membership, interests, events }: { member: Member; membership: boolean; interests?: ReactNode; events?: ReactNode }) {
   const initials = member.displayName.trim().split(/\s+/).map(word => word[0]).slice(0, 2).join('');
   return <section className={'page ' + (membership ? 'membership-page' : 'member-home')}>
     <span className="eyebrow">{membership ? 'Membership' : 'Your member space'}</span>
@@ -221,6 +221,7 @@ function Dashboard({ member, membership, interests }: { member: Member; membersh
       ].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || 'Not added'}</dd></div>)}</dl>
       <Link href="/member/profile" className="link-button">Edit your profile<Icon name="chevron-right" /></Link><Link href="/activate-account" className="link-button">Activate or check your membership<Icon name="chevron-right" /></Link>
     </article>
+    {!membership && <section className="member-upcoming"><div className="section-head"><h2>Events & activities</h2><Link href="/events" className="link-button">View all<Icon name="chevron-right" /></Link></div>{events}</section>}
     {!membership && interests}
     <div className="member-legacy"><h2>Keep your journey growing</h2><div className="stack">
       <Link href="/member/publications" className="service-row"><Icon name="journal-bookmark" /><span>Read The Planter<small>Your member library</small></span><Icon name="chevron-right" /></Link>
@@ -278,13 +279,14 @@ function Roster() {
   </section>;
 }
 
-const slides = [
-  { tag: 'A profession. A community.', title: 'Rooted in the field. Looking to the future.', description: 'Since 1919, ISP has connected planters through knowledge, professional fellowship and a shared commitment to progress.', href: 'https://isp.org.my/v4/', image: 'plantation-small.jpg', alt: 'Oil palm plantation beneath a wide sky' },
-  { tag: 'Knowledge worth sharing', title: 'A profession that keeps learning.', description: 'Explore The Planter and ISP publications, connecting field experience with fresh perspectives from the plantation profession.', href: 'https://isp.org.my/v4/library/', image: 'planter-cover.jpg', alt: 'The Planter professional publication cover' },
+type HomeSlide = { tag: string; title: string; description: string; href: string; image: string; alt: string; caption?: string; secondaryImage?: string };
+const slides: HomeSlide[] = [
+  { tag: 'People and professional fellowship', title: 'Bridging experience. Inspiring the next generation.', description: 'Seasoned planters and emerging professionals, sharing knowledge to move the profession forward.', href: 'https://isp.org.my/v4/', image: 'discover-board.jpg', alt: 'Official ISP board member portraits, 2025–2027', caption: 'Selected board members · 2025–2027' },
+  { tag: 'Knowledge worth sharing', title: 'A profession that keeps learning.', description: 'Explore The Planter, ISP publications and seminars, connecting field experience with fresh perspectives from the plantation profession.', href: 'https://isp.org.my/v4/library/', image: 'planter-cover.jpg', alt: 'The Planter professional publication cover', secondaryImage: 'discover-seminar.jpg' },
   { tag: 'Ideas grow in good company', title: 'Make a connection. Share a new perspective.', description: 'Discover workshops, field visits and conversations that bring the plantation community together.', href: 'https://isp.org.my/v4/event/', image: 'member-events.jpg', alt: 'Plantation professionals exchanging ideas' },
 ];
 
-function Home({ session, connectedSlides }: { session: Session; connectedSlides?: typeof slides }) {
+function Home({ session, connectedSlides }: { session: Session; connectedSlides?: HomeSlide[] }) {
   const carouselSlides = connectedSlides?.length ? connectedSlides : slides;
   const [index, setIndex] = useState(0), [paused, setPaused] = useState(false), [held, setHeld] = useState(false);
   useEffect(() => {
@@ -297,7 +299,7 @@ function Home({ session, connectedSlides }: { session: Session; connectedSlides?
     <section className="welcome-hero"><img src="/assets/welcome-palms.jpg" alt="Oil palm plantation with a mountain backdrop" /><div className="welcome-copy"><span className="eyebrow">People. Plants. Progress.</span><h1>A community of planters.<br />A shared future.</h1><p>Connect with your profession.<br />Learn, contribute and grow with ISP.</p></div></section>
     <section className="home-section discover-section" aria-roledescription="carousel" aria-label="Discover ISP" onMouseEnter={() => setHeld(true)} onMouseLeave={() => setHeld(false)} onFocus={() => setHeld(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setHeld(false); }}>
       <div className="section-head"><h2>Discover ISP</h2><span className="quiet-caption">Since 1919</span></div>
-      <article className="discover-card" aria-label={(activeIndex + 1) + ' of ' + carouselSlides.length}><img src={slide.image.startsWith('blob:') || slide.image.startsWith('/assets/') ? slide.image : '/assets/' + slide.image} alt={slide.alt} /><div className="discover-copy"><span className="eyebrow">{slide.tag}</span><h3>{slide.title}</h3><p>{slide.description}</p><a href={slide.href} className="link-button" target="_blank" rel="noopener noreferrer">Click to Access Website<Icon name="chevron-right" /></a></div></article>
+      <article className="discover-card" aria-label={(activeIndex + 1) + ' of ' + carouselSlides.length}>{slide.secondaryImage ? <div className="discover-cover-media"><img src={'/assets/' + slide.image} alt={slide.alt} /><img src={'/assets/' + slide.secondaryImage} alt="Official ISP ISC 2026 conference brochure cover" /></div> : <img src={slide.image.startsWith('blob:') || slide.image.startsWith('/assets/') ? slide.image : '/assets/' + slide.image} alt={slide.alt} />}{slide.caption && <p className="discover-photo-caption">{slide.caption}</p>}<div className="discover-copy"><span className="eyebrow">{slide.tag}</span><h3>{slide.title}</h3><p>{slide.description}</p><a href={slide.href} className="link-button" target="_blank" rel="noopener noreferrer">Click to Access Website<Icon name="chevron-right" /></a></div></article>
       <div className="discover-controls"><button className="carousel-arrow" type="button" aria-label="Previous slide" onClick={() => setIndex((activeIndex + carouselSlides.length - 1) % carouselSlides.length)}>‹</button><div className="slide-selectors">{carouselSlides.map((_, number) => <button className="slide-dot" key={number} type="button" aria-label={'Show slide ' + (number + 1)} aria-current={number === activeIndex ? 'true' : undefined} onClick={() => setIndex(number)} />)}</div><button className="carousel-arrow" type="button" aria-label="Next slide" onClick={() => setIndex((activeIndex + 1) % carouselSlides.length)}>›</button><button className="carousel-pause" type="button" aria-pressed={paused} onClick={() => setPaused(!paused)}>{paused ? 'Play' : 'Pause'}</button></div>
     </section>
     <section className="home-section home-upcoming"><div className="section-head"><h2>Events & activities</h2><Link href="/events" className="link-button">View all<Icon name="chevron-right" /></Link></div><p className="section-lede">Fresh perspectives, shared in good company.</p><HomeEvents session={session} /></section>

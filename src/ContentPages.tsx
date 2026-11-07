@@ -1,6 +1,12 @@
 import * as api from './content';
 import { sessionResultIsCurrent, type Session } from './firebase';
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+
+const PdfReader = lazy(() => import('./PdfReader'));
+function ContentPdfReader({ kind, id, attachmentId, title, session, onClose }: { kind: 'event' | 'publication'; id: string; attachmentId: string; title: string; session: Session; onClose: () => void }) {
+  const load = useCallback((signal: AbortSignal) => api.loadContentPdf(kind, id, attachmentId, session, signal), [kind, id, attachmentId, session]);
+  return <Suspense fallback={<section className="page"><p role="status">Opening reader…</p></section>}><PdfReader title={title} load={load} onClose={onClose} /></Suspense>;
+}
 
 export type ContentKind = 'event' | 'discover' | 'publication';
 export type ContentIntent = 'draft' | 'preview';
@@ -74,7 +80,7 @@ export function EventsPage({ items, ...page }: { items: ContentProjection<EventD
   </section>;
 }
 
-export function EventDetailPage({ event, preview = false, signedIn, interest, files = {}, onOpenFile }: { event: ContentProjection<EventData> | ContentPreview<EventData>; preview?: boolean; signedIn?: boolean; interest?: Interest | null; files?: Record<string, AttachmentView>; onOpenFile?: (id: string) => Promise<void> }) {
+export function EventDetailPage({ event, preview = false, signedIn, canRead = false, interest, files = {}, onOpenFile }: { event: ContentProjection<EventData> | ContentPreview<EventData>; preview?: boolean; signedIn?: boolean; canRead?: boolean; interest?: Interest | null; files?: Record<string, AttachmentView>; onOpenFile?: (id: string) => Promise<void> }) {
   const data = event.data, action = useAction(), cover = imageUrl(files[data.images[0]]);
   return <section className="page public-event-detail" data-event-revision={event.revision}>
     {!preview && <Link href="/events" className="back"><Icon name="arrow-left" />All events</Link>}
@@ -84,7 +90,7 @@ export function EventDetailPage({ event, preview = false, signedIn, interest, fi
     {preview ? <p className="preview-inline-note">This is how the event will appear publicly. Interest becomes available after publication.</p> : interest ? <div className="interest-confirmation"><Icon name="calendar3" /><div><b>Your interest is saved</b><span>You can review it from the top-right Dashboard.</span></div></div> : <Link href={'/events/' + encodeURIComponent(event.id) + '/interest'} className="primary full">{signedIn ? 'Register interest' : 'Login to register interest'}<Icon name="chevron-right" /></Link>}
     <div className="event-editorial"><section><h2>About this event</h2><p className="preserve-lines">{data.description}</p></section>{data.audience && <section><h2>Who is it for?</h2><p>{data.audience}</p></section>}{data.programme && <section><h2>The programme</h2><p className="programme-lines preserve-lines">{data.programme}</p></section>}
       {data.images.length > 1 && <div className="event-gallery">{data.images.slice(1).map(id => imageUrl(files[id]) ? <img key={id} src={imageUrl(files[id])} alt={files[id].name} loading="lazy" /> : null)}</div>}
-      {data.brochure && <section className="brochure-card"><Icon name="file-earmark-text" /><div><h2>Event brochure</h2><p>{files[data.brochure]?.name || 'PDF brochure'}</p><button type="button" className="link-button" disabled={!onOpenFile || action.busy || files[data.brochure]?.scanStatus !== 'clean'} onClick={() => void action.run(() => onOpenFile!(data.brochure!))}>Open PDF brochure<Icon name="chevron-right" /></button></div></section>}
+      {data.brochure && <section className="brochure-card"><Icon name="file-earmark-text" /><div><h2>Event brochure</h2><p>{files[data.brochure]?.name || 'PDF brochure'}</p>{canRead ? <button type="button" className="link-button" disabled={!onOpenFile || action.busy || files[data.brochure]?.scanStatus !== 'clean'} onClick={() => void action.run(() => onOpenFile!(data.brochure!))}>Read brochure<Icon name="chevron-right" /></button> : <Link href={'/login?returnTo=' + encodeURIComponent('/events/' + event.id + '?read=brochure')} className="link-button">Sign in to read brochure<Icon name="chevron-right" /></Link>}</div></section>}
       <UploadStatus files={files} ids={[...data.images, data.brochure]} /><ErrorNotice message={action.error} />
       {data.admission === 'paid' && <section className="event-payment"><span className="eyebrow">Payment information</span><h2>Plan your place</h2><p className="payment-total">{feeLabel(data)}</p>{data.paymentMethod === 'bank' ? <dl className="payment-details">{[['Bank', data.bankName], ['Account name', data.accountName], ['Account number', data.accountNumber]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl> : <p>Payment arrangements are confirmed by the organiser.</p>}<p className="small preserve-lines">{data.paymentNotes}</p><a className="secondary full" href={'mailto:' + encodeURIComponent(data.receiptEmail) + '?subject=' + encodeURIComponent('Event receipt: ' + data.title)}>Prepare receipt email<Icon name="chevron-right" /></a><p className="form-hint">Opens your email app with a draft to {data.receiptEmail}. You attach your receipt and choose whether to send it. No email is sent here.</p></section>}
     </div>
@@ -131,14 +137,14 @@ export function EventEditorPage({ draft, files = {}, onSave }: { draft: ContentD
   </form></section>;
 }
 
-export function EventPreviewPage({ preview, files, onPublish }: { preview: ContentPreview<EventData>; files?: Record<string, AttachmentView>; onPublish: () => Promise<void> }) {
+export function EventPreviewPage({ preview, files, onOpenFile, onPublish }: { preview: ContentPreview<EventData>; files?: Record<string, AttachmentView>; onOpenFile: (id: string) => Promise<void>; onPublish: () => Promise<void> }) {
   const action = useAction(), blocked = preview.attachmentStatus !== 'clean' || Date.parse(preview.previewExpiresAt) <= Date.now();
-  return <div className="admin-preview"><Steps preview /><div className="preview-banner"><span className="status-badge">Preview · revision {preview.revision}</span><p>Review the public event below. Publish this exact version when every detail feels right.</p><p className="form-hint">Preview expires {momentLabel(preview.previewExpiresAt)}. Any edit requires a fresh preview.</p>{blocked && <p role="status">This preview is expired or file approval is pending. Publishing is unavailable.</p>}<ErrorNotice message={action.error} /><div className="preview-actions"><Link href={'/admin/events/' + preview.id + '/edit'} className="secondary">Edit draft</Link><button type="button" className="primary" disabled={blocked || action.busy} onClick={() => void action.run(onPublish)}>{action.busy ? 'Publishing…' : 'Publish event'}</button></div></div><EventDetailPage event={preview} preview files={files} /></div>;
+  return <div className="admin-preview"><Steps preview /><div className="preview-banner"><span className="status-badge">Preview · revision {preview.revision}</span><p>Review the public event below. Publish this exact version when every detail feels right.</p><p className="form-hint">Preview expires {momentLabel(preview.previewExpiresAt)}. Any edit requires a fresh preview.</p>{blocked && <p role="status">This preview is expired or file approval is pending. Publishing is unavailable.</p>}<ErrorNotice message={action.error} /><div className="preview-actions"><Link href={'/admin/events/' + preview.id + '/edit'} className="secondary">Edit draft</Link><button type="button" className="primary" disabled={blocked || action.busy} onClick={() => void action.run(onPublish)}>{action.busy ? 'Publishing…' : 'Publish event'}</button></div></div><EventDetailPage event={preview} preview canRead files={files} onOpenFile={onOpenFile} /></div>;
 }
 
 export const DEFAULT_DISCOVER: DiscoverData[] = [
-  { tag: 'A profession. A community.', title: 'Rooted in the field. Looking to the future.', description: 'Since 1919, ISP has connected planters through knowledge, professional fellowship and a shared commitment to progress.', websiteUrl: 'https://isp.org.my/v4/', imageAlt: 'Oil palm plantation beneath a wide sky', defaultImage: 'plantation-small.jpg', image: null },
-  { tag: 'Knowledge worth sharing', title: 'A profession that keeps learning.', description: 'Explore The Planter and ISP publications, connecting field experience with fresh perspectives from the plantation profession.', websiteUrl: 'https://isp.org.my/v4/library/', imageAlt: 'The Planter professional publication cover', defaultImage: 'planter-cover.jpg', image: null },
+  { tag: 'People and professional fellowship', title: 'Bridging experience. Inspiring the next generation.', description: 'Seasoned planters and emerging professionals, sharing knowledge to move the profession forward.', websiteUrl: 'https://isp.org.my/v4/', imageAlt: 'Oil palm plantation beneath a wide sky', defaultImage: 'plantation-small.jpg', image: null },
+  { tag: 'Knowledge worth sharing', title: 'A profession that keeps learning.', description: 'Explore The Planter, ISP publications and seminars, connecting field experience with fresh perspectives from the plantation profession.', websiteUrl: 'https://isp.org.my/v4/library/', imageAlt: 'The Planter professional publication cover', defaultImage: 'planter-cover.jpg', image: null },
   { tag: 'Ideas grow in good company', title: 'Make a connection. Share a new perspective.', description: 'Discover workshops, field visits and conversations that bring the plantation community together.', websiteUrl: 'https://isp.org.my/v4/event/', imageAlt: 'Plantation professionals exchanging ideas', defaultImage: 'member-events.jpg', image: null },
 ];
 export function safeContentWebsite(value: string): string | undefined {
@@ -166,7 +172,7 @@ export function PublicationsPage({ items, files = {}, ...page }: { items: Conten
 }
 export function PublicationDetailPage({ publication, files = {}, onOpenFile }: { publication: ContentProjection<PublicationData> | ContentPreview<PublicationData>; files?: Record<string, AttachmentView>; onOpenFile: (id: string) => Promise<void> }) {
   const d = publication.data, action = useAction(), cover = d.cover && imageUrl(files[d.cover]), pdf = d.pdf ? files[d.pdf] : undefined;
-  return <article className="publication-detail"><div className="publication-book">{cover ? <img src={cover} alt={d.title + ' cover'} /> : <p className="form-hint">Cover unavailable</p>}</div><div className="publication-detail-copy"><h1>{d.title}</h1>{d.subtitle && <p className="publication-subtitle">{d.subtitle}</p>}{(d.author || d.issueDate) && <p className="form-hint">{[d.author, d.issueDate].filter(Boolean).join(' · ')}</p>}<p className="preserve-lines">{d.description}</p><ErrorNotice message={action.error} /><button type="button" className="primary full" disabled={action.busy || !d.pdf || !pdf || pdf.scanStatus !== 'clean'} onClick={() => void action.run(() => onOpenFile(d.pdf!))}>Download PDF<Icon name="journal-bookmark" /></button><p className="form-hint publication-file-size">PDF book{pdf?.size ? ' · ' + (pdf.size / 1024 / 1024).toFixed(1) + ' MB' : ''}. Opens with your device's PDF reader.</p><UploadStatus files={files} ids={[d.cover, d.pdf]} /></div></article>;
+  return <article className="publication-detail"><div className="publication-book">{cover ? <img src={cover} alt={d.title + ' cover'} /> : <p className="form-hint">Cover unavailable</p>}</div><div className="publication-detail-copy"><h1>{d.title}</h1>{d.subtitle && <p className="publication-subtitle">{d.subtitle}</p>}{(d.author || d.issueDate) && <p className="form-hint">{[d.author, d.issueDate].filter(Boolean).join(' · ')}</p>}<p className="preserve-lines">{d.description}</p><ErrorNotice message={action.error} /><button type="button" className="primary full" disabled={action.busy || !d.pdf || !pdf || pdf.scanStatus !== 'clean'} onClick={() => void action.run(() => onOpenFile(d.pdf!))}>Read PDF<Icon name="journal-bookmark" /></button><p className="form-hint publication-file-size">PDF book{pdf?.size ? ' · ' + (pdf.size / 1024 / 1024).toFixed(1) + ' MB' : ''}. Read inside the app.</p><UploadStatus files={files} ids={[d.cover, d.pdf]} /></div></article>;
 }
 export function AdminPublicationsPage({ items, ...page }: { items: ContentDraft<PublicationData>[] } & PageState) {
   return <section className="page publication-admin"><span className="eyebrow">Administration</span><h1>The member bookshelf.</h1><p className="intro">Prepare an issue, review its cover and description, then publish it to members.</p><Link href="/admin/publications/new" className="primary full">Add a publication</Link><ListingStatus {...page} /><div className="publication-list">{!page.loading && !page.error && !items.length && <div className="empty-state"><h2>A place for every issue.</h2><p>Upload your first PDF book and cover to start the member library.</p></div>}{items.map(publication => <article className="publication-admin-card" key={publication.id}><span className="eyebrow">{publication.publishedRevision ? publication.revision === publication.publishedRevision ? 'Published to members' : 'Published · draft changes' : 'Private draft'}</span><h2>{publication.data.title || 'Untitled publication'}</h2><Link href={'/admin/publications/' + publication.id + '/edit'} className="link-button">Edit publication</Link></article>)}</div><Pager {...page} /></section>;
@@ -247,6 +253,14 @@ function randomContentId() { const retained = new URLSearchParams(window.locatio
 
 export function ContentRoute({ path, session }: { path: string; session: Session }) {
   const [loaded, setLoaded] = useState<RouteData | null>(null), [error, setError] = useState(''), [loading, setLoading] = useState(true), [version, reload] = useState(0), [cursors, setCursors] = useState<(string | null)[]>([null]), [rowCursors, setRowCursors] = useState<(number | null)[]>([null]), [progress, setProgress] = useState<RegistryProgress | null>(null), [newId] = useState(randomContentId);
+  const [openedPdf, setOpenedPdf] = useState<{ kind: 'event' | 'publication'; id: string; attachmentId: string; title: string } | null>(null);
+  async function openPdf(kind: 'event' | 'publication', id: string, attachmentId: string, title: string) { setOpenedPdf({ kind, id, attachmentId, title }); }
+  function closePdf() { setOpenedPdf(null); const url = new URL(window.location.href); url.searchParams.delete('read'); window.history.replaceState(window.history.state, '', url); }
+  useEffect(() => {
+    if (loaded?.event?.data.brochure && (session.memberAccess || session.adminAccess) && new URLSearchParams(window.location.search).get('read') === 'brochure') {
+      setOpenedPdf({ kind: 'event', id: loaded.event.id, attachmentId: loaded.event.data.brochure, title: loaded.event.data.title + ' brochure' });
+    }
+  }, [loaded?.event, session.memberAccess, session.adminAccess]);
   const afterId = cursors[cursors.length - 1], afterRow = rowCursors[rowCursors.length - 1];
   useEffect(() => { if (path === '/admin/events/new' || path === '/admin/publications/new') { const url = new URL(window.location.href); url.searchParams.set('draftId', newId); window.history.replaceState(window.history.state, '', url); } }, [path, newId]);
   useEffect(() => {
@@ -294,22 +308,23 @@ export function ContentRoute({ path, session }: { path: string; session: Session
   async function save<T extends EventData | PublicationData>(kind: 'event' | 'publication', record: ContentDraft<T>, data: T, uploads: FileSelection[], intent: ContentIntent) { const result = await api.saveDraft(kind, record, data, uploads, session); contentNavigate('/admin/' + (kind === 'event' ? 'events' : 'publications') + '/' + result.id + (intent === 'preview' ? '/preview' : '/edit')); reload(value => value + 1); }
   if (path === '/events') return <EventsPage items={loaded?.events?.items || []} {...page(loaded?.events?.nextCursor)} />;
   if (loading || !loaded) return <section className="page"><ListingStatus loading={loading} error={error} /></section>;
+  if (openedPdf) return <ContentPdfReader {...openedPdf} session={session} onClose={closePdf} />;
   if (loaded.event) {
     if (path.endsWith('/interest')) return session.memberAccess && session.member ? <EventInterestPage event={loaded.event} initial={{ name: session.member.displayName, email: session.member.email, company: session.member.company }} onSave={async values => { await api.saveInterest(loaded.event!.id, values, session); contentNavigate('/events/' + loaded.event!.id); }} /> : <section className="page"><h1>Sign in to register interest.</h1><p className="intro">An approved membership and verified email are required.</p><Link href={'/login?returnTo=' + encodeURIComponent(path)} className="primary full">Member login<Icon name="chevron-right" /></Link></section>;
-    return <EventDetailPage event={loaded.event} signedIn={session.memberAccess} interest={loaded.interest} files={loaded.files} onOpenFile={id => api.downloadContentFile('event', loaded.event!.id, id, session)} />;
+    return <EventDetailPage event={loaded.event} signedIn={session.memberAccess} canRead={session.memberAccess || session.adminAccess} interest={loaded.interest} files={loaded.files} onOpenFile={id => openPdf('event', loaded.event!.id, id, loaded.event!.data.title + ' brochure')} />;
   }
   if (path === '/admin/members') return <MembershipRegistryPage items={loaded.registry?.items || []} {...page(loaded.registry?.nextCursor)} />;
   if (path === '/admin/members/import') return <MembershipImportPage onPreview={async (csv, restoreSuspended) => { const preview = await api.previewRegistry(csv, session, restoreSuspended); contentNavigate('/admin/members/import/' + preview.previewId); }} />;
   if (loaded.preview) return <MembershipImportPreviewPage preview={loaded.preview} progress={progress} {...page()} pageNumber={rowCursors.length} onPrevious={rowCursors.length > 1 ? () => setRowCursors(old => old.slice(0, -1)) : undefined} onNext={loaded.preview.nextCursor !== null ? () => setRowCursors(old => [...old, loaded.preview!.nextCursor]) : undefined} session={session} />;
   if (path === '/admin/events') return <AdminEventsPage items={(loaded.drafts?.items || []) as ContentDraft<EventData>[]} {...page(loaded.drafts?.nextCursor)} />;
   if (loaded.eventDraft) return <EventEditorPage draft={loaded.eventDraft} files={loaded.files} onSave={(data, uploads, intent) => save('event', loaded.eventDraft!, data, uploads, intent)} />;
-  if (loaded.eventPreview) return <EventPreviewPage preview={loaded.eventPreview} files={loaded.files} onPublish={async () => { await api.publishDraft('event', loaded.eventPreview!, session); contentNavigate('/events/' + loaded.eventPreview!.id); }} />;
+  if (loaded.eventPreview) return <EventPreviewPage preview={loaded.eventPreview} files={loaded.files} onOpenFile={id => openPdf('event', loaded.eventPreview!.id, id, loaded.eventPreview!.data.title + ' brochure')} onPublish={async () => { await api.publishDraft('event', loaded.eventPreview!, session); contentNavigate('/events/' + loaded.eventPreview!.id); }} />;
   if (loaded.discover) return <DiscoverEditorPage items={loaded.discover} files={loaded.files} {...page()} onSetup={async () => { for (let i = 0; i < 3; i++) if (!loaded.discover!.some(item => item.id === String(i + 1))) await api.saveDraft('discover', { id: String(i + 1), revision: 0, data: DEFAULT_DISCOVER[i] }, DEFAULT_DISCOVER[i], [], session); reload(value => value + 1); }} onSave={async (id, data, uploads) => { const record = loaded.discover!.find(item => item.id === id)!; await api.saveDraft('discover', record, data, uploads, session); reload(value => value + 1); }} onPreview={async id => api.previewDraft('discover', loaded.discover!.find(item => item.id === id)!, session)} onPublish={async preview => { await api.publishDraft('discover', preview, session); reload(value => value + 1); }} />;
   if (path === '/admin/publications') return <AdminPublicationsPage items={(loaded.drafts?.items || []) as ContentDraft<PublicationData>[]} {...page(loaded.drafts?.nextCursor)} />;
   if (loaded.publicationDraft) return <PublicationEditorPage draft={loaded.publicationDraft} files={loaded.files} onSave={(data, uploads, intent) => save('publication', loaded.publicationDraft!, data, uploads, intent)} />;
-  if (loaded.publicationPreview) return <PublicationPreviewPage preview={loaded.publicationPreview} files={loaded.files} onOpenFile={id => api.downloadContentFile('publication', loaded.publicationPreview!.id, id, session)} onPublish={async () => { await api.publishDraft('publication', loaded.publicationPreview!, session); contentNavigate('/admin/publications'); }} />;
+  if (loaded.publicationPreview) return <PublicationPreviewPage preview={loaded.publicationPreview} files={loaded.files} onOpenFile={id => openPdf('publication', loaded.publicationPreview!.id, id, loaded.publicationPreview!.data.title)} onPublish={async () => { await api.publishDraft('publication', loaded.publicationPreview!, session); contentNavigate('/admin/publications'); }} />;
   if (loaded.publications) return <PublicationsPage items={loaded.publications.items} files={loaded.files} {...page(loaded.publications.nextCursor)} />;
-  if (loaded.publication) return <section className="page publication-library"><Link href="/member/publications" className="back">Member library</Link><PublicationDetailPage publication={loaded.publication} files={loaded.files} onOpenFile={id => api.downloadContentFile('publication', loaded.publication!.id, id, session)} /></section>;
+  if (loaded.publication) return <section className="page publication-library"><Link href="/member/publications" className="back">Member library</Link><PublicationDetailPage publication={loaded.publication} files={loaded.files} onOpenFile={id => openPdf('publication', loaded.publication!.id, id, loaded.publication!.data.title)} /></section>;
   if (path === '/member/consultation/new' && session.member) return <ConsultationFormPage member={session.member} onSubmit={async data => { const result = await api.submitConsultation(data, session); contentNavigate('/member/consultation/' + result.id); }} />;
   if (loaded.consultations) return <ConsultationsPage items={loaded.consultations.items} admin={path.startsWith('/admin/')} {...page(loaded.consultations.nextCursor)} />;
   if (loaded.consultation) return <ConsultationDetailPage query={loaded.consultation} admin={path.startsWith('/admin/')} />;
@@ -332,7 +347,7 @@ export function ConnectedDiscover({ session, children }: { session: Session; chi
       for (const item of page.items) {
         let image = '/assets/' + item.data.defaultImage;
         if (item.data.image) { const lease = await api.loadAttachments('discover', item.id, [item.data.image], session); if (!active) { lease.release(); return; } releases.push(lease.release); image = lease.files[item.data.image]?.objectUrl || image; }
-        const href = safeContentWebsite(item.data.websiteUrl); if (href) result.push({ tag: item.data.tag, title: item.data.title, description: item.data.description, href, image, alt: item.data.imageAlt });
+        const href = safeContentWebsite(item.data.websiteUrl); if (href) result.push({ tag: item.data.tag, title: item.data.title, description: item.data.description, href, image, alt: item.data.imageAlt, ...(item.data.imageAlt === 'Official ISP board member portraits, 2025–2027' ? { caption: 'Selected board members · 2025–2027' } : {}) });
       }
       if (active && sessionResultIsCurrent(session)) setSlides(result.length ? result : undefined);
     }).catch(() => { if (active) setSlides(undefined); });
@@ -341,9 +356,22 @@ export function ConnectedDiscover({ session, children }: { session: Session; chi
   return children(slides);
 }
 export function HomeEvents({ session }: { session: Session }) {
-  const [items, setItems] = useState<ContentProjection<EventData>[]>([]), [error, setError] = useState(''), [loading, setLoading] = useState(true);
-  useEffect(() => { let active = true; if (session.status === 'loading') return; void api.listPublished<EventData>('event', null, session).then(page => { if (active) setItems(page.items.slice(0, 3)); }).catch(() => { if (active) setError('Events are unavailable at the moment.'); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [session]);
-  return <><ListingStatus loading={loading} error={error} />{!loading && !error && !items.length && <p className="form-hint">Published events will appear here as they become available.</p>}{items.map(event => <article className="event-teaser" key={event.id}><img src="/assets/event-palms.jpg" alt="" loading="lazy" /><div><span className="sample-label">{event.data.format}</span><h3>{event.data.title}</h3><p>{dateLabel(event.data.date)} · {feeLabel(event.data)}</p><Link href={'/events/' + event.id} className="link-button">View event<Icon name="chevron-right" /></Link></div></article>)}</>;
+  const [items, setItems] = useState<ContentProjection<EventData>[]>([]), [files, setFiles] = useState<Record<string, AttachmentView>>({}), [error, setError] = useState(''), [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let active = true; const releases: (() => void)[] = [];
+    setItems([]); setFiles({}); setError(''); setLoading(true);
+    if (session.status === 'loading' || session.status === 'signing-out') return () => { active = false; };
+    void api.listPublished<EventData>('event', null, session).then(async page => {
+      const visible = page.items.slice(0, 3), resolved: Record<string, AttachmentView> = {};
+      for (const event of visible) if (event.data.images[0]) {
+        const lease = await api.loadAttachments('event', event.id, [event.data.images[0]], session);
+        if (!active) { lease.release(); return; } releases.push(lease.release); Object.assign(resolved, lease.files);
+      }
+      if (active && sessionResultIsCurrent(session)) { setItems(visible); setFiles(resolved); }
+    }).catch(() => { if (active) setError('Events are unavailable at the moment.'); }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; releases.forEach(release => release()); };
+  }, [session]);
+  return <><ListingStatus loading={loading} error={error} />{!loading && !error && !items.length && <p className="form-hint">Published events will appear here as they become available.</p>}{items.map(event => <article className="event-teaser" key={event.id}><img src={imageUrl(files[event.data.images[0]]) || '/assets/event-palms.jpg'} alt={imageUrl(files[event.data.images[0]]) ? event.data.title + ' cover' : ''} loading="lazy" /><div><span className="sample-label">{event.data.format}</span><h3>{event.data.title}</h3><p>{dateLabel(event.data.date)} · {feeLabel(event.data)}</p><Link href={'/events/' + event.id} className="link-button">View event<Icon name="chevron-right" /></Link></div></article>)}</>;
 }
 
 export function HomePublications({ session }: { session: Session }) {

@@ -388,3 +388,26 @@ input.full{text-align:center}
 .query-message{padding:10px 0 20px}.query-message p{overflow-wrap:anywhere}
 
 .event-interest-list{list-style:none;padding:0}.event-interest-card h2,.event-interest-card dd{overflow-wrap:anywhere}.event-interest-card .query-meta{margin-bottom:0}.event-interest-roster nav{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
+
+/* Approved reading and imagery updates within the existing Design B layout. */
+.brandbar{height:112px;min-height:112px;padding-block:10px}
+.brand>img{width:72px;height:92px}
+.discover-cover-media{height:185px;display:grid;grid-template-columns:1fr 1fr;background:#e6eee1;overflow:hidden}
+.discover-cover-media>img{display:block;width:100%;height:100%;min-width:0;object-fit:contain;padding:8px}
+.discover-photo-caption{margin:0;padding:7px 15px;background:#e6eee1;color:var(--muted);font-size:.72rem;line-height:1.4}
+.member-upcoming{margin:28px 0;padding-top:26px;border-top:1px solid var(--line)}
+.member-upcoming>.section-head{margin-bottom:12px}
+.pdf-reader-back{margin-bottom:22px}
+.pdf-reader h1{overflow-wrap:anywhere}
+.pdf-reader-controls{display:grid;gap:14px;margin:24px 0 18px}
+.pdf-page-controls,.pdf-zoom-controls{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pdf-page-controls>span,.pdf-zoom-controls>span{font-size:.9rem;text-align:center}
+.pdf-reader-controls button{min-height:48px;min-width:48px;padding:10px 12px;font-size:.95rem}
+.pdf-zoom-controls{justify-content:center;gap:20px}
+.pdf-reader-viewport{min-height:160px;max-height:70dvh;overflow-x:auto;overflow-y:scroll;scrollbar-gutter:stable;overscroll-behavior:contain;touch-action:pan-x pan-y;padding:12px;background:#e8eee3;border:1px solid #c4d3bf;border-radius:4px}
+.pdf-reader-viewport>canvas{display:block;max-width:none;margin:0 auto;background:white;box-shadow:0 3px 12px #073e3120}
+.pdf-reader-hint{margin-top:17px}
+@media(max-width:400px){.brand>img{width:72px;height:92px}.discover-cover-media{height:168px}}
+@media(max-width:360px){.brandbar{height:112px;min-height:112px;padding:10px 11px;gap:4px}.brand{font-size:13.2px;gap:6px}.brand>img{width:72px;height:92px}.brand small{font-size:6px;letter-spacing:.04em}.account-control{font-size:.73rem;padding-inline:4px}.menu-root>summary{width:44px}.discover-cover-media{height:151px}.pdf-page-controls{gap:6px}.pdf-reader-controls button{padding-inline:9px;font-size:.85rem}.pdf-page-controls>span{font-size:.79rem}.member-upcoming .section-head{gap:8px}.member-upcoming .section-head h2{font-size:1.34rem}.member-upcoming .section-head .link-button{font-size:.8rem}}
+
+

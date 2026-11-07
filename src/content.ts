@@ -102,32 +102,33 @@ interface FileMetadata { delivery: 'public-storage' | 'authenticated'; attachmen
 async function fileMetadata(kind: ContentKind, id: string, attachmentId: string, session: Session | null) {
   return call<FileMetadata>('getContentFile', { kind, id, attachmentId }, session, session?.adminAccess ? 'admin' : kind === 'publication' ? 'member' : 'public');
 }
-async function checkedBlob(kind: ContentKind, id: string, metadata: FileMetadata, session: Session | null): Promise<Blob> {
+async function checkedBlob(kind: ContentKind, id: string, metadata: FileMetadata, session: Session | null, signal?: AbortSignal): Promise<Blob> {
+  const current = () => { signal?.throwIfAborted(); check(session, 'public'); };
   if (metadata.scanStatus !== 'clean' || !metadata.generation || !metadata.sha256 || !/^[a-f0-9]{64}$/.test(metadata.sha256) || metadata.bucket !== app().options.storageBucket || metadata.storagePath !== 'contentUploads/' + kind + '/' + id + '/' + metadata.attachmentId || metadata.size < 1 || metadata.size > 25 * 1024 * 1024) throw Error('This file has not received server approval.');
-  check(session, 'public');
+  current();
   if (!['public-storage', 'authenticated'].includes(metadata.delivery) || (metadata.delivery === 'public-storage' && kind === 'publication')) throw Error('This file delivery route is unavailable.');
   const user = getAuth(app()).currentUser; let blob: Blob;
   if (metadata.delivery === 'public-storage') {
-    const object = ref(getStorage(app()), metadata.storagePath), before = await getMetadata(object);
+    const object = ref(getStorage(app()), metadata.storagePath), before = await getMetadata(object); current();
     if (String(before.generation) !== String(metadata.generation)) throw Error('This file changed after approval.');
-    blob = await getBlob(object, 25 * 1024 * 1024);
-    const after = await getMetadata(object);
+    blob = await getBlob(object, 25 * 1024 * 1024); current();
+    const after = await getMetadata(object); current();
     if (String(after.generation) !== String(metadata.generation)) throw Error('This file changed after approval.');
   } else {
     if (!user) throw Error('Sign in to open this member file.');
-    const token = await user.getIdToken(); check(session, 'public');
+    const token = await user.getIdToken(); current();
     const target = new URL('/api/member-file', window.location.origin);
     target.searchParams.set('kind', kind); target.searchParams.set('id', id); target.searchParams.set('attachmentId', metadata.attachmentId);
-    const response = await fetch(target, { method: 'GET', headers: { Authorization: 'Bearer ' + token }, credentials: 'omit', cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(60000) });
-    check(session, 'public');
+    const response = await fetch(target, { method: 'GET', headers: { Authorization: 'Bearer ' + token }, credentials: 'omit', cache: 'no-store', redirect: 'error', signal: signal || AbortSignal.timeout(60000) });
+    current();
     if (response.status !== 200 || !response.body || response.headers.get('X-ISP-File-Generation') !== metadata.generation || response.headers.get('X-ISP-File-SHA256') !== metadata.sha256 || response.headers.get('Content-Type')?.split(';')[0] !== metadata.contentType) { await response.body?.cancel(); throw Error('This file is unavailable or no longer matches its approved version.'); }
     const reader = response.body.getReader(), chunks: Uint8Array<ArrayBuffer>[] = []; let size = 0;
-    try { for (;;) { const part = await reader.read(); if (part.done) break; size += part.value.byteLength; if (size > metadata.size || size > 25 * 1024 * 1024) throw Error('The file exceeded its approved size.'); chunks.push(new Uint8Array(part.value)); } }
+    try { for (;;) { const part = await reader.read(); current(); if (part.done) break; size += part.value.byteLength; if (size > metadata.size || size > 25 * 1024 * 1024) throw Error('The file exceeded its approved size.'); chunks.push(new Uint8Array(part.value)); } }
     catch (error) { await reader.cancel().catch(() => {}); throw error; }
     blob = new Blob(chunks, { type: metadata.contentType });
   }
   const bytes = await blob.arrayBuffer(), digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))).map(value => value.toString(16).padStart(2, '0')).join('');
-  check(session, 'public');
+  current();
   if (blob.size !== metadata.size || digest !== metadata.sha256) throw Error('The downloaded file did not match its approved version.');
   return blob;
 }
@@ -147,6 +148,33 @@ export async function loadAttachments(kind: ContentKind, id: string, ids: string
     }
     return { files, release: () => urls.forEach(url => URL.revokeObjectURL(url)) };
   } catch (error) { urls.forEach(url => URL.revokeObjectURL(url)); throw error; }
+}
+export interface PdfFileLease {
+  data: Uint8Array<ArrayBuffer>; fileName: string; isCurrent: () => boolean; release: () => void;
+}
+export async function loadContentPdf(kind: 'event' | 'publication', id: string, attachmentId: string, session: Session, signal: AbortSignal): Promise<PdfFileLease> {
+  const scope: Scope = session.adminAccess ? 'admin' : kind === 'publication' ? 'member' : 'public';
+  const controller = new AbortController(), abort = () => controller.abort();
+  const timer = setTimeout(abort, 60000);
+  signal.addEventListener('abort', abort, { once: true });
+  if (signal.aborted) abort();
+  let released = false;
+  const current = () => { controller.signal.throwIfAborted(); check(session, scope); };
+  try {
+    current();
+    const metadata = await fileMetadata(kind, id, attachmentId, session);
+    current();
+    if (metadata.contentType !== 'application/pdf') throw Error('This attachment is not a PDF.');
+    const blob = await checkedBlob(kind, id, metadata, session, controller.signal);
+    current();
+    const data = new Uint8Array(await blob.arrayBuffer());
+    current();
+    return {
+      data, fileName: metadata.fileName,
+      isCurrent: () => { if (released || signal.aborted) return false; try { check(session, scope); return true; } catch { return false; } },
+      release: () => { released = true; },
+    };
+  } finally { clearTimeout(timer); signal.removeEventListener('abort', abort); }
 }
 export async function downloadContentFile(kind: ContentKind, id: string, attachmentId: string, session: Session | null): Promise<void> {
   const metadata = await fileMetadata(kind, id, attachmentId, session), blob = await checkedBlob(kind, id, metadata, session);
